@@ -20,14 +20,22 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
 }
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
-app.config['WTF_CSRF_ENABLED'] = True
+app.config['WTF_CSRF_ENABLED'] = os.getenv('ENABLE_CSRF', 'false').lower() == 'true'
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 app.config['WTF_CSRF_SSL_STRICT'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-csrf = CSRFProtect(app)
+if app.config['WTF_CSRF_ENABLED']:
+    csrf = CSRFProtect(app)
+    print("CSRF Protection enabled")
+else:
+    print("CSRF Protection disabled for development")
+    @app.context_processor
+    def csrf_token_processor():
+        return {'csrf_token': lambda: ''}
+
 db.init_app(app)
 
 login_manager = LoginManager()
@@ -483,7 +491,6 @@ def billing_success():
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/webhook/stripe', methods=['POST'])
-@csrf.exempt
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
