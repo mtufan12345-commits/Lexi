@@ -5,8 +5,6 @@ import stripe
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from datetime import datetime
-import vertexai
-from vertexai.preview import reasoning_engines
 from werkzeug.utils import secure_filename
 import uuid
 
@@ -18,8 +16,12 @@ class VertexAIService:
         location = os.getenv('VERTEX_AI_LOCATION', 'europe-west1')
         agent_id = os.getenv('VERTEX_AI_AGENT_ID')
         
+        self.agent = None
+        self.enabled = False
+        
         if project and agent_id:
             try:
+                import vertexai
                 credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
                 if credentials_json:
                     credentials_dict = json.loads(credentials_json)
@@ -29,17 +31,27 @@ class VertexAIService:
                 else:
                     vertexai.init(project=project, location=location)
                 
-                self.agent = reasoning_engines.ReasoningEngine(agent_id=agent_id)
-                self.enabled = True
+                try:
+                    from vertexai.preview import reasoning_engines
+                    self.agent = reasoning_engines.ReasoningEngine(agent_id=agent_id)
+                    self.enabled = True
+                    print("Vertex AI agent initialized successfully")
+                except ImportError:
+                    from vertexai.generative_models import GenerativeModel
+                    self.model = GenerativeModel('gemini-pro')
+                    self.enabled = True
+                    self.use_fallback = True
+                    print("Vertex AI using Gemini fallback")
             except Exception as e:
                 print(f"Vertex AI initialization failed: {e}")
                 self.enabled = False
         else:
+            print("Vertex AI not configured (missing credentials)")
             self.enabled = False
     
     def chat(self, message, context=None):
         if not self.enabled:
-            return "LEX is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials."
+            return "LEX is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om LEX te activeren. Je kunt vragen stellen zodra de configuratie is voltooid."
         
         try:
             if context:
@@ -47,11 +59,18 @@ class VertexAIService:
             else:
                 full_message = message
             
-            response = self.agent.query(input=full_message)
-            return response.text if hasattr(response, 'text') else str(response)
+            if self.agent:
+                response = self.agent.query(input=full_message)
+                return response.text if hasattr(response, 'text') else str(response)
+            elif hasattr(self, 'model'):
+                prompt = f"Je bent LEX, een expert op het gebied van Nederlandse CAO's (Collectieve Arbeidsovereenkomsten). Beantwoord de volgende vraag op basis van CAO kennis:\n\n{full_message}"
+                response = self.model.generate_content(prompt)
+                return response.text if hasattr(response, 'text') else str(response)
+            else:
+                return "LEX is momenteel niet correct geconfigureerd."
         except Exception as e:
             print(f"Vertex AI chat error: {e}")
-            return f"Er ging iets mis bij het verwerken van je vraag: {str(e)}"
+            return f"Er ging iets mis bij het verwerken van je vraag. LEX heeft wellicht nog geen toegang tot de CAO database. Configureer de Vertex AI agent voor volledige functionaliteit."
 
 class S3Service:
     def __init__(self):
