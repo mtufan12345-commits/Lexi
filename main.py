@@ -56,6 +56,13 @@ def load_tenant():
     if g.is_super_admin:
         return
     
+    # Development mode: tenant via session
+    tenant_id = session.get('tenant_id')
+    if tenant_id:
+        g.tenant = Tenant.query.get(tenant_id)
+        return
+    
+    # Production mode: tenant via subdomain
     host = request.host.split(':')[0]
     parts = host.split('.')
     
@@ -140,11 +147,14 @@ def signup_tenant():
         
         db.session.commit()
         
+        # Set tenant in session for development mode
+        session['tenant_id'] = tenant.id
+        
         login_url = f"https://{subdomain}.lex-cao.replit.app/login"
         email_service.send_welcome_email(admin_user, tenant, login_url)
         
         flash('Account aangemaakt! Je kunt nu inloggen.', 'success')
-        return redirect(login_url)
+        return redirect(url_for('login'))
     
     return render_template('signup_tenant.html')
 
@@ -202,6 +212,21 @@ def super_admin_login():
     
     return render_template('super_admin_login.html')
 
+@app.route('/select-tenant', methods=['GET', 'POST'])
+def select_tenant():
+    """Development mode: manually select a tenant"""
+    if request.method == 'POST':
+        subdomain = request.form.get('subdomain')
+        tenant = Tenant.query.filter_by(subdomain=subdomain).first()
+        if tenant:
+            session['tenant_id'] = tenant.id
+            flash(f'Tenant geselecteerd: {tenant.company_name}', 'success')
+            return redirect(url_for('login'))
+        flash('Tenant niet gevonden', 'danger')
+    
+    tenants = Tenant.query.all()
+    return render_template('select_tenant.html', tenants=tenants)
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -211,7 +236,7 @@ def logout():
     
     logout_user()
     session.clear()
-    return redirect(url_for('login') if g.tenant else url_for('index'))
+    return redirect(url_for('index'))
 
 @app.route('/chat')
 @login_required
