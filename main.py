@@ -58,19 +58,23 @@ def load_tenant():
     
     # Development mode: tenant via session
     tenant_id = session.get('tenant_id')
+    print(f"[DEBUG] load_tenant - tenant_id from session: {tenant_id}")
     if tenant_id:
         g.tenant = Tenant.query.get(tenant_id)
+        print(f"[DEBUG] Tenant loaded from session: {g.tenant.company_name if g.tenant else None}")
         return
     
     # Production mode: tenant via subdomain
     host = request.host.split(':')[0]
     parts = host.split('.')
+    print(f"[DEBUG] Host parts: {parts}")
     
     if len(parts) >= 2 and parts[0] not in ['www', 'lex-cao', 'lex-cao-expert']:
         subdomain = parts[0]
         tenant = Tenant.query.filter_by(subdomain=subdomain).first()
         if tenant:
             g.tenant = tenant
+            print(f"[DEBUG] Tenant loaded from subdomain: {tenant.company_name}")
 
 def tenant_required(f):
     @wraps(f)
@@ -221,9 +225,12 @@ def select_tenant():
     """Development mode: manually select a tenant"""
     if request.method == 'POST':
         subdomain = request.form.get('subdomain')
+        print(f"[DEBUG] select_tenant - subdomain: {subdomain}")
         tenant = Tenant.query.filter_by(subdomain=subdomain).first()
         if tenant:
             session['tenant_id'] = tenant.id
+            session.modified = True  # Force session save
+            print(f"[DEBUG] Tenant ID {tenant.id} saved to session")
             flash(f'Tenant geselecteerd: {tenant.company_name}', 'success')
             return redirect(url_for('login'))
         flash('Tenant niet gevonden', 'danger')
