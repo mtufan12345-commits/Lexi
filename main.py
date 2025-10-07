@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, jsonify, g, session, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 from models import db, SuperAdmin, Tenant, User, Chat, Message, Subscription, Template, UploadedFile, Artifact
 from services import vertex_ai_service, s3_service, email_service, StripeService
@@ -19,7 +20,10 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
 }
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+app.config['WTF_CSRF_ENABLED'] = True
+app.config['WTF_CSRF_TIME_LIMIT'] = None
 
+csrf = CSRFProtect(app)
 db.init_app(app)
 
 login_manager = LoginManager()
@@ -475,6 +479,7 @@ def billing_success():
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/webhook/stripe', methods=['POST'])
+@csrf.exempt
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
@@ -562,18 +567,25 @@ def super_admin_update_tenant_status(tenant_id):
     
     return redirect(url_for('super_admin_dashboard'))
 
-with app.app_context():
-    db.create_all()
-    
-    if not SuperAdmin.query.first():
-        admin = SuperAdmin(
-            email='admin@lex-cao.nl',
-            name='Super Administrator'
-        )
-        admin.set_password('admin123')
-        db.session.add(admin)
-        db.session.commit()
-        print("Super admin created: admin@lex-cao.nl / admin123")
+def init_db():
+    try:
+        with app.app_context():
+            db.create_all()
+            print("Database tables checked/created successfully")
+            
+            if not SuperAdmin.query.first():
+                admin = SuperAdmin(
+                    email='admin@lex-cao.nl',
+                    name='Super Administrator'
+                )
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+                print("Super admin created: admin@lex-cao.nl / admin123")
+    except Exception as e:
+        print(f"Database initialization: {e}")
+
+init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

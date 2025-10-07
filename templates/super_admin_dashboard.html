@@ -34,6 +34,7 @@
         <div class="bg-gray-800 rounded-lg shadow p-6 mb-6">
             <h3 class="text-lg font-semibold mb-4">Nieuwe Tenant Aanmaken</h3>
             <form method="POST" action="/super-admin/tenants/create" class="grid md:grid-cols-5 gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="text" name="company_name" placeholder="Bedrijfsnaam" required 
                        class="px-3 py-2 border border-gray-700 bg-gray-900 rounded-md text-white">
                 <input type="text" name="subdomain" placeholder="subdomain" required 
@@ -82,6 +83,7 @@
                         <td class="px-6 py-4 whitespace-nowrap">{{ tenant.users|length }} / {{ tenant.max_users }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <form method="POST" action="/super-admin/tenants/{{ tenant.id }}/status" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <select name="status" onchange="this.form.submit()" 
                                         class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1">
                                     <option value="trial" {% if tenant.status == 'trial' %}selected{% endif %}>Trial</option>

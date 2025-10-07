@@ -86,6 +86,16 @@
 <script>
 let currentChatId = null;
 
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+function fetchWithCSRF(url, options = {}) {
+    options.headers = options.headers || {};
+    options.headers['X-CSRFToken'] = getCSRFToken();
+    return fetch(url, options);
+}
+
 const LEX_SCENES = [
     {
         frames: [
@@ -150,7 +160,7 @@ function stopLexAnimation(interval) {
 }
 
 async function newChat() {
-    const response = await fetch('/api/chat/new', { method: 'POST' });
+    const response = await fetchWithCSRF('/api/chat/new', { method: 'POST' });
     const data = await response.json();
     currentChatId = data.id;
     
@@ -210,7 +220,7 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
     e.preventDefault();
     
     if (!currentChatId) {
-        const response = await fetch('/api/chat/new', { method: 'POST' });
+        const response = await fetchWithCSRF('/api/chat/new', { method: 'POST' });
         const data = await response.json();
         currentChatId = data.id;
         document.getElementById('chat-actions').classList.remove('hidden');
@@ -227,7 +237,7 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
     const animationInterval = startLexAnimation();
     
     try {
-        const response = await fetch(`/api/chat/${currentChatId}/message`, {
+        const response = await fetchWithCSRF(`/api/chat/${currentChatId}/message`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message })
@@ -249,7 +259,7 @@ async function renameChat() {
     
     const newTitle = prompt('Nieuwe naam:');
     if (newTitle) {
-        await fetch(`/api/chat/${currentChatId}/rename`, {
+        await fetchWithCSRF(`/api/chat/${currentChatId}/rename`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newTitle })
@@ -262,14 +272,14 @@ async function deleteChat() {
     if (!currentChatId) return;
     
     if (confirm('Weet je zeker dat je deze chat wilt verwijderen?')) {
-        await fetch(`/api/chat/${currentChatId}/delete`, { method: 'DELETE' });
+        await fetchWithCSRF(`/api/chat/${currentChatId}/delete`, { method: 'DELETE' });
         location.reload();
     }
 }
 
 async function handleFileUpload(event) {
     if (!currentChatId) {
-        const response = await fetch('/api/chat/new', { method: 'POST' });
+        const response = await fetchWithCSRF('/api/chat/new', { method: 'POST' });
         const data = await response.json();
         currentChatId = data.id;
     }
@@ -282,7 +292,7 @@ async function handleFileUpload(event) {
     formData.append('chat_id', currentChatId);
     
     try {
-        const response = await fetch('/api/upload', {
+        const response = await fetchWithCSRF('/api/upload', {
             method: 'POST',
             body: formData
         });
