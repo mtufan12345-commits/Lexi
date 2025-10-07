@@ -286,6 +286,8 @@ def get_chat(chat_id):
 @login_required
 @tenant_required
 def send_message(chat_id):
+    print(f"[DEBUG] send_message called - chat_id: {chat_id}, user: {current_user.id}")
+    
     chat = Chat.query.filter_by(
         id=chat_id,
         tenant_id=g.tenant.id,
@@ -294,6 +296,7 @@ def send_message(chat_id):
     
     data = request.json
     user_message = data.get('message', '')
+    print(f"[DEBUG] User message: {user_message}")
     
     message = Message(
         tenant_id=g.tenant.id,
@@ -309,7 +312,9 @@ def send_message(chat_id):
     chat.updated_at = datetime.utcnow()
     db.session.commit()
     
+    print("[DEBUG] Calling Vertex AI service...")
     lex_response = vertex_ai_service.chat(user_message)
+    print(f"[DEBUG] LEX response: {lex_response[:100]}...")
     
     assistant_message = Message(
         tenant_id=g.tenant.id,
@@ -320,6 +325,7 @@ def send_message(chat_id):
     db.session.add(assistant_message)
     db.session.commit()
     
+    print("[DEBUG] Response sent successfully")
     return jsonify({'response': lex_response})
 
 @app.route('/api/chat/<int:chat_id>/rename', methods=['POST'])
