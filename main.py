@@ -168,9 +168,12 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         
+        print(f"Login attempt - Tenant ID: {g.tenant.id}, Email: {email}")
         user = User.query.filter_by(tenant_id=g.tenant.id, email=email).first()
+        print(f"User found: {user is not None}")
         
         if user and user.check_password(password):
+            print("Password check passed")
             if not user.is_active:
                 flash('Je account is gedeactiveerd.', 'danger')
                 return render_template('login.html', tenant=g.tenant)
@@ -192,6 +195,7 @@ def login():
             
             return redirect(url_for('chat_page'))
         
+        print("Login failed - invalid credentials")
         flash('Ongeldige email of wachtwoord.', 'danger')
     
     return render_template('login.html', tenant=g.tenant)
