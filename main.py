@@ -22,6 +22,10 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['WTF_CSRF_TIME_LIMIT'] = None
+app.config['WTF_CSRF_SSL_STRICT'] = False
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 csrf = CSRFProtect(app)
 db.init_app(app)
