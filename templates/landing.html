@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-2xl font-bold text-indigo-600">LEX CAO Expert</div>
+                <div class="space-x-4">
+                    <a href="/signup/tenant" class="text-gray-700 hover:text-indigo-600">Aanmelden</a>
+                    <a href="/super-admin/login" class="text-sm text-gray-500 hover:text-gray-700">Admin</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div class="text-center">
+            <h1 class="text-5xl font-bold text-gray-900 mb-6">
+                🤖 LEX CAO Expert
+            </h1>
+            <p class="text-2xl text-gray-600 mb-4">
+                Altijd het juiste antwoord op je CAO vragen
+            </p>
+            <p class="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
+                LEX is jouw AI-assistent met kennis van 70+ CAO documenten. Perfect voor uitzendbureaus.
+            </p>
+            <a href="/signup/tenant" class="inline-block bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition">
+                14 Dagen Gratis Proberen →
+            </a>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-8 mt-20">
+            <div class="text-center">
+                <div class="text-4xl mb-4">📚</div>
+                <h3 class="font-semibold mb-2">70+ CAO Documenten</h3>
+                <p class="text-gray-600 text-sm">Glastuinbouw, ABU, NBBU, en meer</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl mb-4">⚡</div>
+                <h3 class="font-semibold mb-2">Instant Antwoorden</h3>
+                <p class="text-gray-600 text-sm">Geen zoeken, direct het juiste artikel</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl mb-4">👥</div>
+                <h3 class="font-semibold mb-2">Team Collaboration</h3>
+                <p class="text-gray-600 text-sm">Heel je payroll team</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl mb-4">🔒</div>
+                <h3 class="font-semibold mb-2">100% Privacy</h3>
+                <p class="text-gray-600 text-sm">Jouw data blijft van jouw bedrijf</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 mt-20 max-w-5xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <h3 class="text-2xl font-bold mb-2">Professional</h3>
+                <div class="text-4xl font-bold text-indigo-600 mb-6">€499<span class="text-lg text-gray-500">/maand</span></div>
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-start">
+                        <span class="text-green-500 mr-2">✓</span>
+                        <span>5 gebruikers</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-500 mr-2">✓</span>
+                        <span>Unlimited vragen</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-500 mr-2">✓</span>
+                        <span>Chat history</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-500 mr-2">✓</span>
+                        <span>Priority support</span>
+                    </li>
+                </ul>
+                <a href="/signup/tenant" class="block text-center bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
+                    Start Trial
+                </a>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-lg p-8 border-2 border-indigo-600">
+                <h3 class="text-2xl font-bold mb-2">Enterprise</h3>
+                <div class="text-4xl font-bold text-indigo-600 mb-6">€1.199<span class="text-lg text-gray-500">/maand</span></div>
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-start">
+                        <span class="text-green-500 mr-2">✓</span>
+                        <span>Unlimited gebruikers</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-500 mr-2">✓</span>
+                        <span>Unlimited vragen</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-500 mr-2">✓</span>
+                        <span>White-label branding</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-500 mr-2">✓</span>
+                        <span>Dedicated support</span>
+                    </li>
+                </ul>
+                <a href="/signup/tenant" class="block text-center bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
+                    Start Trial
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

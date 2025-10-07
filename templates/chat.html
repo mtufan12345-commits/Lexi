@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex h-screen bg-gray-100">
+    <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div class="p-4 border-b border-gray-200">
+            <h2 class="text-xl font-bold text-indigo-600">LEX CAO Expert</h2>
+            <p class="text-sm text-gray-600">{{ tenant.company_name }}</p>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4">
+            <button onclick="newChat()" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition mb-4">
+                + Nieuwe Chat
+            </button>
+            
+            <div id="chat-list" class="space-y-2">
+                {% for chat in chats %}
+                <div onclick="loadChat({{ chat.id }})" 
+                     class="p-3 rounded-lg hover:bg-gray-100 cursor-pointer border border-gray-200 chat-item" 
+                     data-chat-id="{{ chat.id }}">
+                    <div class="font-medium text-sm truncate">{{ chat.title }}</div>
+                    <div class="text-xs text-gray-500">{{ chat.updated_at.strftime('%d-%m %H:%M') }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="p-4 border-t border-gray-200">
+            <div class="text-sm text-gray-600 mb-2">{{ user.full_name }}</div>
+            {% if user.role == 'admin' %}
+            <a href="/admin/dashboard" class="block text-sm text-indigo-600 hover:text-indigo-800 mb-2">
+                ⚙️ Dashboard
+            </a>
+            {% endif %}
+            <a href="/logout" class="block text-sm text-gray-600 hover:text-gray-800">
+                Uitloggen
+            </a>
+        </div>
+    </div>
+    
+    <div class="flex-1 flex flex-col">
+        <div class="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+            <h3 id="chat-title" class="text-lg font-semibold">Selecteer of start een chat</h3>
+            <div id="chat-actions" class="hidden space-x-2">
+                <button onclick="renameChat()" class="text-sm text-gray-600 hover:text-gray-800">
+                    ✏️ Hernoemen
+                </button>
+                <button onclick="deleteChat()" class="text-sm text-red-600 hover:text-red-800">
+                    🗑️ Verwijderen
+                </button>
+            </div>
+        </div>
+        
+        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <div class="text-center text-gray-500 py-20">
+                <div class="text-6xl mb-4">🤖</div>
+                <p class="text-xl">Welkom bij LEX!</p>
+                <p class="text-sm">Stel me een vraag over CAO's en ik help je direct.</p>
+            </div>
+        </div>
+        
+        <div id="lex-loading" class="hidden p-6 bg-blue-50 border-t border-blue-200">
+            <div class="max-w-3xl mx-auto">
+                <div class="lex-animation text-center" id="lex-animation-content"></div>
+                <div class="text-center text-sm text-gray-600 mt-2" id="lex-animation-text"></div>
+            </div>
+        </div>
+        
+        <div class="bg-white border-t border-gray-200 p-4">
+            <form id="message-form" class="max-w-3xl mx-auto flex space-x-2">
+                <input type="file" id="file-input" class="hidden" onchange="handleFileUpload(event)">
+                <button type="button" onclick="document.getElementById('file-input').click()" 
+                        class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                    📎
+                </button>
+                <input type="text" id="message-input" placeholder="Stel een vraag over CAO's..." 
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                    Verstuur
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentChatId = null;
+
+const LEX_SCENES = [
+    {
+        frames: [
+            { ascii: " 📚\\n /|\\\\\\n / \\\\", text: "Zoeken in 70 CAO documenten..." },
+            { ascii: "  📚\\n /|\\\\\\n / \\\\", text: "Hmm, welk artikel was het ook alweer..." },
+            { ascii: " 📖✨\\n /|\\\\\\n / \\\\", text: "Gevonden in Glastuinbouw CAO!" }
+        ]
+    },
+    {
+        frames: [
+            { ascii: " ☕\\n /|\\\\\\n / \\\\", text: "LEX drinkt koffie..." },
+            { ascii: " 🔥☕\\n /|\\\\\\n / \\\\", text: "Te heet! *blaast*" },
+            { ascii: " ☕😊\\n /|\\\\\\n / \\\\", text: "Zo, lekker. Aan het werk!" }
+        ]
+    },
+    {
+        frames: [
+            { ascii: " 📄📄\\n /|\\\\\\n / \\\\", text: "Papers doorbladeren..." },
+            { ascii: " 💨📄\\n /|\\\\\\n / \\\\", text: "Oh nee, ze waaien weg!" },
+            { ascii: " 📄✅\\n /|\\\\\\n / \\\\", text: "Gevangen! Hier is je antwoord." }
+        ]
+    },
+    {
+        frames: [
+            { ascii: " 🔢\\n /|\\\\\\n / \\\\", text: "Berekeningen maken..." },
+            { ascii: " ❌🔢\\n /|\\\\\\n / \\\\", text: "Verkeerde knop!" },
+            { ascii: " ✅🔢\\n /|\\\\\\n / \\\\", text: "Ah, daar heb ik het!" }
+        ]
+    },
+    {
+        frames: [
+            { ascii: " 📱\\n /|\\\\\\n / \\\\", text: "Telefoon gaat..." },
+            { ascii: " 📱📞\\n /|\\\\\\n / \\\\", text: "Hallo? Momentje..." },
+            { ascii: " ✅\\n /|\\\\\\n / \\\\", text: "Klaar met je antwoord!" }
+        ]
+    }
+];
+
+function startLexAnimation() {
+    const scene = LEX_SCENES[Math.floor(Math.random() * LEX_SCENES.length)];
+    const loadingDiv = document.getElementById('lex-loading');
+    const animationContent = document.getElementById('lex-animation-content');
+    const animationText = document.getElementById('lex-animation-text');
+    
+    loadingDiv.classList.remove('hidden');
+    
+    let frameIndex = 0;
+    const interval = setInterval(() => {
+        const frame = scene.frames[frameIndex];
+        animationContent.innerHTML = frame.ascii;
+        animationText.textContent = frame.text;
+        
+        frameIndex = (frameIndex + 1) % scene.frames.length;
+    }, 2000);
+    
+    return interval;
+}
+
+function stopLexAnimation(interval) {
+    clearInterval(interval);
+    document.getElementById('lex-loading').classList.add('hidden');
+}
+
+async function newChat() {
+    const response = await fetch('/api/chat/new', { method: 'POST' });
+    const data = await response.json();
+    currentChatId = data.id;
+    
+    document.getElementById('messages-container').innerHTML = `
+        <div class="text-center text-gray-500 py-20">
+            <div class="text-6xl mb-4">🤖</div>
+            <p class="text-xl">Nieuwe chat gestart!</p>
+            <p class="text-sm">Stel me een vraag over CAO's.</p>
+        </div>
+    `;
+    
+    document.getElementById('chat-title').textContent = data.title;
+    document.getElementById('chat-actions').classList.remove('hidden');
+    
+    location.reload();
+}
+
+async function loadChat(chatId) {
+    currentChatId = chatId;
+    
+    const response = await fetch(`/api/chat/${chatId}`);
+    const data = await response.json();
+    
+    document.getElementById('chat-title').textContent = data.title;
+    document.getElementById('chat-actions').classList.remove('hidden');
+    
+    const container = document.getElementById('messages-container');
+    container.innerHTML = '';
+    
+    data.messages.forEach(msg => {
+        addMessageToUI(msg.role, msg.content);
+    });
+    
+    document.querySelectorAll('.chat-item').forEach(item => {
+        item.classList.remove('bg-indigo-50', 'border-indigo-300');
+    });
+    document.querySelector(`[data-chat-id="${chatId}"]`)?.classList.add('bg-indigo-50', 'border-indigo-300');
+}
+
+function addMessageToUI(role, content) {
+    const container = document.getElementById('messages-container');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    
+    messageDiv.innerHTML = `
+        <div class="max-w-2xl ${role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200'} rounded-lg p-4">
+            <div class="font-semibold text-sm mb-1">${role === 'user' ? 'Jij' : 'LEX 🤖'}</div>
+            <div class="whitespace-pre-wrap">${content}</div>
+        </div>
+    `;
+    
+    container.appendChild(messageDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+document.getElementById('message-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!currentChatId) {
+        const response = await fetch('/api/chat/new', { method: 'POST' });
+        const data = await response.json();
+        currentChatId = data.id;
+        document.getElementById('chat-actions').classList.remove('hidden');
+    }
+    
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    addMessageToUI('user', message);
+    input.value = '';
+    
+    const animationInterval = startLexAnimation();
+    
+    try {
+        const response = await fetch(`/api/chat/${currentChatId}/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        stopLexAnimation(animationInterval);
+        addMessageToUI('assistant', data.response);
+        
+        setTimeout(() => location.reload(), 1000);
+    } catch (error) {
+        stopLexAnimation(animationInterval);
+        addMessageToUI('assistant', 'Er ging iets mis. Probeer het opnieuw.');
+    }
+});
+
+async function renameChat() {
+    if (!currentChatId) return;
+    
+    const newTitle = prompt('Nieuwe naam:');
+    if (newTitle) {
+        await fetch(`/api/chat/${currentChatId}/rename`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle })
+        });
+        location.reload();
+    }
+}
+
+async function deleteChat() {
+    if (!currentChatId) return;
+    
+    if (confirm('Weet je zeker dat je deze chat wilt verwijderen?')) {
+        await fetch(`/api/chat/${currentChatId}/delete`, { method: 'DELETE' });
+        location.reload();
+    }
+}
+
+async function handleFileUpload(event) {
+    if (!currentChatId) {
+        const response = await fetch('/api/chat/new', { method: 'POST' });
+        const data = await response.json();
+        currentChatId = data.id;
+    }
+    
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('chat_id', currentChatId);
+    
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            alert('Bestand geüpload! Je kunt nu vragen stellen over dit document.');
+        }
+    } catch (error) {
+        alert('Upload mislukt. Probeer het opnieuw.');
+    }
+}
+</script>
+{% endblock %}

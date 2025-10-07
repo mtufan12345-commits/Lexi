@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-indigo-600">Admin Dashboard</h1>
+                <a href="/chat" class="text-gray-600 hover:text-gray-800">← Terug naar chat</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-3xl font-bold text-indigo-600">{{ users|length }}</div>
+                <div class="text-gray-600">Gebruikers</div>
+                <div class="text-sm text-gray-500 mt-1">Max: {{ tenant.max_users }}</div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-3xl font-bold text-green-600">{{ total_chats }}</div>
+                <div class="text-gray-600">Totaal Chats</div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-lg font-semibold">
+                    {% if tenant.status == 'trial' %}
+                    <span class="text-blue-600">Trial</span>
+                    {% elif tenant.status == 'active' %}
+                    <span class="text-green-600">Actief</span>
+                    {% else %}
+                    <span class="text-red-600">{{ tenant.status }}</span>
+                    {% endif %}
+                </div>
+                <div class="text-gray-600">Status</div>
+                {% if tenant.status == 'trial' %}
+                <div class="text-sm text-gray-500 mt-1">Tot {{ tenant.trial_ends_at.strftime('%d-%m-%Y') }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-6">
+            <a href="/admin/users" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition block">
+                <div class="text-4xl mb-2">👥</div>
+                <h3 class="text-lg font-semibold mb-1">Gebruikers</h3>
+                <p class="text-sm text-gray-600">Beheer teamleden</p>
+            </a>
+            
+            <a href="/admin/templates" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition block">
+                <div class="text-4xl mb-2">📄</div>
+                <h3 class="text-lg font-semibold mb-1">Templates</h3>
+                <p class="text-sm text-gray-600">Documenten database</p>
+            </a>
+            
+            <a href="/admin/billing" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition block">
+                <div class="text-4xl mb-2">💳</div>
+                <h3 class="text-lg font-semibold mb-1">Billing</h3>
+                <p class="text-sm text-gray-600">Abonnement beheer</p>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

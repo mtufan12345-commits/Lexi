@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-900 text-white">
+    <nav class="bg-gray-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Super Admin Dashboard</h1>
+                <a href="/logout" class="text-gray-400 hover:text-white">Uitloggen</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-3xl font-bold text-indigo-400">{{ tenants|length }}</div>
+                <div class="text-gray-400">Totaal Tenants</div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-3xl font-bold text-green-400">{{ total_users }}</div>
+                <div class="text-gray-400">Totaal Gebruikers</div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-3xl font-bold text-blue-400">
+                    {{ tenants|selectattr('status', 'equalto', 'active')|list|length }}
+                </div>
+                <div class="text-gray-400">Actieve Tenants</div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Nieuwe Tenant Aanmaken</h3>
+            <form method="POST" action="/super-admin/tenants/create" class="grid md:grid-cols-5 gap-4">
+                <input type="text" name="company_name" placeholder="Bedrijfsnaam" required 
+                       class="px-3 py-2 border border-gray-700 bg-gray-900 rounded-md text-white">
+                <input type="text" name="subdomain" placeholder="subdomain" required 
+                       class="px-3 py-2 border border-gray-700 bg-gray-900 rounded-md text-white">
+                <input type="email" name="contact_email" placeholder="Email" required 
+                       class="px-3 py-2 border border-gray-700 bg-gray-900 rounded-md text-white">
+                <input type="text" name="contact_name" placeholder="Contactpersoon" required 
+                       class="px-3 py-2 border border-gray-700 bg-gray-900 rounded-md text-white">
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                    Aanmaken
+                </button>
+            </form>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-900">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Bedrijf</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Subdomain</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Contact</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Gebruikers</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Acties</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    {% for tenant in tenants %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ tenant.company_name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="https://{{ tenant.subdomain }}.lex-cao.replit.app" target="_blank" class="text-indigo-400 hover:text-indigo-300">
+                                {{ tenant.subdomain }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">{{ tenant.contact_email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if tenant.status == 'trial' %}
+                            <span class="px-2 py-1 text-xs bg-blue-900 text-blue-300 rounded">Trial</span>
+                            {% elif tenant.status == 'active' %}
+                            <span class="px-2 py-1 text-xs bg-green-900 text-green-300 rounded">Actief</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs bg-red-900 text-red-300 rounded">{{ tenant.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ tenant.users|length }} / {{ tenant.max_users }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <form method="POST" action="/super-admin/tenants/{{ tenant.id }}/status" class="inline">
+                                <select name="status" onchange="this.form.submit()" 
+                                        class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1">
+                                    <option value="trial" {% if tenant.status == 'trial' %}selected{% endif %}>Trial</option>
+                                    <option value="active" {% if tenant.status == 'active' %}selected{% endif %}>Actief</option>
+                                    <option value="suspended" {% if tenant.status == 'suspended' %}selected{% endif %}>Suspended</option>
+                                </select>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
