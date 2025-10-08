@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-900 text-white">
+    <nav class="bg-gray-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold">Analytics Dashboard</h1>
+                    <p class="text-sm text-gray-400">Uitgebreide metrics en inzichten</p>
+                </div>
+                <div class="flex gap-4">
+                    <a href="{{ url_for('super_admin_dashboard') }}" class="text-gray-400 hover:text-white">← Dashboard</a>
+                    <a href="/logout" class="text-gray-400 hover:text-white">Uitloggen</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-gray-400 text-sm mb-1">Monthly Recurring Revenue</div>
+                <div class="text-3xl font-bold text-green-400">€{{ "{:,.0f}".format(current_mrr) }}</div>
+                <div class="text-sm mt-1">
+                    <span class="{% if growth_rate >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                        {{ "{:+.1f}".format(growth_rate) }}%
+                    </span>
+                    <span class="text-gray-400">vs vorige maand</span>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-gray-400 text-sm mb-1">Annual Revenue (ARR)</div>
+                <div class="text-3xl font-bold text-purple-400">€{{ "{:,.0f}".format(total_revenue) }}</div>
+                <div class="text-sm text-gray-400 mt-1">Projected yearly</div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-gray-400 text-sm mb-1">Active Tenants</div>
+                <div class="text-3xl font-bold text-blue-400">{{ active_tenants }}</div>
+                <div class="text-sm text-gray-400 mt-1">Betalende klanten</div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-gray-400 text-sm mb-1">Total Questions</div>
+                <div class="text-3xl font-bold text-indigo-400">{{ "{:,}".format(total_questions) }}</div>
+                <div class="text-sm text-gray-400 mt-1">All-time</div>
+            </div>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">MRR Trend (12 maanden)</h3>
+                <canvas id="mrrChart" height="250"></canvas>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Vragen per Maand</h3>
+                <canvas id="questionsChart" height="250"></canvas>
+            </div>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Tier Distributie</h3>
+                <canvas id="tierChart" height="200"></canvas>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6 md:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">Conversie Funnel</h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span>Signups</span>
+                            <span class="font-bold">{{ conversion_funnel.signups }}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div class="bg-blue-500 h-3 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span>Trials</span>
+                            <span class="font-bold">{{ conversion_funnel.trials }}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div class="bg-yellow-500 h-3 rounded-full" style="width: {{ (conversion_funnel.trials / conversion_funnel.signups * 100) if conversion_funnel.signups > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span>Active (Betaald)</span>
+                            <span class="font-bold">{{ conversion_funnel.active }}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div class="bg-green-500 h-3 rounded-full" style="width: {{ (conversion_funnel.active / conversion_funnel.signups * 100) if conversion_funnel.signups > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-gray-700">
+                        <div class="text-center">
+                            <span class="text-2xl font-bold text-green-400">{{ "{:.1f}".format(conversion_funnel.conversion_rate) }}%</span>
+                            <span class="text-sm text-gray-400 block">Conversion Rate</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Top 10 Meest Actieve Tenants</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="border-b border-gray-700">
+                            <tr>
+                                <th class="text-left py-2 text-sm text-gray-400">#</th>
+                                <th class="text-left py-2 text-sm text-gray-400">Tenant</th>
+                                <th class="text-right py-2 text-sm text-gray-400">Vragen</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700">
+                            {% for item in top_tenants %}
+                            <tr>
+                                <td class="py-2 text-gray-400">{{ loop.index }}</td>
+                                <td class="py-2">
+                                    <a href="{{ url_for('super_admin_tenant_detail', tenant_id=item.tenant.id) }}" class="text-indigo-400 hover:text-indigo-300">
+                                        {{ item.tenant.company_name }}
+                                    </a>
+                                </td>
+                                <td class="py-2 text-right font-bold">{{ "{:,}".format(item.questions) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Top 10 Meest Gestelde Vragen</h3>
+                <div class="space-y-3">
+                    {% for question, count in top_questions %}
+                    <div>
+                        <div class="text-sm mb-1">{{ question[:80] }}{% if question|length > 80 %}...{% endif %}</div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 bg-gray-700 rounded-full h-2">
+                                <div class="bg-indigo-500 h-2 rounded-full" style="width: {{ (count / top_questions[0][1] * 100) if top_questions else 0 }}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-400">{{ count }}x</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Recente Activiteit</h3>
+                <a href="{{ url_for('super_admin_analytics_export') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    📊 Export CSV
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="border-b border-gray-700">
+                        <tr>
+                            <th class="text-left py-3 text-sm text-gray-400">Tenant</th>
+                            <th class="text-left py-3 text-sm text-gray-400">Gebruiker</th>
+                            <th class="text-left py-3 text-sm text-gray-400">Chat Titel</th>
+                            <th class="text-left py-3 text-sm text-gray-400">Laatste Update</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        {% for chat in recent_activity %}
+                        <tr>
+                            <td class="py-3">
+                                <a href="{{ url_for('super_admin_tenant_detail', tenant_id=chat.tenant.id) }}" class="text-indigo-400 hover:text-indigo-300">
+                                    {{ chat.tenant.company_name }}
+                                </a>
+                            </td>
+                            <td class="py-3 text-sm">{{ chat.user.full_name }}</td>
+                            <td class="py-3 text-sm text-gray-400">{{ chat.title }}</td>
+                            <td class="py-3 text-sm text-gray-400">{{ chat.updated_at.strftime('%d-%m-%Y %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const mrrData = {{ mrr_history|tojson }};
+const questionsData = {{ questions_history|tojson }};
+const tierData = {{ tier_distribution|tojson }};
+
+new Chart(document.getElementById('mrrChart'), {
+    type: 'line',
+    data: {
+        labels: mrrData.map(d => d.month),
+        datasets: [{
+            label: 'MRR (€)',
+            data: mrrData.map(d => d.mrr),
+            borderColor: 'rgb(34, 197, 94)',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { 
+                labels: { color: '#9CA3AF' } 
+            }
+        },
+        scales: {
+            y: { 
+                ticks: { color: '#9CA3AF' },
+                grid: { color: '#374151' }
+            },
+            x: { 
+                ticks: { color: '#9CA3AF' },
+                grid: { color: '#374151' }
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById('questionsChart'), {
+    type: 'bar',
+    data: {
+        labels: questionsData.map(d => d.month),
+        datasets: [{
+            label: 'Vragen',
+            data: questionsData.map(d => d.count),
+            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+            borderColor: 'rgb(99, 102, 241)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { 
+                labels: { color: '#9CA3AF' } 
+            }
+        },
+        scales: {
+            y: { 
+                ticks: { color: '#9CA3AF' },
+                grid: { color: '#374151' }
+            },
+            x: { 
+                ticks: { color: '#9CA3AF' },
+                grid: { color: '#374151' }
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById('tierChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Professional', 'Enterprise', 'Trial'],
+        datasets: [{
+            data: [tierData.professional, tierData.enterprise, tierData.trial],
+            backgroundColor: [
+                'rgba(168, 85, 247, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(59, 130, 246, 0.8)'
+            ],
+            borderColor: [
+                'rgb(168, 85, 247)',
+                'rgb(236, 72, 153)',
+                'rgb(59, 130, 246)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { color: '#9CA3AF' }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
