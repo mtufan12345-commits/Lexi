@@ -741,9 +741,48 @@ def super_admin_dashboard():
     tenants = Tenant.query.order_by(Tenant.created_at.desc()).all()
     total_users = User.query.count()
     
+    mrr_prices = {'professional': 499, 'enterprise': 1199, 'trial': 0}
+    
+    current_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in tenants if t.subscription_status == 'active')
+    arr = current_mrr * 12
+    
+    from dateutil.relativedelta import relativedelta
+    last_month = datetime.utcnow() - relativedelta(months=1)
+    last_month_tenants = [t for t in tenants if t.created_at < last_month and t.subscription_status == 'active']
+    last_month_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in last_month_tenants)
+    
+    growth_percentage = 0
+    if last_month_mrr > 0:
+        growth_percentage = ((current_mrr - last_month_mrr) / last_month_mrr) * 100
+    elif current_mrr > 0 and last_month_mrr == 0:
+        growth_percentage = 100
+    
+    professional_count = sum(1 for t in tenants if t.subscription_tier == 'professional' and t.subscription_status == 'active')
+    enterprise_count = sum(1 for t in tenants if t.subscription_tier == 'enterprise' and t.subscription_status == 'active')
+    professional_mrr = professional_count * 499
+    enterprise_mrr = enterprise_count * 1199
+    
+    mrr_history = []
+    for i in range(6, 0, -1):
+        month_date = datetime.utcnow() - relativedelta(months=i)
+        month_tenants = [t for t in tenants if t.created_at <= month_date and t.subscription_status == 'active']
+        month_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in month_tenants)
+        mrr_history.append({
+            'month': month_date.strftime('%b'),
+            'mrr': month_mrr
+        })
+    
     return render_template('super_admin_dashboard.html', 
                          tenants=tenants, 
-                         total_users=total_users)
+                         total_users=total_users,
+                         current_mrr=current_mrr,
+                         arr=arr,
+                         growth_percentage=growth_percentage,
+                         professional_count=professional_count,
+                         enterprise_count=enterprise_count,
+                         professional_mrr=professional_mrr,
+                         enterprise_mrr=enterprise_mrr,
+                         mrr_history=mrr_history)
 
 @app.route('/super-admin/tenants/create', methods=['POST'])
 @super_admin_required

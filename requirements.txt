@@ -16,3 +16,6 @@ email-validator==2.1.0
 gunicorn==21.2.0
 pypdf2
 python-docx
+python-dateutil==2.8.2
+docx
+python-dateutil

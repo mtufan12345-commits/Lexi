@@ -35,6 +35,9 @@ class Tenant(db.Model):
     status = db.Column(db.String(50), default='trial')
     trial_ends_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(days=14))
     max_users = db.Column(db.Integer, default=5)
+    subscription_tier = db.Column(db.String(50), default='trial')
+    subscription_status = db.Column(db.String(50), default='trial')
+    mrr = db.Column(db.Float, default=0.0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

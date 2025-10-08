@@ -1,0 +1,503 @@
+💰 OPTIE A: MRR TRACKING
+Voeg MRR (Monthly Recurring Revenue) tracking toe aan het Super Admin Dashboard:
+
+1. DATABASE WIJZIGINGEN:
+   - Voeg "subscription_tier" veld toe aan tenants tabel (Professional €499, Enterprise €1.199)
+   - Voeg "subscription_status" toe (trial, active, cancelled, expired)
+   - Voeg "trial_end_date" toe
+
+2. SUPER ADMIN DASHBOARD KAARTEN:
+   Voeg nieuwe metrics kaarten toe naast bestaande:
+   - "MRR" kaart met totaal bedrag (bereken: tel alle active subscriptions op)
+   - "ARR" kaart (MRR × 12)
+   - "Groei" kaart met percentage verandering t.o.v. vorige maand
+   
+3. FINANCIEEL OVERZICHT SECTIE:
+   Onder de metric kaarten, voeg toe:
+   - Breakdown: "Professional (X tenants): €XXX/maand"
+   - Breakdown: "Enterprise (X tenants): €XXX/maand"
+   - Lijn grafiek: MRR over laatste 6 maanden (simpele chart.js of recharts)
+   
+4. TENANT LIJST UPDATE:
+   - Toon subscription tier in de tabel (Professional/Enterprise)
+   - Toon MRR per tenant in kolom
+   - Voeg filter: [Alle] [Professional] [Enterprise] [Trial]
+
+5. BEREKENINGEN:
+   - Bereken totaal MRR: SUM(prijs WHERE status = 'active')
+   - Bereken groei: (huidige MRR - vorige maand MRR) / vorige maand MRR × 100
+   - Toon duidelijk welke tenants betalen en welke trial zijn
+
+Maak het visueel aantrekkelijk met de huidige design system (dark theme, blauw/paars accent).
+
+🏢 OPTIE B: TENANT DETAIL PAGINA
+Maak een Tenant Detail pagina die opent als je klikt op een tenant in de lijst:
+
+1. ROUTING:
+   - Voeg route toe: /super-admin/tenants/[id]
+   - Link vanuit tenant lijst naar deze pagina
+
+2. HEADER SECTIE:
+   - Tenant naam groot bovenaan
+   - Subdomain (subdomain.lexcao.nl)
+   - Status badge (Trial/Active/Expired met kleuren)
+   - Contactpersoon info
+
+3. OVERZICHT KAARTEN (4 kaarten naast elkaar):
+   - Subscription info (tier, prijs, status)
+   - Gebruikers (X van max)
+   - Activiteit (laatste login, vragen deze maand)
+   - Trial info (als trial: "Nog X dagen")
+
+4. GEBRUIK STATISTIEKEN:
+   Query de database voor deze tenant:
+   - Totaal vragen gesteld (all-time)
+   - Vragen deze maand
+   - Vragen vandaag
+   - Actieve gebruikers (users die in laatste 7 dagen ingelogd zijn)
+   - Gemiddelde vragen per gebruiker
+
+5. TOP 5 MEEST GESTELDE VRAGEN:
+   - Query: SELECT vraag_text, COUNT(*) as count FROM conversations WHERE tenant_id = X GROUP BY vraag_text ORDER BY count DESC LIMIT 5
+   - Toon in lijst met aantal keer gesteld
+
+6. GEBRUIKERS LIJST:
+   - Tabel met alle gebruikers van deze tenant
+   - Kolommen: Naam, Email, Laatste activiteit, Aantal vragen, Acties
+   - [+ Voeg gebruiker toe] knop
+
+7. ACTIE KNOPPEN:
+   Onderaan:
+   - [🔐 Inloggen als deze tenant] (impersonate functie)
+   - [💳 Wijzig subscription]
+   - [📧 Stuur email naar admin]
+   - [⏸️ Pauzeer account]
+   - [🗑️ Verwijder tenant]
+
+8. BACK BUTTON:
+   - [← Terug naar overzicht] bovenaan
+
+Gebruik de huidige design system, dark theme, responsive layout.
+
+🔐 OPTIE C: IMPERSONATE FUNCTIE
+Implementeer een "Login als tenant" functie zodat super admin kan inloggen als een tenant gebruiker:
+
+1. KNOP IN SUPER ADMIN:
+   - Voeg "🔐 Login als tenant" knop toe in:
+     a) Tenant lijst (acties dropdown)
+     b) Tenant detail pagina
+   
+2. BACKEND ENDPOINT:
+   - POST /api/super-admin/impersonate
+   - Input: tenant_id
+   - Verifieer dat ingelogde user super admin is
+   - Maak een speciale session aan:
+     * Sla originele super admin session op
+     * Switch naar tenant context (tenant_id in session)
+     * Flag: is_impersonating = true
+
+3. SESSION MANAGEMENT:
+   - Store in session:
+     * original_admin_id (om terug te kunnen)
+     * current_tenant_id (welke tenant)
+     * impersonating: true
+   
+4. UI AANPASSINGEN:
+   Wanneer impersonating:
+   - Toon banner bovenaan ALLE pagina's:
+     "⚠️ Je bent ingelogd als [Tenant Naam] | [Stop Impersonation]"
+   - Banner in rode/oranje kleur (opvallend)
+   - "Stop Impersonation" knop gaat terug naar super admin
+
+5. STOP IMPERSONATION:
+   - Endpoint: POST /api/super-admin/stop-impersonate
+   - Restore originele super admin session
+   - Redirect naar super admin dashboard
+
+6. REDIRECT NA IMPERSONATE:
+   - Na impersonate: redirect naar /chat (tenant chat interface)
+   - Tenant ziet normale interface alsof ze ingelogd zijn
+   - Super admin kan nu testen als tenant gebruiker
+
+7. BEVEILIGING:
+   - Check altijd of user super admin is voor impersonate
+   - Log alle impersonate acties (voor audit trail)
+   - Voeg timestamp toe aan logs
+
+8. PERMISSIONS:
+   - Tijdens impersonation: alle tenant permissions
+   - GEEN toegang tot super admin functies
+   - Alleen via "Stop Impersonation" terug naar admin
+
+Gebruik bestaande auth systeem, voeg impersonate flags toe aan session management.
+
+📊 OPTIE D: VOLLEDIGE ANALYTICS DASHBOARD
+Bouw een uitgebreid Analytics Dashboard voor super admin met alle belangrijke metrics en grafieken:
+
+1. NIEUWE PAGINA:
+   - Route: /super-admin/analytics
+   - Voeg toe aan navigatie menu
+
+2. TOP METRICS (4 grote kaarten):
+   - Totaal Tenants (met groei % deze maand)
+   - Totaal Gebruikers (met groei % deze maand)
+   - MRR (met groei €)
+   - Vragen vandaag (met vergelijking gisteren)
+
+3. GRAFIEKEN SECTIE:
+   
+   a) MRR OVER TIJD (lijn grafiek):
+      - X-as: laatste 6 maanden
+      - Y-as: MRR in euro's
+      - Toon trend lijn
+   
+   b) VRAGEN PER DAG (bar chart):
+      - X-as: laatste 30 dagen
+      - Y-as: aantal vragen
+      - Highlight hoogste dag
+   
+   c) TENANTS GROEI (area chart):
+      - X-as: laatste 6 maanden
+      - Y-as: aantal tenants
+      - Stack: Trial vs Active
+   
+   d) SUBSCRIPTION DISTRIBUTION (pie chart):
+      - Professional vs Enterprise
+      - Aantallen + percentages
+
+4. TOP LIJSTEN (2 kolommen):
+   
+   Links:
+   - Top 10 Meest Gestelde Vragen (alle tenants)
+     * Vraag tekst
+     * Aantal keer gevraagd
+     * Percentage van totaal
+   
+   Rechts:
+   - Top 10 Meest Actieve Tenants
+     * Tenant naam
+     * Aantal vragen deze maand
+     * Groei t.o.v. vorige maand
+
+5. ACTIVITEIT TABEL:
+   - Recent Activity (laatste 50 acties)
+   - Kolommen: Tijd, Tenant, Gebruiker, Actie, Details
+   - Acties: "Vraag gesteld", "Gebruiker aangemaakt", "Login", etc.
+   - Real-time updates (optioneel)
+
+6. CONVERSIE FUNNEL:
+   - Stap 1: Tenants aangemaakt (X)
+   - Stap 2: Trial gestart (X, Y%)
+   - Stap 3: Eerste vraag gesteld (X, Y%)
+   - Stap 4: Betaald subscription (X, Y%)
+   - Visuele funnel met percentages
+
+7. DATUM FILTERS:
+   Bovenaan:
+   - [Vandaag] [Deze week] [Deze maand] [Laatste 6 maanden] [Custom]
+   - Custom date range picker
+   - Update alle charts bij filter change
+
+8. EXPORT FUNCTIE:
+   - [📥 Export naar CSV] knop
+   - Download alle analytics data
+
+9. DATABASE QUERIES:
+   Maak efficient queries voor:
+   - Aggregate counts (tenants, users, questions)
+   - Time-series data (groupeer per dag/maand)
+   - Top queries (GROUP BY met COUNT en ORDER BY)
+   - Gebruik indexing waar nodig
+
+10. PERFORMANCE:
+    - Cache metrics (refresh elke 5 minuten)
+    - Lazy load grafieken
+    - Loading skeletons tijdens data fetch
+
+Gebruik Chart.js of Recharts voor grafieken. Dark theme consistent met rest van admin panel.
+
+👤 OPTIE F: TENANT-SIDE USER FEATURES
+Verbeter de tenant gebruikerservaring met profiel, voorbeeldvragen en export functies:
+
+1. USER PROFIEL SYSTEEM:
+   
+   a) Database schema:
+      - Voeg toe aan users tabel:
+        * functiegroep (1-8)
+        * leeftijd
+        * dienstjaren
+        * parttime_percentage (100 = fulltime)
+        * bedrijf (optioneel)
+   
+   b) Profiel pagina (/profiel):
+      - Header: "Mijn Profiel"
+      - Form met velden:
+        * Naam
+        * Email (read-only)
+        * Functiegroep (dropdown 1-8)
+        * Leeftijd (number input)
+        * Dienstjaren (number input)
+        * Parttime % (slider 0-100%)
+        * Bedrijf (text input, optioneel)
+      - [Opslaan] knop
+      - Success message na opslaan
+   
+   c) Profiel data in Lex:
+      - Bij elke chat: check of user profiel heeft
+      - Als ja: gebruik automatisch in context
+      - Voorbeeld: "Op basis van je profiel (FG 4, 28 jaar, 3 jaar dienst)..."
+      - Als nee: vraag om profiel in te vullen bij loonvragen
+
+2. VOORBEELDVRAGEN IN CHAT:
+   
+   a) Empty state in nieuwe chat:
+      - Toon in plaats van alleen "Welkom bij LEX"
+      - Grid van 6-8 voorbeeldvragen in cards
+      - Categorieën:
+        * 💰 Loon: "Wat is mijn loon in functiegroep 4?"
+        * 📅 Verlof: "Hoeveel vakantiedagen heb ik?"
+        * ⏰ Overuren: "Hoe bereken ik overuren?"
+        * 📋 Ontslag: "Wat is mijn opzegtermijn?"
+        * 🎁 Toeslagen: "Welke toeslagen bestaan er?"
+        * 🧮 Berekening: "Bereken mijn netto loon"
+   
+   b) Click functionaliteit:
+      - Klik op voorbeeldvraag = direct versturen
+      - Chat start met die vraag
+      - Voorbeelden verdwijnen, normale chat begint
+   
+   c) Wisselen:
+      - Willekeurige volgorde bij elke nieuwe chat
+      - Optioneel: "↻ Meer vragen" knop voor andere voorbeelden
+
+3. EXPORT FUNCTIE:
+   
+   a) PDF Export per antwoord:
+      - Onder elk Lex antwoord: knop [📥 Download als PDF]
+      - PDF bevat:
+        * Jouw vraag
+        * Lex antwoord (volledig, met formatting)
+        * Bronvermelding (CAO artikelen)
+        * Datum en tijd
+        * Disclaimer footer
+        * Lex logo/branding
+      - Gebruik library zoals jsPDF of Puppeteer
+   
+   b) Volledig gesprek export:
+      - Rechts bovenaan chat: [...] menu
+      - Opties:
+        * [📄 Download chat als PDF]
+        * [📧 Email naar mezelf]
+        * [🗑️ Verwijder chat]
+      - PDF met alle vraag-antwoord paren
+   
+   c) Email functie:
+      - Input: email adres (pre-fill met user email)
+      - Send email met PDF als attachment
+      - Subject: "Je Lex gesprek - [eerste vraag]"
+      - Email template met branding
+
+4. CHAT IMPROVEMENTS:
+   
+   a) Chat titels automatisch:
+      - Bij nieuwe chat: gebruik eerste vraag als titel
+      - In sidebar: toon eerste 50 chars van vraag
+      - Format: "Wat is mijn loon in..." (truncate)
+   
+   b) Chat acties:
+      - Hover over chat in sidebar: toon acties
+      - Iconen: [✏️ Hernoem] [🗑️ Verwijder]
+      - Hernoem: inline edit, direct opslaan
+      - Verwijder: confirm dialog, dan permanent delete
+   
+   c) Zoeken in chats:
+      - Zoekbalk boven chat lijst
+      - Zoek in: vraag tekst, antwoord tekst, datum
+      - Live filtering terwijl je typt
+      - Highlight zoekterm in resultaten
+
+5. FEEDBACK SYSTEEM:
+   
+   a) Onder elk antwoord:
+      - "Was dit nuttig?" met 👍 👎 knoppen
+      - Na klik: "Bedankt voor je feedback!"
+      - Optioneel: "Vertel ons meer" (text area verschijnt)
+   
+   b) Opslaan in database:
+      - Tabel: feedback
+      - Velden: conversation_id, message_id, rating (1/-1), comment, timestamp
+      - Toon in super admin (zie optie E voor admin view)
+
+6. NAVIGATION:
+   - Voeg "Profiel" toe aan top nav (naast "Uitloggen")
+   - Icon: 👤 of user avatar
+   - Highlight active page
+
+Gebruik bestaande design system, zorg voor mobile responsive, voeg loading states toe.
+
+💳 OPTIE G: PAYMENT INTEGRATIE
+Implementeer volledige payment flow met Mollie voor subscriptions en trial management:
+
+1. MOLLIE SETUP:
+   - Installeer Mollie SDK: npm install @mollie/api-client
+   - Voeg Mollie API key toe aan environment variables (.env)
+   - Maak Mollie client instance in backend
+
+2. DATABASE SCHEMA:
+   
+   Voeg toe aan tenants tabel:
+   - subscription_tier (enum: 'trial', 'professional', 'enterprise')
+   - subscription_status (enum: 'trial', 'active', 'past_due', 'cancelled', 'expired')
+   - trial_end_date (datetime)
+   - subscription_start_date (datetime)
+   - mollie_customer_id (string)
+   - mollie_subscription_id (string)
+   - next_billing_date (datetime)
+   - cancel_at_period_end (boolean)
+   
+   Nieuwe tabel: payments
+   - id
+   - tenant_id
+   - mollie_payment_id
+   - amount (decimal)
+   - status (pending/paid/failed)
+   - created_at
+   - paid_at
+
+3. PRICING PAGE (/pricing):
+   Hergebruik bestaande pricing page, voeg toe:
+   
+   a) Plan details:
+      Professional (€499/maand):
+      - 5 gebruikers
+      - Onbeperkt vragen
+      - Chat history
+      - Priority support
+      - [Start Trial] button
+   
+   Enterprise (€1.199/maand):
+      - Unlimited gebruikers
+      - Onbeperkt vragen
+      - White-label branding
+      - Dedicated support
+      - API toegang
+      - [Contact Sales] button
+
+4. TRIAL FLOW:
+   
+   a) Bij signup nieuwe tenant:
+      - Automatisch: subscription_tier = 'trial'
+      - Automatisch: trial_end_date = now + 14 dagen
+      - Automatisch: subscription_status = 'trial'
+   
+   b) Trial banner in tenant dashboard:
+      - Top van elke pagina (voor trial tenants):
+      - "⚠️ Trial - nog X dagen | [Upgrade Nu]"
+      - Banner verdwijnt bij betaald subscription
+   
+   c) Trial expiry:
+      - Cron job: check daily voor expired trials
+      - Als trial_end_date < now:
+        * subscription_status = 'expired'
+        * Blokkeer toegang (redirect naar /upgrade)
+        * Stuur email: "Trial verlopen"
+
+5. CHECKOUT FLOW:
+   
+   a) Upgrade pagina (/upgrade):
+      - Toon beide plannen (Professional/Enterprise)
+      - Als trial: "Nog X dagen trial" melding
+      - [Kies Professional] / [Kies Enterprise] buttons
+   
+   b) Checkout endpoint (POST /api/checkout):
+      - Input: plan_tier (professional/enterprise)
+      - Create Mollie customer (als nog niet bestaat)
+      - Create Mollie payment (first month)
+      - Return: payment URL van Mollie
+      - Redirect user naar Mollie checkout
+   
+   c) Mollie webhook (POST /api/webhooks/mollie):
+      - Ontvang payment status updates
+      - Bij "paid":
+        * subscription_status = 'active'
+        * subscription_start_date = now
+        * Maak Mollie subscription (recurring)
+        * Stuur confirmation email
+      - Bij "failed":
+        * subscription_status = 'past_due'
+        * Stuur payment failed email
+
+6. SUBSCRIPTION MANAGEMENT:
+   
+   a) Billing pagina (/billing):
+      - Huidige plan info
+      - Next billing date
+      - Payment method (card info van Mollie)
+      - Payment history (tabel van alle payments)
+      - [Update Payment Method] button
+      - [Cancel Subscription] button
+   
+   b) Update payment method:
+      - Generate Mollie mandate URL
+      - Redirect naar Mollie om nieuwe card toe te voegen
+      - Webhook update subscription
+   
+   c) Cancel flow:
+      - Confirm dialog: "Weet je het zeker?"
+      - POST /api/subscription/cancel
+      - Cancel Mollie subscription
+      - subscription_status = 'cancelled'
+      - cancel_at_period_end = true
+      - Access blijft tot einde billing period
+      - Stuur cancellation email
+
+7. USAGE LIMITS:
+   
+   Voor trial tenants (indien je freemium model wilt):
+   - Max 10 vragen per maand
+   - Counter: check bij elke vraag
+   - Als limit bereikt:
+     * Toon modal: "Je hebt je trial limiet bereikt"
+     * [Upgrade naar Professional] button
+     * Blokkeer nieuwe vragen
+   
+   Voor betaalde tenants:
+   - Onbeperkt vragen
+
+8. EMAIL NOTIFICATIES:
+   
+   Setup email templates voor:
+   - Trial start: "Welkom! Je trial is begonnen"
+   - Trial 3 dagen voor einde: "Trial verloopt binnenkort"
+   - Trial expired: "Je trial is verlopen"
+   - Payment success: "Bedankt voor je betaling!"
+   - Payment failed: "Je betaling is mislukt"
+   - Subscription cancelled: "Je subscription is geannuleerd"
+   
+   Gebruik Mailgun, SendGrid of Resend voor emails.
+
+9. ADMIN INTEGRATIE:
+   
+   In super admin dashboard:
+   - Toon subscription status in tenant lijst
+   - Filter: [Trial] [Active] [Cancelled] [Expired]
+   - Acties:
+     * [Extend trial] (verleng trial met X dagen)
+     * [Force activate] (manual activate subscription)
+     * [Refund payment] (via Mollie API)
+
+10. ERROR HANDLING:
+    
+    - Mollie API down: toon error, retry later
+    - Payment failed: stuur email, show past_due status
+    - Subscription lapse: grace period 3 dagen, dan blokkeer
+    - Webhook niet ontvangen: fallback check via Mollie API
+
+11. TESTING:
+    
+    - Gebruik Mollie test mode
+    - Test cards: 4242 4242 4242 4242 (success)
+    - Test payment flows: success, failed, cancelled
+    - Test webhook endpoints
+
+Implementeer volledige error handling, logging, en confirmatie flows. Gebruik bestaande design system.
