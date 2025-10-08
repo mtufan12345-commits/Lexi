@@ -325,8 +325,33 @@ def send_message(chat_id):
     chat.updated_at = datetime.utcnow()
     db.session.commit()
     
+    uploaded_files = UploadedFile.query.filter_by(
+        chat_id=chat.id,
+        tenant_id=g.tenant.id
+    ).all()
+    
+    ai_message = user_message
+    file_errors = []
+    
+    if uploaded_files:
+        file_contents = []
+        for uploaded_file in uploaded_files:
+            content, error = s3_service.download_file_content(uploaded_file.s3_key, uploaded_file.mime_type)
+            if error:
+                file_errors.append(f"{uploaded_file.original_filename}: {error}")
+            elif content:
+                file_contents.append(f"\n\n--- Bestand: {uploaded_file.original_filename} ---\n{content}\n--- Einde bestand ---\n")
+        
+        if file_contents:
+            ai_message = f"{user_message}\n\n{''.join(file_contents)}"
+            print(f"[DEBUG] Including {len(file_contents)} uploaded files in context")
+        
+        if file_errors and not file_contents:
+            error_msg = "\n".join(file_errors)
+            return jsonify({'response': f"⚠️ Kon geen bestanden lezen:\n{error_msg}\n\nProbeer andere bestanden.", 'has_errors': True})
+    
     print("[DEBUG] Calling Vertex AI service...")
-    lex_response = vertex_ai_service.chat(user_message)
+    lex_response = vertex_ai_service.chat(ai_message)
     print(f"[DEBUG] LEX response: {lex_response[:100]}...")
     
     assistant_message = Message(

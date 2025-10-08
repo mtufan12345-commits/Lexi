@@ -7,6 +7,9 @@ from sendgrid.helpers.mail import Mail
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import uuid
+import io
+from PyPDF2 import PdfReader
+from docx import Document
 
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY', '')
 
@@ -189,6 +192,72 @@ class S3Service:
         except Exception as e:
             print(f"S3 upload content error: {e}")
             return None
+    
+    def download_file_content(self, s3_key, mime_type=None):
+        if not self.enabled:
+            return None, "S3 niet geconfigureerd"
+        
+        try:
+            response = self.s3_client.get_object(Bucket=self.bucket, Key=s3_key)
+            content_bytes = response['Body'].read()
+            
+            if mime_type == 'application/pdf':
+                try:
+                    pdf_file = io.BytesIO(content_bytes)
+                    pdf_reader = PdfReader(pdf_file)
+                    text_content = []
+                    for page in pdf_reader.pages:
+                        page_text = page.extract_text()
+                        if page_text and page_text.strip():
+                            text_content.append(page_text)
+                    
+                    if not text_content:
+                        return None, "PDF bevat geen leesbare tekst (mogelijk scan of beveiligd)"
+                    
+                    return '\n'.join(text_content), None
+                except Exception as e:
+                    return None, f"Kon PDF niet lezen: {str(e)}"
+            
+            if mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                try:
+                    docx_file = io.BytesIO(content_bytes)
+                    doc = Document(docx_file)
+                    text_content = []
+                    
+                    for paragraph in doc.paragraphs:
+                        if paragraph.text.strip():
+                            text_content.append(paragraph.text)
+                    
+                    for table in doc.tables:
+                        for row in table.rows:
+                            row_text = []
+                            for cell in row.cells:
+                                if cell.text.strip():
+                                    row_text.append(cell.text.strip())
+                            if row_text:
+                                text_content.append(' | '.join(row_text))
+                    
+                    if not text_content:
+                        return None, "DOCX bevat geen leesbare tekst"
+                    
+                    return '\n'.join(text_content), None
+                except Exception as e:
+                    return None, f"Kon DOCX niet lezen: {str(e)}"
+            
+            if mime_type and 'text' in mime_type:
+                try:
+                    return content_bytes.decode('utf-8'), None
+                except UnicodeDecodeError:
+                    return content_bytes.decode('latin-1'), None
+            
+            try:
+                return content_bytes.decode('utf-8'), None
+            except UnicodeDecodeError:
+                return None, "Kon bestand niet lezen. Upload alleen tekst, PDF of DOCX bestanden."
+                
+        except Exception as e:
+            print(f"S3 download error: {e}")
+            return None, f"Fout bij downloaden: {str(e)}"
     
     def get_file_url(self, s3_key, expiration=3600):
         if not self.enabled:
