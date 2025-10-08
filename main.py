@@ -106,8 +106,6 @@ def super_admin_required(f):
 
 @app.route('/')
 def index():
-    if g.tenant:
-        return redirect(url_for('login'))
     return render_template('landing.html')
 
 @app.route('/prijzen')
