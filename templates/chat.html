@@ -297,6 +297,11 @@ window.loadChat = async function(chatId) {
     
     data.messages.forEach(msg => {
         addMessageToDOM(msg.role, msg.content, messagesDiv, msg.attachments);
+        
+        // Show artifacts if present (assistant messages)
+        if (msg.role === 'assistant' && msg.artifacts && msg.artifacts.length > 0) {
+            msg.artifacts.forEach(artifact => showArtifact(artifact));
+        }
     });
     
     // Load uploaded files for this chat

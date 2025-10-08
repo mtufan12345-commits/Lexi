@@ -622,7 +622,8 @@ def get_chat(chat_id):
                     msg_data['artifacts'] = [{
                         'id': a.id,
                         'title': a.title,
-                        'type': a.artifact_type
+                        'type': a.artifact_type,
+                        'content': a.content
                     } for a in artifacts]
             
             messages.append(msg_data)
@@ -662,13 +663,23 @@ def send_message(chat_id):
         'created_at': datetime.utcnow().isoformat()
     }
     
-    # Add file attachments to message
+    # Add file attachments to message ONLY for newly uploaded files
+    # Files uploaded AFTER the last message should be shown as attachments
+    # For subsequent messages, old files are still used for AI context but not shown as attachments
     if uploaded_files:
-        user_msg_dict['attachments'] = [{
-            'id': f.id,
-            'filename': f.original_filename,
-            'mime_type': f.mime_type
-        } for f in uploaded_files]
+        # Get files uploaded after the last message (new uploads since last message)
+        # Guard against None updated_at (legacy/migrated chats) - show all files if None
+        if chat.message_count > 0 and chat.updated_at is not None:
+            newly_uploaded = [f for f in uploaded_files if f.created_at > chat.updated_at]
+        else:
+            newly_uploaded = uploaded_files
+        
+        if newly_uploaded:
+            user_msg_dict['attachments'] = [{
+                'id': f.id,
+                'filename': f.original_filename,
+                'mime_type': f.mime_type
+            } for f in newly_uploaded]
     
     # Append to S3
     s3_key = s3_service.append_chat_message(
@@ -776,7 +787,8 @@ def send_message(chat_id):
             artifacts_created.append({
                 'id': artifact.id,
                 'title': artifact.title,
-                'type': artifact.artifact_type
+                'type': artifact.artifact_type,
+                'content': artifact.content
             })
         print(f"[DEBUG] Created {len(artifacts_created)} artifacts")
     
