@@ -241,7 +241,7 @@ def send_free_chat_message(chat_id):
     db.session.flush()
     
     try:
-        lex_response = vertex_ai_service.generate_response(user_message, [])
+        lex_response = vertex_ai_service.chat(user_message, [])
         
         assistant_msg = Message(
             tenant_id=session.get('tenant_id'),
