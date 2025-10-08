@@ -383,26 +383,6 @@ class EmailService:
         """
         return self.send_email(user.email, subject, html_content)
     
-    def send_trial_expiring_email(self, tenant):
-        subject = "Je LEX trial loopt over 3 dagen af"
-        html_content = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2>Je trial loopt bijna af</h2>
-            <p>Hoi {tenant.contact_name},</p>
-            <p>Je 14-daagse trial van LEX CAO Expert loopt over 3 dagen af.</p>
-            <p>Upgrade nu om door te gaan met LEX en toegang te houden tot al je CAO kennis.</p>
-            <p><a href="https://{tenant.subdomain}.lex-cao.replit.app/admin/billing" 
-               style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-               Upgrade naar Professional →
-            </a></p>
-            <br>
-            <p>Groeten,<br>Het LEX team</p>
-        </body>
-        </html>
-        """
-        return self.send_email(tenant.contact_email, subject, html_content)
-    
     def send_payment_failed_email(self, tenant):
         subject = "⚠️ Betaling mislukt"
         html_content = f"""
@@ -415,6 +395,31 @@ class EmailService:
             <p><a href="https://{tenant.subdomain}.lex-cao.replit.app/admin/billing" 
                style="background: #DC2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                Betaalmethode Updaten →
+            </a></p>
+            <br>
+            <p>Groeten,<br>Het LEX team</p>
+        </body>
+        </html>
+        """
+        return self.send_email(tenant.contact_email, subject, html_content)
+    
+    def send_trial_expiring_email(self, tenant, days_left):
+        subject = f"⏰ Je trial verloopt over {days_left} dagen"
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2>⏰ Je trial verloopt binnenkort</h2>
+            <p>Hoi {tenant.contact_name},</p>
+            <p>Je 14-daagse trial van LEX CAO Expert verloopt over {days_left} dagen.</p>
+            <p>Upgrade nu naar een betaald plan om toegang te behouden tot LEX en al je chat geschiedenis.</p>
+            <p><strong>Beschikbare plannen:</strong></p>
+            <ul>
+                <li>Professional: €499/maand (5 users, unlimited questions)</li>
+                <li>Enterprise: €1.199/maand (unlimited users, unlimited questions)</li>
+            </ul>
+            <p><a href="https://{tenant.subdomain}.lex-cao.replit.app/admin/billing" 
+               style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+               Upgrade Nu →
             </a></p>
             <br>
             <p>Groeten,<br>Het LEX team</p>

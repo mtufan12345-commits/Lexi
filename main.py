@@ -262,9 +262,20 @@ def logout():
 @tenant_required
 def user_profile():
     if request.method == 'POST':
+        new_email = request.form.get('email')
+        
+        if new_email != current_user.email:
+            existing = User.query.filter_by(
+                tenant_id=g.tenant.id,
+                email=new_email
+            ).first()
+            if existing:
+                flash('Dit e-mailadres is al in gebruik!', 'error')
+                return redirect(url_for('user_profile'))
+        
         current_user.first_name = request.form.get('first_name')
         current_user.last_name = request.form.get('last_name')
-        current_user.email = request.form.get('email')
+        current_user.email = new_email
         
         new_password = request.form.get('new_password')
         if new_password:
@@ -280,6 +291,10 @@ def user_profile():
 @login_required
 @tenant_required
 def chat_page():
+    if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
+        flash('Je account is niet actief. Neem contact op met je beheerder.', 'warning')
+        return redirect(url_for('index'))
+    
     chats = Chat.query.filter_by(
         tenant_id=g.tenant.id,
         user_id=current_user.id
@@ -291,6 +306,9 @@ def chat_page():
 @login_required
 @tenant_required
 def new_chat():
+    if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
+        return jsonify({'error': 'Subscription niet actief'}), 403
+    
     chat = Chat(
         tenant_id=g.tenant.id,
         user_id=current_user.id,
@@ -305,6 +323,9 @@ def new_chat():
 @login_required
 @tenant_required
 def get_chat(chat_id):
+    if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
+        return jsonify({'error': 'Subscription niet actief'}), 403
+    
     chat = Chat.query.filter_by(
         id=chat_id,
         tenant_id=g.tenant.id,
@@ -314,9 +335,11 @@ def get_chat(chat_id):
     messages = []
     for m in chat.messages:
         msg_data = {
+            'id': m.id,
             'role': m.role,
             'content': m.content,
-            'created_at': m.created_at.isoformat()
+            'created_at': m.created_at.isoformat(),
+            'feedback_rating': m.feedback_rating
         }
         
         if m.role == 'assistant':
@@ -336,6 +359,9 @@ def get_chat(chat_id):
 @login_required
 @tenant_required
 def send_message(chat_id):
+    if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
+        return jsonify({'error': 'Subscription niet actief'}), 403
+    
     print(f"[DEBUG] send_message called - chat_id: {chat_id}, user: {current_user.id}")
     
     chat = Chat.query.filter_by(
@@ -443,7 +469,9 @@ def send_message(chat_id):
     print("[DEBUG] Response sent successfully")
     return jsonify({
         'response': lex_response,
-        'artifacts': artifacts_created
+        'artifacts': artifacts_created,
+        'message_id': assistant_message.id,
+        'feedback_rating': assistant_message.feedback_rating
     })
 
 @app.route('/api/chat/<int:chat_id>/rename', methods=['POST'])
@@ -481,6 +509,64 @@ def delete_chat(chat_id):
     
     return jsonify({'success': True})
 
+@app.route('/api/chat/<int:chat_id>/export', methods=['GET'])
+@login_required
+@tenant_required
+def export_chat_pdf(chat_id):
+    from io import BytesIO
+    from datetime import datetime
+    
+    chat = Chat.query.filter_by(
+        id=chat_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.created_at).all()
+    
+    text_content = f"LEX CAO Expert - Chat Export\n"
+    text_content += f"Titel: {chat.title}\n"
+    text_content += f"Datum: {datetime.now().strftime('%d-%m-%Y %H:%M')}\n"
+    text_content += f"Gebruiker: {current_user.full_name}\n"
+    text_content += f"\n{'='*80}\n\n"
+    
+    for msg in messages:
+        role = "Jij" if msg.role == "user" else "LEX"
+        timestamp = msg.created_at.strftime('%d-%m-%Y %H:%M')
+        text_content += f"{role} ({timestamp}):\n{msg.content}\n\n{'-'*80}\n\n"
+    
+    return Response(
+        text_content,
+        mimetype='text/plain',
+        headers={'Content-Disposition': f'attachment; filename=chat_{chat_id}_{datetime.now().strftime("%Y%m%d")}.txt'}
+    )
+
+@app.route('/api/feedback', methods=['POST'])
+@login_required
+@tenant_required
+def submit_feedback():
+    data = request.json
+    message_id = data.get('message_id')
+    rating = data.get('rating')
+    comment = data.get('comment', '')
+    
+    if not message_id or not rating:
+        return jsonify({'error': 'Missing data'}), 400
+    
+    message = Message.query.filter_by(id=message_id, tenant_id=g.tenant.id).first_or_404()
+    
+    chat = Chat.query.filter_by(
+        id=message.chat_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    message.feedback_rating = rating
+    message.feedback_comment = comment
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
 @app.route('/api/artifact/<int:artifact_id>/download')
 @login_required
 @tenant_required
@@ -505,6 +591,9 @@ def download_artifact(artifact_id):
 @login_required
 @tenant_required
 def upload_file():
+    if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
+        return jsonify({'error': 'Subscription niet actief'}), 403
+    
     if 'file' not in request.files:
         return jsonify({'error': 'Geen bestand'}), 400
     
