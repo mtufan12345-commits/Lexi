@@ -59,10 +59,15 @@
             </div>
         </div>
         
-        <div id="lex-loading" class="hidden p-6 bg-blue-50 border-t border-blue-200">
-            <div class="max-w-3xl mx-auto">
-                <div class="lex-animation text-center" id="lex-animation-content"></div>
-                <div class="text-center text-sm text-gray-600 mt-2" id="lex-animation-text"></div>
+        <div id="lex-loading" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                <div id="lex-character" class="relative w-48 h-48 mx-auto mb-6"></div>
+                <div id="lex-speech" class="text-center text-lg font-medium text-gray-700 mb-4 min-h-[60px]"></div>
+                <div id="lex-fun-fact" class="text-center text-sm text-indigo-600 mb-4 min-h-[40px]"></div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div id="lex-progress" class="bg-indigo-600 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <div id="lex-timer" class="text-center text-xs text-gray-500"></div>
             </div>
         </div>
         
@@ -96,67 +101,130 @@ function fetchWithCSRF(url, options = {}) {
     return fetch(url, options);
 }
 
-const LEX_SCENES = [
+const LEX_ANIMATIONS = [
     {
-        frames: [
-            { ascii: " 📚\\n /|\\\\\\n / \\\\", text: "Zoeken in 70 CAO documenten..." },
-            { ascii: "  📚\\n /|\\\\\\n / \\\\", text: "Hmm, welk artikel was het ook alweer..." },
-            { ascii: " 📖✨\\n /|\\\\\\n / \\\\", text: "Gevonden in Glastuinbouw CAO!" }
-        ]
+        name: 'detective',
+        character: '🔍📚',
+        speeches: [
+            "Hmm, was het artikel 7 of artikel 8...? 🤔",
+            "Ah, ik zie het al in de NBBU CAO!",
+            "Dit staat in hoofdstuk 3, sectie 2..."
+        ],
+        duration: 8000
     },
     {
-        frames: [
-            { ascii: " ☕\\n /|\\\\\\n / \\\\", text: "LEX drinkt koffie..." },
-            { ascii: " 🔥☕\\n /|\\\\\\n / \\\\", text: "Te heet! *blaast*" },
-            { ascii: " ☕😊\\n /|\\\\\\n / \\\\", text: "Zo, lekker. Aan het werk!" }
-        ]
+        name: 'speedreader',
+        character: '📖⚡',
+        speeches: [
+            "70+ CAO's... geen probleem! 📚",
+            "Even snel alle artikelen scannen...",
+            "Ik heb het gevonden!"
+        ],
+        duration: 8000
     },
     {
-        frames: [
-            { ascii: " 📄📄\\n /|\\\\\\n / \\\\", text: "Papers doorbladeren..." },
-            { ascii: " 💨📄\\n /|\\\\\\n / \\\\", text: "Oh nee, ze waaien weg!" },
-            { ascii: " 📄✅\\n /|\\\\\\n / \\\\", text: "Gevangen! Hier is je antwoord." }
-        ]
+        name: 'calculator',
+        character: '🧮💡',
+        speeches: [
+            "Even het minimumloon herberekenen... ⚡",
+            "3,50 × 1,05 × 160 uur = ...?",
+            "Klaar met de berekening!"
+        ],
+        duration: 8000
     },
     {
-        frames: [
-            { ascii: " 🔢\\n /|\\\\\\n / \\\\", text: "Berekeningen maken..." },
-            { ascii: " ❌🔢\\n /|\\\\\\n / \\\\", text: "Verkeerde knop!" },
-            { ascii: " ✅🔢\\n /|\\\\\\n / \\\\", text: "Ah, daar heb ik het!" }
-        ]
+        name: 'coffee',
+        character: '☕😊',
+        speeches: [
+            "Bijna klaar... nog even dit artikel checken! ☕",
+            "Koffie doet wonderen voor de focus...",
+            "Zo, nu kan ik weer verder!"
+        ],
+        duration: 10000
     },
     {
-        frames: [
-            { ascii: " 📱\\n /|\\\\\\n / \\\\", text: "Telefoon gaat..." },
-            { ascii: " 📱📞\\n /|\\\\\\n / \\\\", text: "Hallo? Momentje..." },
-            { ascii: " ✅\\n /|\\\\\\n / \\\\", text: "Klaar met je antwoord!" }
-        ]
+        name: 'eureka',
+        character: '💡✨',
+        speeches: [
+            "Aha! Gevonden! 💡",
+            "Dit is precies wat je zoekt!",
+            "Het antwoord komt eraan!"
+        ],
+        duration: 5000
     }
 ];
 
+const FUN_FACTS = [
+    "💡 Wist je dat de NBBU CAO 127 pagina's heeft?",
+    "🎓 Lex kent alle 70+ CAO's uit zijn hoofd!",
+    "⚡ Even checken of dit ook geldt voor uitzendkrachten...",
+    "📚 De ABU CAO is een van de meest gebruikte in Nederland",
+    "🔍 Lex analyseert gemiddeld 200 documenten per seconde",
+    "☕ Lex drinkt per dag ongeveer 8 virtuele koppen koffie",
+    "🎯 Nauwkeurigheid is key: elk artikel wordt dubbel gecheckt!"
+];
+
 function startLexAnimation() {
-    const scene = LEX_SCENES[Math.floor(Math.random() * LEX_SCENES.length)];
+    const animation = LEX_ANIMATIONS[Math.floor(Math.random() * LEX_ANIMATIONS.length)];
     const loadingDiv = document.getElementById('lex-loading');
-    const animationContent = document.getElementById('lex-animation-content');
-    const animationText = document.getElementById('lex-animation-text');
+    const characterDiv = document.getElementById('lex-character');
+    const speechDiv = document.getElementById('lex-speech');
+    const funFactDiv = document.getElementById('lex-fun-fact');
+    const timerDiv = document.getElementById('lex-timer');
+    const progressBar = document.getElementById('lex-progress');
     
     loadingDiv.classList.remove('hidden');
     
-    let frameIndex = 0;
-    const interval = setInterval(() => {
-        const frame = scene.frames[frameIndex];
-        animationContent.innerHTML = frame.ascii;
-        animationText.textContent = frame.text;
+    let startTime = Date.now();
+    let speechIndex = 0;
+    let lastSpeechTime = startTime;
+    
+    characterDiv.innerHTML = `<div class="text-8xl animate-bounce">${animation.character}</div>`;
+    
+    funFactDiv.textContent = FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
+    
+    const updateAnimation = () => {
+        const elapsed = Date.now() - startTime;
+        const seconds = Math.floor(elapsed / 1000);
         
-        frameIndex = (frameIndex + 1) % scene.frames.length;
-    }, 2000);
+        timerDiv.textContent = `${seconds} seconden - Lex is hard aan het werk!`;
+        
+        const progress = Math.min((elapsed / 30000) * 100, 95);
+        progressBar.style.width = `${progress}%`;
+        
+        if (elapsed - lastSpeechTime > 3000) {
+            speechIndex = (speechIndex + 1) % animation.speeches.length;
+            speechDiv.textContent = animation.speeches[speechIndex];
+            lastSpeechTime = elapsed;
+        }
+        
+        if (elapsed > 40000) {
+            speechDiv.textContent = "Wow, dit is een lastige vraag! 😅";
+            characterDiv.innerHTML = `<div class="text-8xl animate-pulse">😰📚</div>`;
+        }
+    };
+    
+    speechDiv.textContent = animation.speeches[0];
+    
+    const interval = setInterval(updateAnimation, 500);
     
     return interval;
 }
 
 function stopLexAnimation(interval) {
     clearInterval(interval);
-    document.getElementById('lex-loading').classList.add('hidden');
+    
+    const characterDiv = document.getElementById('lex-character');
+    const speechDiv = document.getElementById('lex-speech');
+    const progressBar = document.getElementById('lex-progress');
+    
+    characterDiv.innerHTML = `<div class="text-8xl animate-ping">👋✨</div>`;
+    speechDiv.textContent = "Klaar! Hier is je antwoord! 🎉";
+    progressBar.style.width = '100%';
+    
+    setTimeout(() => {
+        document.getElementById('lex-loading').classList.add('hidden');
+    }, 1000);
 }
 
 async function newChat() {
