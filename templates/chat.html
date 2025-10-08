@@ -112,6 +112,12 @@
         <!-- Input Area -->
         <div class="border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4">
             <div id="drop-zone" class="max-w-3xl mx-auto">
+                <!-- Uploaded Files List -->
+                <div id="uploaded-files-list" class="hidden mb-3 space-y-2">
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Geüploade bestanden in deze chat:</div>
+                    <div id="files-container" class="space-y-1"></div>
+                </div>
+                
                 <div id="file-preview" class="hidden mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,6 +271,35 @@ window.loadChat = async function(chatId) {
     data.messages.forEach(msg => {
         addMessageToDOM(msg.role, msg.content, messagesDiv);
     });
+    
+    // Load uploaded files for this chat
+    loadChatFiles(chatId);
+}
+
+async function loadChatFiles(chatId) {
+    try {
+        const response = await fetch(`/api/chat/${chatId}/files`);
+        const data = await response.json();
+        
+        const filesList = document.getElementById('uploaded-files-list');
+        const filesContainer = document.getElementById('files-container');
+        
+        if (data.files && data.files.length > 0) {
+            filesContainer.innerHTML = data.files.map(file => `
+                <div class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-zinc-900 rounded-lg">
+                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span class="text-xs text-gray-700 dark:text-gray-300 truncate flex-1">${file.filename}</span>
+                </div>
+            `).join('');
+            filesList.classList.remove('hidden');
+        } else {
+            filesList.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error loading chat files:', error);
+    }
 }
 
 function formatMarkdown(text) {
@@ -391,6 +426,9 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
         
         // Show only the response text in chat (no artifacts inline)
         addMessageToDOM('assistant', data.response);
+        
+        // Refresh files list after message is sent
+        loadChatFiles(currentChatId);
         
         // If there are artifacts, show them in the right sidebar
         if (data.artifacts && data.artifacts.length > 0) {
@@ -639,6 +677,11 @@ async function uploadFile(file) {
         if (data.success && data.file_id) {
             uploadedFileId = data.file_id;
             fileName.textContent = file.name;
+            
+            // Refresh files list if we're in an existing chat
+            if (currentChatId) {
+                loadChatFiles(currentChatId);
+            }
         } else {
             fileName.innerHTML = '<span class="text-red-600">Upload failed</span>';
             setTimeout(() => {
