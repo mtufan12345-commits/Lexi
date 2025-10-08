@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex h-screen bg-gray-50 dark:bg-black {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
+<div class="flex h-screen bg-gradient-to-b from-blue-50/30 to-white dark:bg-black {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
     {% if session.get('impersonating_from') == 'super_admin' %}
     <div class="absolute top-0 left-0 right-0 bg-orange-600 text-white py-2 px-4 z-50 flex justify-between items-center">
         <span class="text-sm">Super Admin Mode - Viewing as {{ tenant.company_name }}</span>
@@ -14,8 +14,8 @@
     <!-- Backdrop for mobile -->
     <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden" onclick="closeSidebar()"></div>
 
-    <!-- Left Sidebar - Chat History -->
-    <div id="chat-sidebar" class="fixed md:relative w-64 bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 flex flex-col z-40 md:z-auto transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 h-full {% if session.get('impersonating_from') == 'super_admin' %}top-14{% else %}top-0{% endif %}">
+    <!-- Left Sidebar - Dual View (Chats / Bijlagen) -->
+    <div id="chat-sidebar" class="fixed md:relative w-64 bg-gradient-to-b from-blue-50/20 to-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 flex flex-col z-40 md:z-auto transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 h-full {% if session.get('impersonating_from') == 'super_admin' %}top-14{% else %}top-0{% endif %}">
         <!-- Header -->
         <div class="p-4 border-b border-gray-200 dark:border-zinc-800">
             <div class="flex items-center justify-between mb-4">
@@ -32,7 +32,21 @@
                     </svg>
                 </button>
             </div>
-            <button onclick="newChat()" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2">
+            
+            <!-- Tabs (shown when chat is active) -->
+            <div id="sidebar-tabs" class="hidden mb-4">
+                <div class="flex gap-1 p-1 bg-gray-100 dark:bg-zinc-900 rounded-lg">
+                    <button id="tab-chats" onclick="showChatsView()" class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition">
+                        Chats
+                    </button>
+                    <button id="tab-files" onclick="showFilesView()" class="flex-1 py-2 px-3 text-xs font-medium rounded-md transition">
+                        Bijlagen
+                    </button>
+                </div>
+            </div>
+            
+            <!-- New Chat Button (only shown in chats view) -->
+            <button id="new-chat-btn" onclick="newChat()" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -40,29 +54,71 @@
             </button>
         </div>
 
-        <!-- Chat List -->
-        <div class="flex-1 overflow-y-auto py-2">
-            <div id="chat-list" class="px-2 space-y-1">
-                {% for chat in chats %}
-                <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="{{ chat.id }}" onclick="loadChat({{ chat.id }})">
-                    <div class="p-3">
-                        <div class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ chat.title }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ chat.updated_at.strftime('%d/%m %H:%M') }}</div>
-                    </div>
-                    <div class="absolute right-2 top-3 hidden group-hover:flex gap-1">
-                        <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
-                            <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                            </svg>
-                        </button>
-                        <button onclick="event.stopPropagation(); deleteChatFromSidebar({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Delete">
-                            <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                        </button>
-                    </div>
+        <!-- Chats View -->
+        <div id="chats-view" class="flex-1 flex flex-col overflow-hidden">
+            <!-- Search Bar -->
+            <div class="px-4 pb-3">
+                <div class="relative">
+                    <input id="chat-search" type="text" placeholder="Zoek in chats..." 
+                           class="w-full px-3 py-2 pl-9 bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           oninput="searchChats(this.value)">
+                    <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
                 </div>
-                {% endfor %}
+            </div>
+
+            <!-- Chat List -->
+            <div class="flex-1 overflow-y-auto py-2">
+                <div id="chat-list" class="px-2 space-y-1">
+                    {% for chat in chats %}
+                    <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="{{ chat.id }}" onclick="loadChat({{ chat.id }})">
+                        <div class="p-3">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ chat.title }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ chat.updated_at.strftime('%d/%m %H:%M') }}</div>
+                        </div>
+                        <div class="absolute right-2 top-3 hidden group-hover:flex gap-1">
+                            <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
+                                <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                </svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); deleteChatFromSidebar({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Delete">
+                                <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Files View (Bijlagen) -->
+        <div id="files-view" class="hidden flex-1 flex flex-col overflow-hidden">
+            <!-- Files List -->
+            <div class="flex-1 overflow-y-auto py-2 px-4">
+                <div id="sidebar-files-list" class="space-y-2">
+                    <!-- Files will be loaded here -->
+                </div>
+                <div id="no-files-message" class="hidden text-center py-8">
+                    <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Geen bijlagen</p>
+                </div>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="p-4 border-t border-gray-200 dark:border-zinc-800">
+                <input type="file" id="sidebar-file-input" class="hidden" accept=".pdf,.docx,.txt" onchange="handleSidebarFileSelect(event)">
+                <button onclick="document.getElementById('sidebar-file-input').click()" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Upload bestand
+                </button>
             </div>
         </div>
 
@@ -122,24 +178,8 @@
         </div>
 
         <!-- Input Area -->
-        <div class="border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4">
+        <div class="border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-lg dark:shadow-none">
             <div id="drop-zone" class="max-w-3xl mx-auto">
-                <!-- Uploaded Files List -->
-                <div id="uploaded-files-list" class="hidden mb-3">
-                    <button type="button" onclick="toggleFilesList()" class="w-full flex items-center justify-between p-2 bg-gray-50 dark:bg-zinc-900 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <span id="files-count-text" class="text-xs font-medium text-gray-700 dark:text-gray-300"></span>
-                        </div>
-                        <svg id="files-chevron" class="w-4 h-4 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div id="files-container" class="hidden mt-2 space-y-1 max-h-32 overflow-y-auto"></div>
-                </div>
-                
                 <div id="file-preview" class="hidden mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,7 +255,7 @@
     </div>
 </div>
 
-<!-- Delete Modal -->
+<!-- Delete Chat Modal -->
 <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
         <div class="p-6">
@@ -227,6 +267,26 @@
                     Annuleren
                 </button>
                 <button onclick="confirmDelete()" 
+                        class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">
+                    Verwijderen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete File Modal -->
+<div id="delete-file-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Bestand verwijderen?</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Dit bestand wordt permanent verwijderd.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteFileModal()" 
+                        class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white rounded-lg font-medium transition">
+                    Annuleren
+                </button>
+                <button onclick="confirmDeleteFile()" 
                         class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">
                     Verwijderen
                 </button>
@@ -254,7 +314,10 @@
 
 <script>
 let currentChatId = null;
+let currentView = 'chats';
+let fileToDelete = null;
 const userName = "{{ user.full_name if user and user.full_name else 'User' }}";
+const userAvatarUrl = "{{ user.avatar_url if user and user.avatar_url else '' }}";
 let sidebarOpen = false;
 
 window.toggleSidebar = function() {
@@ -322,6 +385,11 @@ window.newChat = async function() {
     const data = await response.json();
     currentChatId = data.id;
     document.getElementById('messages-container').innerHTML = '<div class="max-w-3xl mx-auto"></div>';
+    
+    // Hide tabs and show chats view for new chat
+    document.getElementById('sidebar-tabs').classList.add('hidden');
+    showChatsView();
+    
     updateChatList();
 }
 
@@ -343,8 +411,9 @@ window.loadChat = async function(chatId) {
         }
     });
     
-    // Load uploaded files for this chat
-    loadChatFiles(chatId);
+    // Show tabs and auto-switch to files view
+    document.getElementById('sidebar-tabs').classList.remove('hidden');
+    showFilesView();
     
     // Close sidebar on mobile after selecting a chat
     if (window.innerWidth < 768) {
@@ -352,48 +421,148 @@ window.loadChat = async function(chatId) {
     }
 }
 
-async function loadChatFiles(chatId) {
+window.showChatsView = function() {
+    currentView = 'chats';
+    
+    // Update tab styles
+    const tabChats = document.getElementById('tab-chats');
+    const tabFiles = document.getElementById('tab-files');
+    tabChats.classList.add('bg-white', 'dark:bg-zinc-800', 'text-gray-900', 'dark:text-white');
+    tabChats.classList.remove('text-gray-600', 'dark:text-gray-400');
+    tabFiles.classList.remove('bg-white', 'dark:bg-zinc-800', 'text-gray-900', 'dark:text-white');
+    tabFiles.classList.add('text-gray-600', 'dark:text-gray-400');
+    
+    // Show/hide views
+    document.getElementById('chats-view').classList.remove('hidden');
+    document.getElementById('files-view').classList.add('hidden');
+    document.getElementById('new-chat-btn').classList.remove('hidden');
+}
+
+window.showFilesView = function() {
+    currentView = 'files';
+    
+    // Update tab styles
+    const tabChats = document.getElementById('tab-chats');
+    const tabFiles = document.getElementById('tab-files');
+    tabFiles.classList.add('bg-white', 'dark:bg-zinc-800', 'text-gray-900', 'dark:text-white');
+    tabFiles.classList.remove('text-gray-600', 'dark:text-gray-400');
+    tabChats.classList.remove('bg-white', 'dark:bg-zinc-800', 'text-gray-900', 'dark:text-white');
+    tabChats.classList.add('text-gray-600', 'dark:text-gray-400');
+    
+    // Show/hide views
+    document.getElementById('chats-view').classList.add('hidden');
+    document.getElementById('files-view').classList.remove('hidden');
+    document.getElementById('new-chat-btn').classList.add('hidden');
+    
+    // Load files for current chat
+    if (currentChatId) {
+        loadSidebarFiles(currentChatId);
+    }
+}
+
+async function loadSidebarFiles(chatId) {
     try {
         const response = await fetch(`/api/chat/${chatId}/files`);
         const data = await response.json();
         
-        const filesList = document.getElementById('uploaded-files-list');
-        const filesContainer = document.getElementById('files-container');
-        const filesCountText = document.getElementById('files-count-text');
+        const filesList = document.getElementById('sidebar-files-list');
+        const noFilesMsg = document.getElementById('no-files-message');
         
         if (data.files && data.files.length > 0) {
-            const count = data.files.length;
-            filesCountText.textContent = `${count} bestand${count > 1 ? 'en' : ''} geüpload`;
-            
-            filesContainer.innerHTML = data.files.map(file => `
-                <div class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-zinc-900 rounded-lg">
-                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    <span class="text-xs text-gray-700 dark:text-gray-300 truncate flex-1">${file.filename}</span>
-                </div>
-            `).join('');
+            filesList.innerHTML = data.files.map(file => {
+                const fileSize = formatFileSize(file.file_size);
+                const fileIcon = getFileIcon(file.mime_type);
+                
+                return `
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-900 rounded-lg group">
+                        <div class="text-2xl">${fileIcon}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${file.filename}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">${fileSize}</div>
+                        </div>
+                        <button onclick="deleteFileFromSidebar(${file.id})" class="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            }).join('');
             filesList.classList.remove('hidden');
-            // Collapse by default
-            filesContainer.classList.add('hidden');
+            noFilesMsg.classList.add('hidden');
         } else {
             filesList.classList.add('hidden');
+            noFilesMsg.classList.remove('hidden');
         }
     } catch (error) {
-        console.error('Error loading chat files:', error);
+        console.error('Error loading sidebar files:', error);
     }
 }
 
-window.toggleFilesList = function() {
-    const container = document.getElementById('files-container');
-    const chevron = document.getElementById('files-chevron');
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 10) / 10 + ' ' + sizes[i];
+}
+
+function getFileIcon(mimeType) {
+    if (mimeType && mimeType.includes('pdf')) return '📄';
+    if (mimeType && mimeType.includes('word')) return '📝';
+    if (mimeType && mimeType.includes('text')) return '📋';
+    return '📎';
+}
+
+window.handleSidebarFileSelect = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
     
-    if (container.classList.contains('hidden')) {
-        container.classList.remove('hidden');
-        chevron.classList.add('rotate-180');
-    } else {
-        container.classList.add('hidden');
-        chevron.classList.remove('rotate-180');
+    if (!currentChatId) {
+        alert('Start eerst een chat voordat je een bestand uploadt.');
+        return;
+    }
+    
+    await uploadFile(file);
+    loadSidebarFiles(currentChatId);
+    
+    // Clear input
+    document.getElementById('sidebar-file-input').value = '';
+}
+
+window.deleteFileFromSidebar = function(fileId) {
+    fileToDelete = fileId;
+    document.getElementById('delete-file-modal').classList.remove('hidden');
+}
+
+window.closeDeleteFileModal = function() {
+    fileToDelete = null;
+    document.getElementById('delete-file-modal').classList.add('hidden');
+}
+
+window.confirmDeleteFile = async function() {
+    if (!fileToDelete) return;
+    
+    try {
+        const response = await fetch(`/api/files/${fileToDelete}`, {
+            method: 'DELETE',
+            headers: {'X-CSRFToken': getCSRFToken()}
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Reload files list
+            if (currentChatId) {
+                loadSidebarFiles(currentChatId);
+            }
+            closeDeleteFileModal();
+        } else {
+            alert(data.error || 'Kon bestand niet verwijderen');
+        }
+    } catch (error) {
+        console.error('Error deleting file:', error);
+        alert('Er is een fout opgetreden bij het verwijderen');
     }
 }
 
@@ -438,20 +607,29 @@ function addMessageToDOM(role, content, container = null, attachments = null) {
             `;
         }
         
+        let userAvatarHTML = '';
+        if (userAvatarUrl) {
+            userAvatarHTML = `<img src="${userAvatarUrl}" class="flex-shrink-0 w-12 h-12 rounded-full object-cover" alt="User avatar" />`;
+        } else {
+            userAvatarHTML = `
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <span class="text-sm font-semibold text-blue-600 dark:text-blue-400">${userInitials}</span>
+                </div>
+            `;
+        }
+        
         msgDiv.innerHTML = `
-            <div class="max-w-[75%] bg-gradient-to-br from-blue-600 to-blue-700 text-white px-4 py-3 rounded-2xl rounded-tr-md shadow-sm">
+            <div class="max-w-[75%] bg-blue-100 dark:bg-gradient-to-br dark:from-blue-600 dark:to-blue-700 text-gray-900 dark:text-white px-4 py-3 rounded-2xl rounded-tr-md border-2 border-blue-200 dark:border-transparent shadow-md dark:shadow-sm">
                 <div class="text-sm leading-relaxed">${content}</div>
                 ${attachmentsHTML}
             </div>
-            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <span class="text-xs font-semibold text-blue-600 dark:text-blue-400">${userInitials}</span>
-            </div>
+            ${userAvatarHTML}
         `;
     } else {
         msgDiv.className = 'flex gap-3 items-start';
         msgDiv.innerHTML = `
-            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                <span class="text-white text-sm font-semibold">L</span>
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                <span class="text-white text-base font-semibold">L</span>
             </div>
             <div class="flex-1 max-w-[75%]">
                 <div class="text-sm leading-relaxed text-gray-900 dark:text-gray-100 prose dark:prose-invert prose-sm max-w-none">${formatMarkdown(content)}</div>
@@ -474,11 +652,11 @@ function showLoadingMessage() {
     loadingDiv.id = 'loading-message';
     loadingDiv.className = 'flex gap-3 items-start';
     loadingDiv.innerHTML = `
-        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-            <span class="text-white text-sm font-semibold">L</span>
+        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+            <span class="text-white text-base font-semibold">L</span>
         </div>
         <div class="flex-1">
-            <div class="flex items-center gap-1 pt-1">
+            <div class="flex items-center gap-1 pt-2">
                 <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
                 <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
                 <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
@@ -682,6 +860,80 @@ async function updateChatList() {
     `).join('');
 }
 
+let searchTimeout;
+window.searchChats = function(query) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+        if (!query.trim()) {
+            loadAllChats();
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/chats/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ query: query })
+            });
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            console.error('Error searching chats:', error);
+        }
+    }, 300);
+}
+
+function displaySearchResults(results) {
+    const listDiv = document.getElementById('chat-list');
+    if (results.length === 0) {
+        listDiv.innerHTML = '<div class="p-3 text-center text-sm text-gray-500 dark:text-gray-400">Geen resultaten gevonden</div>';
+        return;
+    }
+    
+    listDiv.innerHTML = results.map(chat => {
+        const matchTypeIndicator = chat.match_type === 'content' 
+            ? '<span class="text-xs text-blue-600 dark:text-blue-400">📝 In bericht</span>' 
+            : '<span class="text-xs text-green-600 dark:text-green-400">📌 In titel</span>';
+        
+        const snippet = chat.snippet 
+            ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">${escapeHtml(chat.snippet)}</div>`
+            : '';
+        
+        return `
+            <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
+                <div class="p-3">
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">${escapeHtml(chat.title)}</div>
+                    </div>
+                    ${matchTypeIndicator}
+                    <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">${chat.updated_at}</div>
+                    ${snippet}
+                </div>
+                <div class="absolute right-2 top-3 hidden group-hover:flex gap-1">
+                    <button onclick="event.stopPropagation(); renameChatFromSidebar(${chat.id}, '${escapeHtml(chat.title)}')" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
+                        <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                        </svg>
+                    </button>
+                    <button onclick="event.stopPropagation(); deleteChatFromSidebar(${chat.id})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Delete">
+                        <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.loadAllChats = async function() {
+    document.getElementById('chat-search').value = '';
+    await updateChatList();
+}
+
 let chatToRename = null;
 let chatToDelete = null;
 
@@ -759,14 +1011,19 @@ window.confirmDelete = async function() {
     }
 }
 
-// Enter key support for rename modal
+// Keyboard support for modals
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !document.getElementById('rename-modal').classList.contains('hidden')) {
-        confirmRename();
+    if (e.key === 'Enter') {
+        if (!document.getElementById('rename-modal').classList.contains('hidden')) {
+            confirmRename();
+        } else if (!document.getElementById('delete-file-modal').classList.contains('hidden')) {
+            confirmDeleteFile();
+        }
     }
     if (e.key === 'Escape') {
         if (!document.getElementById('rename-modal').classList.contains('hidden')) closeRenameModal();
         if (!document.getElementById('delete-modal').classList.contains('hidden')) closeDeleteModal();
+        if (!document.getElementById('delete-file-modal').classList.contains('hidden')) closeDeleteFileModal();
     }
 });
 
@@ -804,9 +1061,9 @@ async function uploadFile(file) {
             uploadedFileId = data.file_id;
             fileName.textContent = file.name;
             
-            // Refresh files list if we're in an existing chat
-            if (currentChatId) {
-                loadChatFiles(currentChatId);
+            // Refresh sidebar files list if we're in files view
+            if (currentChatId && currentView === 'files') {
+                loadSidebarFiles(currentChatId);
             }
         } else {
             fileName.innerHTML = '<span class="text-red-600">Upload failed</span>';

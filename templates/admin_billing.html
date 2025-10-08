@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex h-screen bg-gray-50 dark:bg-black overflow-hidden {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
+<div class="flex h-screen bg-gradient-to-br from-blue-50/30 via-white to-purple-50/30 dark:bg-black overflow-hidden {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
     {% if session.get('impersonating_from') == 'super_admin' %}
     <div class="absolute top-0 left-0 right-0 bg-orange-600 text-white py-2 px-4 z-50 flex justify-between items-center">
         <span class="text-sm">Super Admin Mode - {{ tenant.company_name }}</span>
@@ -47,7 +47,7 @@
                 </svg>
                 Templates
             </a>
-            <a href="/admin/billing" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+            <a href="/admin/billing" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                 </svg>
@@ -74,7 +74,7 @@
     <!-- Main Content -->
     <div class="flex-1 overflow-y-auto">
         <!-- Header with Hamburger -->
-        <div class="border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 md:px-8 py-4">
+        <div class="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-blue-50/30 to-purple-50/30 dark:bg-zinc-950 px-4 md:px-8 py-4">
             <div class="flex items-center gap-4">
                 <button onclick="toggleAdminSidebar()" class="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition md:hidden">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@
 
         <div class="p-4 md:p-8">
             <!-- Current Status -->
-            <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
+            <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6 shadow-md hover:shadow-lg transition-shadow">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Huidige Status</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

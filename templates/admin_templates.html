@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex h-screen bg-gray-50 dark:bg-black overflow-hidden {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
+<div class="flex h-screen bg-gradient-to-br from-blue-50/30 via-white to-purple-50/30 dark:bg-black overflow-hidden {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
     {% if session.get('impersonating_from') == 'super_admin' %}
     <div class="absolute top-0 left-0 right-0 bg-orange-600 text-white py-2 px-4 z-50 flex justify-between items-center">
         <span class="text-sm">Super Admin Mode - {{ tenant.company_name }}</span>
@@ -41,7 +41,7 @@
                 </svg>
                 Gebruikers
             </a>
-            <a href="/admin/templates" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+            <a href="/admin/templates" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
@@ -74,7 +74,7 @@
     <!-- Main Content -->
     <div class="flex-1 overflow-y-auto">
         <!-- Header with Hamburger -->
-        <div class="border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 md:px-8 py-4">
+        <div class="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-blue-50/30 to-purple-50/30 dark:bg-zinc-950 px-4 md:px-8 py-4">
             <div class="flex items-center gap-4">
                 <button onclick="toggleAdminSidebar()" class="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition md:hidden">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@
 
         <div class="p-4 md:p-8">
             <!-- Add Template Form -->
-            <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
+            <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6 shadow-md hover:shadow-lg transition-shadow">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Nieuwe Template Toevoegen</h3>
                 <form method="POST" action="/admin/templates" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -111,7 +111,7 @@
             <!-- Templates Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {% for template in templates %}
-                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                     <div class="flex justify-between items-start mb-2">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ template.name }}</h3>
                         <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300">{{ template.category }}</span>
