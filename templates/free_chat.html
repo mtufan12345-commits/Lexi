@@ -7,7 +7,7 @@
             <div class="flex justify-between items-center">
                 <div>
                     <a href="/" class="text-xl font-bold text-white hover:text-gray-200 transition">LEX CAO Expert - Gratis Trial</a>
-                    <p class="text-sm text-gray-400">{{ guest_email }} • {{ questions_remaining }} vragen over</p>
+                    <p id="questions-counter" class="text-sm text-gray-400">{{ guest_email }} • {{ questions_remaining }} vragen over</p>
                 </div>
                 <div class="flex gap-4">
                     <a href="/prijzen" class="text-indigo-400 hover:text-indigo-300">Bekijk Plannen</a>
@@ -162,7 +162,7 @@ messageForm.addEventListener('submit', async (e) => {
             addMessage('assistant', data.response);
             questionsRemaining = data.questions_remaining;
             
-            document.querySelector('.text-gray-400').textContent = 
+            document.getElementById('questions-counter').textContent = 
                 `{{ guest_email }} • ${questionsRemaining} vragen over`;
             
             if (questionsRemaining <= 0) {
