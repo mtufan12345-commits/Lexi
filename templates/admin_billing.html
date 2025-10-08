@@ -2,6 +2,24 @@
 
 {% block content %}
 <div class="min-h-screen bg-gray-100">
+    {% if session.get('impersonating_from') == 'super_admin' %}
+    <div class="bg-orange-600 text-white py-3">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold">🔐 Super Admin Modus</span>
+                    <span class="text-orange-200">Je bekijkt dit account als super administrator</span>
+                </div>
+                <form method="POST" action="{{ url_for('stop_impersonate') }}" class="inline">
+                    <button type="submit" class="px-4 py-1 bg-white text-orange-600 rounded hover:bg-orange-100 font-medium">
+                        Stop Impersonation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <nav class="bg-white shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex justify-between items-center">
