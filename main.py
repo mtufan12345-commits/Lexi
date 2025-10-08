@@ -681,6 +681,21 @@ def delete_chat(chat_id):
     
     return jsonify({'success': True})
 
+@app.route('/api/chats', methods=['GET'])
+@login_required
+@tenant_required
+def get_chats():
+    chats = Chat.query.filter_by(
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).order_by(Chat.updated_at.desc()).all()
+    
+    return jsonify([{
+        'id': chat.id,
+        'title': chat.title,
+        'updated_at': chat.updated_at.strftime('%d/%m %H:%M')
+    } for chat in chats])
+
 @app.route('/api/chat/<int:chat_id>/export', methods=['GET'])
 @login_required
 @tenant_required
