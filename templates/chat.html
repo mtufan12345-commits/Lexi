@@ -194,40 +194,80 @@ async function loadChat(chatId) {
     });
 }
 
+function formatMarkdown(text) {
+    // Simple markdown to HTML conversion
+    return text
+        // Bold
+        .replace(/\*\*\*(.*?)\*\*\*/g, '<strong>$1</strong>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-4 mb-2">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
+        // Line breaks
+        .replace(/\n/g, '<br>');
+}
+
 function addMessageToDOM(role, content, container = null) {
     if (!container) {
         container = document.getElementById('messages-container').querySelector('div');
     }
     
     const msgDiv = document.createElement('div');
-    msgDiv.className = 'flex gap-4';
     
     if (role === 'user') {
+        msgDiv.className = 'flex gap-3 justify-end';
         msgDiv.innerHTML = `
-            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-200 dark:bg-zinc-800 flex items-center justify-center">
-                <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-            </div>
-            <div class="flex-1">
-                <div class="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">${content}</div>
+            <div class="max-w-[80%]">
+                <div class="bg-blue-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm">
+                    <div class="text-sm whitespace-pre-wrap">${content}</div>
+                </div>
             </div>
         `;
     } else {
+        msgDiv.className = 'flex gap-3';
         msgDiv.innerHTML = `
             <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                 </svg>
             </div>
-            <div class="flex-1">
-                <div class="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">${content}</div>
+            <div class="flex-1 max-w-[80%]">
+                <div class="text-sm text-gray-900 dark:text-white prose dark:prose-invert prose-sm max-w-none">${formatMarkdown(content)}</div>
             </div>
         `;
     }
     
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
+}
+
+function showLoadingMessage() {
+    const container = document.getElementById('messages-container').querySelector('div');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loading-message';
+    loadingDiv.className = 'flex gap-3';
+    loadingDiv.innerHTML = `
+        <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+        </div>
+        <div class="flex-1">
+            <div class="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+            </div>
+        </div>
+    `;
+    container.appendChild(loadingDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+function removeLoadingMessage() {
+    const loading = document.getElementById('loading-message');
+    if (loading) loading.remove();
 }
 
 document.getElementById('message-form').addEventListener('submit', async (e) => {
@@ -243,21 +283,28 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
     
     input.value = '';
     addMessageToDOM('user', message);
+    showLoadingMessage();
     
-    const response = await fetch(`/api/chat/${currentChatId}/message`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
-        },
-        body: JSON.stringify({message})
-    });
-    
-    const data = await response.json();
-    addMessageToDOM('assistant', data.response);
-    
-    if (data.artifact) {
-        showArtifact(data.artifact);
+    try {
+        const response = await fetch(`/api/chat/${currentChatId}/message`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({message})
+        });
+        
+        const data = await response.json();
+        removeLoadingMessage();
+        addMessageToDOM('assistant', data.response);
+        
+        if (data.artifact) {
+            showArtifact(data.artifact);
+        }
+    } catch (error) {
+        removeLoadingMessage();
+        addMessageToDOM('assistant', 'Er is een fout opgetreden. Probeer het opnieuw.');
     }
 });
 
@@ -294,32 +341,44 @@ async function updateChatList() {
     `).join('');
 }
 
-function renameChatFromSidebar(id, title) {
-    const newTitle = prompt('New name:', title);
-    if (newTitle) {
-        fetch(`/api/chat/${id}/rename`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({title: newTitle})
-        }).then(() => updateChatList());
+async function renameChatFromSidebar(id, title) {
+    const newTitle = prompt('Nieuwe naam voor chat:', title);
+    if (newTitle && newTitle !== title) {
+        try {
+            const response = await fetch(`/api/chat/${id}/rename`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({title: newTitle})
+            });
+            if (response.ok) {
+                updateChatList();
+            }
+        } catch (error) {
+            console.error('Error renaming chat:', error);
+        }
     }
 }
 
-function deleteChatFromSidebar(id) {
-    if (confirm('Delete this chat?')) {
-        fetch(`/api/chat/${id}`, {
-            method: 'DELETE',
-            headers: {'X-CSRFToken': getCSRFToken()}
-        }).then(() => {
-            if (currentChatId === id) {
-                currentChatId = null;
-                document.getElementById('messages-container').innerHTML = '<div class="max-w-3xl mx-auto"></div>';
+async function deleteChatFromSidebar(id) {
+    if (confirm('Weet je zeker dat je deze chat wilt verwijderen?')) {
+        try {
+            const response = await fetch(`/api/chat/${id}`, {
+                method: 'DELETE',
+                headers: {'X-CSRFToken': getCSRFToken()}
+            });
+            if (response.ok) {
+                if (currentChatId === id) {
+                    currentChatId = null;
+                    document.getElementById('messages-container').innerHTML = '<div class="max-w-3xl mx-auto"><div class="text-center py-16"><div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl mb-4"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg></div><h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Start a conversation</h2><p class="text-sm text-gray-500 dark:text-gray-400">Ask LEX anything about CAO regulations</p></div></div>';
+                }
+                updateChatList();
             }
-            updateChatList();
-        });
+        } catch (error) {
+            console.error('Error deleting chat:', error);
+        }
     }
 }
 
