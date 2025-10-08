@@ -612,6 +612,10 @@ def get_chat(chat_id):
                 'feedback_rating': m.get('feedback_rating')
             }
             
+            # Add attachments if present (user messages)
+            if m.get('attachments'):
+                msg_data['attachments'] = m.get('attachments')
+            
             if m.get('role') == 'assistant':
                 artifacts = Artifact.query.filter_by(message_id=idx + 1, chat_id=chat.id, tenant_id=g.tenant.id).all()
                 if artifacts:
@@ -644,12 +648,27 @@ def send_message(chat_id):
     user_message = data.get('message', '')
     print(f"[DEBUG] User message: {user_message}")
     
-    # Create user message dict for S3
+    # Get uploaded files for this chat
+    uploaded_files = UploadedFile.query.filter_by(
+        chat_id=chat.id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).all()
+    
+    # Create user message dict for S3 with file attachments
     user_msg_dict = {
         'role': 'user',
         'content': user_message,
         'created_at': datetime.utcnow().isoformat()
     }
+    
+    # Add file attachments to message
+    if uploaded_files:
+        user_msg_dict['attachments'] = [{
+            'id': f.id,
+            'filename': f.original_filename,
+            'mime_type': f.mime_type
+        } for f in uploaded_files]
     
     # Append to S3
     s3_key = s3_service.append_chat_message(
@@ -670,12 +689,6 @@ def send_message(chat_id):
     
     chat.updated_at = datetime.utcnow()
     db.session.commit()
-    
-    uploaded_files = UploadedFile.query.filter_by(
-        chat_id=chat.id,
-        tenant_id=g.tenant.id,
-        user_id=current_user.id
-    ).all()
     
     ai_message = user_message
     file_errors = []
