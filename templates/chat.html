@@ -605,10 +605,15 @@ function addMessageToUI(role, content) {
 document.getElementById('message-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    let isNewChat = false;
+    let newChatId = null;
+    
     if (!currentChatId) {
         const response = await fetchWithCSRF('/api/chat/new', { method: 'POST' });
         const data = await response.json();
         currentChatId = data.id;
+        newChatId = data.id;
+        isNewChat = true;
         document.getElementById('chat-actions').classList.remove('hidden');
     }
     
@@ -632,6 +637,31 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
         const data = await response.json();
         stopLexAnimation(animationInterval);
         addMessageToUI('assistant', data.response);
+        
+        if (isNewChat && newChatId) {
+            const newTitle = message.substring(0, 50) + (message.length > 50 ? '...' : '');
+            document.getElementById('chat-title').textContent = newTitle;
+            
+            const chatList = document.getElementById('chat-list');
+            const newChatItem = document.createElement('div');
+            newChatItem.className = 'p-3 rounded-lg hover:bg-gray-100 cursor-pointer border border-gray-200 chat-item bg-indigo-50 border-indigo-300';
+            newChatItem.setAttribute('data-chat-id', newChatId);
+            newChatItem.onclick = () => loadChat(newChatId);
+            
+            const now = new Date();
+            const timeStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            
+            newChatItem.innerHTML = `
+                <div class="font-medium text-sm truncate">${newTitle}</div>
+                <div class="text-xs text-gray-500">${timeStr}</div>
+            `;
+            
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('bg-indigo-50', 'border-indigo-300');
+            });
+            
+            chatList.insertBefore(newChatItem, chatList.firstChild);
+        }
     } catch (error) {
         stopLexAnimation(animationInterval);
         addMessageToUI('assistant', 'Er ging iets mis. Probeer het opnieuw.');
@@ -642,13 +672,20 @@ async function renameChat() {
     if (!currentChatId) return;
     
     const newTitle = prompt('Nieuwe naam:');
-    if (newTitle) {
-        await fetchWithCSRF(`/api/chat/${currentChatId}/rename`, {
+    if (newTitle && newTitle.trim()) {
+        const response = await fetchWithCSRF(`/api/chat/${currentChatId}/rename`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: newTitle })
+            body: JSON.stringify({ title: newTitle.trim() })
         });
-        location.reload();
+        
+        if (response.ok) {
+            document.getElementById('chat-title').textContent = newTitle.trim();
+            const chatItem = document.querySelector(`[data-chat-id="${currentChatId}"]`);
+            if (chatItem) {
+                chatItem.querySelector('.font-medium').textContent = newTitle.trim();
+            }
+        }
     }
 }
 
@@ -657,7 +694,22 @@ async function deleteChat() {
     
     if (confirm('Weet je zeker dat je deze chat wilt verwijderen?')) {
         await fetchWithCSRF(`/api/chat/${currentChatId}/delete`, { method: 'DELETE' });
-        location.reload();
+        
+        const chatItem = document.querySelector(`[data-chat-id="${currentChatId}"]`);
+        if (chatItem) {
+            chatItem.remove();
+        }
+        
+        currentChatId = null;
+        document.getElementById('messages-container').innerHTML = `
+            <div class="text-center text-gray-500 py-20">
+                <div class="text-6xl mb-4">🤖</div>
+                <p class="text-xl">Chat verwijderd</p>
+                <p class="text-sm">Start een nieuwe chat of selecteer een bestaande.</p>
+            </div>
+        `;
+        document.getElementById('chat-title').textContent = 'Selecteer of start een chat';
+        document.getElementById('chat-actions').classList.add('hidden');
     }
 }
 
