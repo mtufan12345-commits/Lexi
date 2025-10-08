@@ -571,6 +571,19 @@ def new_chat():
     db.session.add(chat)
     db.session.commit()
     
+    # Associate any pending uploaded files (chat_id=NULL) with this new chat
+    pending_files = UploadedFile.query.filter_by(
+        tenant_id=g.tenant.id,
+        user_id=current_user.id,
+        chat_id=None
+    ).all()
+    
+    if pending_files:
+        for uploaded_file in pending_files:
+            uploaded_file.chat_id = chat.id
+        db.session.commit()
+        print(f"[DEBUG] Associated {len(pending_files)} pending files with new chat {chat.id}")
+    
     return jsonify({'id': chat.id, 'title': chat.title})
 
 @app.route('/api/chat/<int:chat_id>', methods=['GET'])
@@ -660,7 +673,8 @@ def send_message(chat_id):
     
     uploaded_files = UploadedFile.query.filter_by(
         chat_id=chat.id,
-        tenant_id=g.tenant.id
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
     ).all()
     
     ai_message = user_message
@@ -911,6 +925,7 @@ def upload_file():
     
     uploaded_file = UploadedFile(
         tenant_id=g.tenant.id,
+        user_id=current_user.id,
         chat_id=chat_id if chat_id else None,
         filename=file.filename,
         original_filename=file.filename,
