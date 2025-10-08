@@ -111,23 +111,38 @@
 
         <!-- Input Area -->
         <div class="border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4">
-            <form id="message-form" class="max-w-3xl mx-auto">
-                <div class="flex gap-3">
-                    <input type="file" id="file-input" class="hidden" onchange="handleFileUpload(event)">
-                    <button type="button" onclick="document.getElementById('file-input').click()" 
-                            class="p-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+            <div id="drop-zone" class="max-w-3xl mx-auto">
+                <div id="file-preview" class="hidden mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span id="file-name" class="text-sm text-gray-900 dark:text-white font-medium"></span>
+                    </div>
+                    <button type="button" onclick="clearFile()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
-                    <input type="text" id="message-input" placeholder="Ask about CAO regulations..." 
-                           class="flex-1 px-4 py-3 bg-gray-100 dark:bg-zinc-900 border-0 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button type="submit" 
-                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium">
-                        Send
-                    </button>
                 </div>
-            </form>
+                <form id="message-form">
+                    <div class="flex gap-3">
+                        <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt" onchange="handleFileSelect(event)">
+                        <button type="button" onclick="document.getElementById('file-input').click()" 
+                                class="p-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                            </svg>
+                        </button>
+                        <input type="text" id="message-input" placeholder="Ask about CAO regulations..." 
+                               class="flex-1 px-4 py-3 bg-gray-100 dark:bg-zinc-900 border-0 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button type="submit" 
+                                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium">
+                            Send
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -152,11 +167,11 @@
 <script>
 let currentChatId = null;
 
-function getCSRFToken() {
+window.getCSRFToken = function() {
     return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 }
 
-function toggleDarkMode() {
+window.toggleDarkMode = function() {
     const html = document.documentElement;
     const isDark = html.classList.contains('dark');
     
@@ -169,7 +184,7 @@ function toggleDarkMode() {
     }
 }
 
-async function newChat() {
+window.newChat = async function() {
     const response = await fetch('/api/chat/new', {
         method: 'POST',
         headers: {'X-CSRFToken': getCSRFToken()}
@@ -180,7 +195,7 @@ async function newChat() {
     updateChatList();
 }
 
-async function loadChat(chatId) {
+window.loadChat = async function(chatId) {
     currentChatId = chatId;
     const response = await fetch(`/api/chat/${chatId}`);
     const data = await response.json();
@@ -216,24 +231,25 @@ function addMessageToDOM(role, content, container = null) {
     const msgDiv = document.createElement('div');
     
     if (role === 'user') {
-        msgDiv.className = 'flex gap-3 justify-end';
+        msgDiv.className = 'flex gap-3 justify-end items-start';
         msgDiv.innerHTML = `
-            <div class="max-w-[80%]">
-                <div class="bg-blue-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm">
-                    <div class="text-sm whitespace-pre-wrap">${content}</div>
-                </div>
+            <div class="max-w-[75%] bg-gradient-to-br from-blue-600 to-blue-700 text-white px-4 py-3 rounded-2xl rounded-tr-md shadow-sm">
+                <div class="text-sm leading-relaxed">${content}</div>
+            </div>
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
             </div>
         `;
     } else {
-        msgDiv.className = 'flex gap-3';
+        msgDiv.className = 'flex gap-3 items-start';
         msgDiv.innerHTML = `
-            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                </svg>
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                <span class="text-white text-sm font-semibold">L</span>
             </div>
-            <div class="flex-1 max-w-[80%]">
-                <div class="text-sm text-gray-900 dark:text-white prose dark:prose-invert prose-sm max-w-none">${formatMarkdown(content)}</div>
+            <div class="flex-1 max-w-[75%]">
+                <div class="text-sm leading-relaxed text-gray-900 dark:text-gray-100 prose dark:prose-invert prose-sm max-w-none">${formatMarkdown(content)}</div>
             </div>
         `;
     }
@@ -246,15 +262,13 @@ function showLoadingMessage() {
     const container = document.getElementById('messages-container').querySelector('div');
     const loadingDiv = document.createElement('div');
     loadingDiv.id = 'loading-message';
-    loadingDiv.className = 'flex gap-3';
+    loadingDiv.className = 'flex gap-3 items-start';
     loadingDiv.innerHTML = `
-        <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-            </svg>
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+            <span class="text-white text-sm font-semibold">L</span>
         </div>
         <div class="flex-1">
-            <div class="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+            <div class="flex items-center gap-1 pt-1">
                 <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
                 <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
                 <div class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
@@ -281,9 +295,19 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
         await newChat();
     }
     
+    const payload = { message };
+    if (uploadedFileId) {
+        payload.file_id = uploadedFileId;
+    }
+    
     input.value = '';
     addMessageToDOM('user', message);
     showLoadingMessage();
+    
+    // Clear file after sending
+    if (uploadedFileId) {
+        clearFile();
+    }
     
     try {
         const response = await fetch(`/api/chat/${currentChatId}/message`, {
@@ -292,7 +316,7 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken()
             },
-            body: JSON.stringify({message})
+            body: JSON.stringify(payload)
         });
         
         const data = await response.json();
@@ -309,21 +333,83 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
 });
 
 function showArtifact(artifact) {
-    document.getElementById('artifacts-panel').classList.remove('hidden');
+    const panel = document.getElementById('artifacts-panel');
     const content = document.getElementById('artifact-content');
+    
+    panel.classList.remove('hidden');
+    
     content.innerHTML = `
-        <div class="prose dark:prose-invert max-w-none">
-            <h4 class="text-lg font-semibold mb-4">${artifact.title}</h4>
-            <pre class="bg-gray-100 dark:bg-zinc-900 p-4 rounded-lg text-sm overflow-x-auto">${artifact.content}</pre>
-            <button onclick="downloadArtifact('${artifact.id}')" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
-                Download
-            </button>
+        <div class="space-y-4">
+            <div>
+                <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-1">${escapeHtml(artifact.title || 'Document')}</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${artifact.type || 'Document'}</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg p-4 max-h-[calc(100vh-250px)] overflow-y-auto">
+                <pre class="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono">${escapeHtml(artifact.content || '')}</pre>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="downloadArtifact('${artifact.id}', '${escapeHtml(artifact.title || 'document')}')" 
+                        class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download
+                </button>
+                <button onclick="copyArtifact('${artifact.id}')" 
+                        class="px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white text-sm font-medium rounded-lg transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
     `;
 }
 
-function closeArtifacts() {
+window.closeArtifacts = function() {
     document.getElementById('artifacts-panel').classList.add('hidden');
+}
+
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+window.downloadArtifact = async function(id, title) {
+    try {
+        const response = await fetch(`/api/artifact/${id}/download`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = title + '.txt';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error downloading artifact:', error);
+    }
+}
+
+window.copyArtifact = async function(id) {
+    const content = document.querySelector('#artifact-content pre').textContent;
+    try {
+        await navigator.clipboard.writeText(content);
+        // Show brief success message
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+        }, 1500);
+    } catch (error) {
+        console.error('Error copying:', error);
+    }
 }
 
 async function updateChatList() {
@@ -341,7 +427,7 @@ async function updateChatList() {
     `).join('');
 }
 
-async function renameChatFromSidebar(id, title) {
+window.renameChatFromSidebar = async function(id, title) {
     const newTitle = prompt('Nieuwe naam voor chat:', title);
     if (newTitle && newTitle !== title) {
         try {
@@ -362,7 +448,7 @@ async function renameChatFromSidebar(id, title) {
     }
 }
 
-async function deleteChatFromSidebar(id) {
+window.deleteChatFromSidebar = async function(id) {
     if (confirm('Weet je zeker dat je deze chat wilt verwijderen?')) {
         try {
             const response = await fetch(`/api/chat/${id}`, {
@@ -382,23 +468,74 @@ async function deleteChatFromSidebar(id) {
     }
 }
 
-function handleFileUpload(event) {
+let uploadedFileId = null;
+
+function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+    uploadFile(file);
+}
+
+async function uploadFile(file) {
     const formData = new FormData();
     formData.append('file', file);
     
-    fetch('/api/upload', {
-        method: 'POST',
-        headers: {'X-CSRFToken': getCSRFToken()},
-        body: formData
-    }).then(response => response.json())
-      .then(data => {
-          if (data.file_id) {
-              document.getElementById('message-input').value = `[Uploaded: ${file.name}]`;
-          }
-      });
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCSRFToken()},
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (data.file_id) {
+            uploadedFileId = data.file_id;
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-preview').classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Error uploading file:', error);
+    }
 }
+
+window.clearFile = function() {
+    uploadedFileId = null;
+    document.getElementById('file-preview').classList.add('hidden');
+    document.getElementById('file-input').value = '';
+}
+
+// Drag and drop functionality
+const dropZone = document.getElementById('drop-zone');
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        // Check file type
+        const validTypes = ['.pdf', '.docx', '.txt'];
+        const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+        if (validTypes.includes(fileExt)) {
+            uploadFile(file);
+        } else {
+            alert('Alleen PDF, DOCX en TXT bestanden zijn toegestaan.');
+        }
+    }
+});
 </script>
 {% endblock %}
