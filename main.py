@@ -576,15 +576,26 @@ def send_message(chat_id):
     user_message = data.get('message', '')
     print(f"[DEBUG] User message: {user_message}")
     
-    message = Message(
-        tenant_id=g.tenant.id,
-        chat_id=chat.id,
-        role='user',
-        content=user_message
-    )
-    db.session.add(message)
+    # Create user message dict for S3
+    user_msg_dict = {
+        'role': 'user',
+        'content': user_message,
+        'created_at': datetime.utcnow().isoformat()
+    }
     
-    if len(chat.messages) == 0:
+    # Append to S3
+    s3_key = s3_service.append_chat_message(
+        chat.s3_messages_key,
+        chat.id,
+        g.tenant.id,
+        user_msg_dict
+    )
+    
+    if s3_key:
+        chat.s3_messages_key = s3_key
+        chat.message_count = chat.message_count + 1
+    
+    if chat.message_count <= 1:
         chat.title = user_message[:50] + ('...' if len(user_message) > 50 else '')
     
     chat.updated_at = datetime.utcnow()
@@ -619,14 +630,30 @@ def send_message(chat_id):
     lex_response = vertex_ai_service.chat(ai_message)
     print(f"[DEBUG] LEX response: {lex_response[:100]}...")
     
-    assistant_message = Message(
-        tenant_id=g.tenant.id,
-        chat_id=chat.id,
-        role='assistant',
-        content=lex_response
+    # Create assistant message dict for S3
+    assistant_msg_dict = {
+        'role': 'assistant',
+        'content': lex_response,
+        'created_at': datetime.utcnow().isoformat()
+    }
+    
+    # Append to S3
+    s3_key = s3_service.append_chat_message(
+        chat.s3_messages_key,
+        chat.id,
+        g.tenant.id,
+        assistant_msg_dict
     )
-    db.session.add(assistant_message)
+    
+    if s3_key:
+        chat.s3_messages_key = s3_key
+        chat.message_count = chat.message_count + 1
+    
+    chat.updated_at = datetime.utcnow()
     db.session.commit()
+    
+    # Store last message ID for artifacts (use message_count as ID)
+    assistant_message_id = chat.message_count
     
     artifacts_created = []
     artifact_pattern = r'```artifact:(\w+)\s+title:([^\n]+)\n(.*?)```'
@@ -649,7 +676,7 @@ def send_message(chat_id):
             artifact = Artifact(
                 tenant_id=g.tenant.id,
                 chat_id=chat.id,
-                message_id=assistant_message.id,
+                message_id=assistant_message_id,
                 title=title,
                 content=content,
                 artifact_type=artifact_type,
@@ -672,8 +699,8 @@ def send_message(chat_id):
     return jsonify({
         'response': lex_response,
         'artifacts': artifacts_created,
-        'message_id': assistant_message.id,
-        'feedback_rating': assistant_message.feedback_rating
+        'message_id': assistant_message_id,
+        'feedback_rating': None
     })
 
 @app.route('/api/chat/<int:chat_id>/rename', methods=['POST'])
