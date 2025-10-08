@@ -24,7 +24,7 @@
     {% endif %}
     
 <div class="flex flex-1 overflow-hidden">
-    <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <div class="w-64 bg-white dark:bg-black border-r border-gray-200 dark:border-zinc-800 flex flex-col">
         <div class="p-4 border-b border-gray-200 dark:border-zinc-800">
             <a href="/" class="flex items-center space-x-2 hover:opacity-80 transition mb-2">
                 <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded flex-shrink-0"></div>
@@ -43,7 +43,7 @@
             
             <div id="chat-list" class="space-y-2">
                 {% for chat in chats %}
-                <div class="p-3 rounded-lg hover:bg-gray-100 border border-gray-200 chat-item relative group" 
+                <div class="p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 chat-item relative group" 
                      data-chat-id="{{ chat.id }}">
                     <div onclick="loadChat({{ chat.id }})" class="cursor-pointer">
                         <div class="font-medium text-sm truncate pr-14">{{ chat.title }}</div>
@@ -70,16 +70,16 @@
             </div>
         </div>
         
-        <div class="p-4 border-t border-gray-200 space-y-2">
-            <div class="text-sm font-medium text-gray-900 mb-3">{{ user.full_name }}</div>
-            <a href="/profile" class="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition">
+        <div class="p-4 border-t border-gray-200 dark:border-zinc-800 space-y-2">
+            <div class="text-sm font-medium text-gray-900 dark:text-white mb-3">{{ user.full_name }}</div>
+            <a href="/profile" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
                 Mijn Profiel
             </a>
             {% if user.role == 'admin' %}
-            <a href="/admin/dashboard" class="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition">
+            <a href="/admin/dashboard" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -87,7 +87,7 @@
                 Dashboard
             </a>
             {% endif %}
-            <a href="/logout" class="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition">
+            <a href="/logout" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
@@ -97,7 +97,7 @@
     </div>
     
     <div class="flex-1 flex flex-col">
-        <div class="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+        <div class="bg-white dark:bg-black border-b border-gray-200 dark:border-zinc-800 p-4 flex justify-between items-center">
             <h3 id="chat-title" class="text-lg font-semibold text-gray-900 dark:text-white">Selecteer of start een chat</h3>
             <div id="chat-actions" class="hidden flex items-center gap-3">
                 <button onclick="exportChat()" class="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium transition">
@@ -159,7 +159,7 @@
             </div>
         </div>
         
-        <div id="lex-animation-container" class="hidden relative h-64 bg-gradient-to-b from-indigo-50 to-white border-b border-indigo-100 overflow-hidden">
+        <div id="lex-animation-container" class="hidden relative h-64 bg-gradient-to-b from-indigo-50 to-white dark:from-zinc-900 dark:to-black border-b border-indigo-100 overflow-hidden">
             <!-- Progress bar (alleen visueel, geen tekst) -->
             <div class="absolute top-4 left-1/2 transform -translate-x-1/2 w-64">
                 <div class="w-full bg-gray-200 rounded-full h-1.5">
@@ -657,7 +657,7 @@ async function newChat() {
     
     const chatList = document.getElementById('chat-list');
     const newChatItem = document.createElement('div');
-    newChatItem.className = 'p-3 rounded-lg hover:bg-gray-100 cursor-pointer border border-gray-200 chat-item bg-indigo-50 border-indigo-300';
+    newChatItem.className = 'p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer border border-gray-200 chat-item bg-indigo-50 border-indigo-300';
     newChatItem.setAttribute('data-chat-id', data.id);
     newChatItem.onclick = () => loadChat(data.id);
     
@@ -792,7 +792,7 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
             
             const chatList = document.getElementById('chat-list');
             const newChatItem = document.createElement('div');
-            newChatItem.className = 'p-3 rounded-lg hover:bg-gray-100 cursor-pointer border border-gray-200 chat-item bg-indigo-50 border-indigo-300';
+            newChatItem.className = 'p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer border border-gray-200 chat-item bg-indigo-50 border-indigo-300';
             newChatItem.setAttribute('data-chat-id', newChatId);
             newChatItem.onclick = () => loadChat(newChatId);
             
