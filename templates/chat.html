@@ -34,11 +34,17 @@
             
             <div id="chat-list" class="space-y-2">
                 {% for chat in chats %}
-                <div onclick="loadChat({{ chat.id }})" 
-                     class="p-3 rounded-lg hover:bg-gray-100 cursor-pointer border border-gray-200 chat-item" 
+                <div class="p-3 rounded-lg hover:bg-gray-100 border border-gray-200 chat-item relative group" 
                      data-chat-id="{{ chat.id }}">
-                    <div class="font-medium text-sm truncate">{{ chat.title }}</div>
-                    <div class="text-xs text-gray-500">{{ chat.updated_at.strftime('%d-%m %H:%M') }}</div>
+                    <div onclick="loadChat({{ chat.id }})" class="cursor-pointer">
+                        <div class="font-medium text-sm truncate pr-6">{{ chat.title }}</div>
+                        <div class="text-xs text-gray-500">{{ chat.updated_at.strftime('%d-%m %H:%M') }}</div>
+                    </div>
+                    <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" 
+                            class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-indigo-600"
+                            title="Naam wijzigen">
+                        ✏️
+                    </button>
                 </div>
                 {% endfor %}
             </div>
@@ -783,6 +789,28 @@ async function renameChat() {
             const chatItem = document.querySelector(`[data-chat-id="${currentChatId}"]`);
             if (chatItem) {
                 chatItem.querySelector('.font-medium').textContent = newTitle.trim();
+            }
+        }
+    }
+}
+
+async function renameChatFromSidebar(chatId, currentTitle) {
+    const newTitle = prompt('Nieuwe naam:', currentTitle);
+    if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
+        const response = await fetchWithCSRF(`/api/chat/${chatId}/rename`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle.trim() })
+        });
+        
+        if (response.ok) {
+            const chatItem = document.querySelector(`[data-chat-id="${chatId}"]`);
+            if (chatItem) {
+                chatItem.querySelector('.font-medium').textContent = newTitle.trim();
+            }
+            
+            if (currentChatId === chatId) {
+                document.getElementById('chat-title').textContent = newTitle.trim();
             }
         }
     }
