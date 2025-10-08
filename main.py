@@ -903,6 +903,33 @@ def download_artifact(artifact_id):
         'type': artifact.artifact_type
     })
 
+@app.route('/api/chat/<int:chat_id>/files', methods=['GET'])
+@login_required
+@tenant_required
+def get_chat_files(chat_id):
+    if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
+        return jsonify({'error': 'Subscription niet actief'}), 403
+    
+    chat = Chat.query.filter_by(
+        id=chat_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    files = UploadedFile.query.filter_by(
+        chat_id=chat_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).all()
+    
+    return jsonify({
+        'files': [{
+            'id': f.id,
+            'filename': f.original_filename,
+            'created_at': f.created_at.isoformat()
+        } for f in files]
+    })
+
 @app.route('/api/upload', methods=['POST'])
 @login_required
 @tenant_required
