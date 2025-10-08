@@ -904,6 +904,10 @@ def admin_users():
             first_name = request.form.get('first_name')
             last_name = request.form.get('last_name')
             password = request.form.get('password')
+            role = request.form.get('role', 'user')
+            
+            if role not in ['user', 'admin']:
+                role = 'user'
             
             if User.query.filter_by(tenant_id=g.tenant.id, email=email).first():
                 flash('Deze email is al in gebruik.', 'danger')
@@ -913,7 +917,7 @@ def admin_users():
                     email=email,
                     first_name=first_name,
                     last_name=last_name,
-                    role='user'
+                    role=role
                 )
                 user.set_password(password)
                 db.session.add(user)
@@ -922,7 +926,7 @@ def admin_users():
                 login_url = f"https://{g.tenant.subdomain}.lex-cao.replit.app/login"
                 email_service.send_welcome_email(user, g.tenant, login_url)
                 
-                flash('Gebruiker toegevoegd!', 'success')
+                flash(f'Gebruiker toegevoegd als {role}!', 'success')
         
         elif action == 'toggle':
             user_id = request.form.get('user_id')
