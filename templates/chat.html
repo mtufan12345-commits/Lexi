@@ -59,16 +59,20 @@
             </div>
         </div>
         
-        <div id="lex-loading" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-                <div id="lex-character" class="relative w-48 h-48 mx-auto mb-6"></div>
-                <div id="lex-speech" class="text-center text-lg font-medium text-gray-700 mb-4 min-h-[60px]"></div>
-                <div id="lex-fun-fact" class="text-center text-sm text-indigo-600 mb-4 min-h-[40px]"></div>
-                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                    <div id="lex-progress" class="bg-indigo-600 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+        <div id="lex-loading" class="hidden fixed bottom-4 right-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl p-3 max-w-xs">
+                <div class="flex items-center space-x-3">
+                    <div id="lex-character" class="text-4xl"></div>
+                    <div class="flex-1">
+                        <div id="lex-speech" class="text-sm font-medium text-gray-700 mb-1"></div>
+                        <div class="w-full bg-gray-200 rounded-full h-1.5">
+                            <div id="lex-progress" class="bg-indigo-600 h-1.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
-                <div id="lex-timer" class="text-center text-xs text-gray-500"></div>
             </div>
+            
+            <div id="lex-runner" class="fixed bottom-20 text-6xl transition-all duration-1000" style="left: -100px;"></div>
         </div>
         
         <div class="bg-white border-t border-gray-200 p-4">
@@ -101,130 +105,90 @@ function fetchWithCSRF(url, options = {}) {
     return fetch(url, options);
 }
 
-const LEX_ANIMATIONS = [
-    {
-        name: 'detective',
-        character: '🔍📚',
-        speeches: [
-            "Hmm, was het artikel 7 of artikel 8...? 🤔",
-            "Ah, ik zie het al in de NBBU CAO!",
-            "Dit staat in hoofdstuk 3, sectie 2..."
-        ],
-        duration: 8000
-    },
-    {
-        name: 'speedreader',
-        character: '📖⚡',
-        speeches: [
-            "Even snel alle artikelen scannen... 📚",
-            "Ah, hier staat het!",
-            "Ik heb het gevonden!"
-        ],
-        duration: 8000
-    },
-    {
-        name: 'calculator',
-        character: '🧮💡',
-        speeches: [
-            "Even het minimumloon herberekenen... ⚡",
-            "3,50 × 1,05 × 160 uur = ...?",
-            "Klaar met de berekening!"
-        ],
-        duration: 8000
-    },
-    {
-        name: 'coffee',
-        character: '☕😊',
-        speeches: [
-            "Bijna klaar... nog even dit artikel checken! ☕",
-            "Koffie doet wonderen voor de focus...",
-            "Zo, nu kan ik weer verder!"
-        ],
-        duration: 10000
-    },
-    {
-        name: 'eureka',
-        character: '💡✨',
-        speeches: [
-            "Aha! Gevonden! 💡",
-            "Dit is precies wat je zoekt!",
-            "Het antwoord komt eraan!"
-        ],
-        duration: 5000
-    }
-];
-
-const FUN_FACTS = [
-    "💡 Wist je dat de NBBU CAO 127 pagina's heeft?",
-    "🎓 Lex is specialist in uitzendbureau CAO's!",
-    "⚡ Even checken of dit ook geldt voor uitzendkrachten...",
-    "📚 De ABU CAO is een van de meest gebruikte in Nederland",
-    "🔍 Lex analyseert elk artikel zorgvuldig voor je",
-    "☕ Lex drinkt per dag ongeveer 8 virtuele koppen koffie",
-    "🎯 Nauwkeurigheid is key: elk artikel wordt dubbel gecheckt!"
+const LEX_ACTIONS = [
+    { char: '🏃‍♂️💨', text: 'Zoeken in CAO database...', speed: 2000 },
+    { char: '🔍📚', text: 'Artikel gevonden!', speed: 3000 },
+    { char: '🧮⚡', text: 'Even berekenen...', speed: 2500 },
+    { char: '☕😊', text: 'Koffie pause... nee toch niet!', speed: 2000 },
+    { char: '📖✨', text: 'NBBU CAO checken...', speed: 2500 },
+    { char: '🎯💡', text: 'Bijna klaar!', speed: 2000 }
 ];
 
 function startLexAnimation() {
-    const animation = LEX_ANIMATIONS[Math.floor(Math.random() * LEX_ANIMATIONS.length)];
     const loadingDiv = document.getElementById('lex-loading');
     const characterDiv = document.getElementById('lex-character');
     const speechDiv = document.getElementById('lex-speech');
-    const funFactDiv = document.getElementById('lex-fun-fact');
-    const timerDiv = document.getElementById('lex-timer');
     const progressBar = document.getElementById('lex-progress');
+    const runnerDiv = document.getElementById('lex-runner');
     
     loadingDiv.classList.remove('hidden');
     
     let startTime = Date.now();
-    let speechIndex = 0;
-    let lastSpeechTime = startTime;
+    let actionIndex = 0;
+    let isRunning = false;
     
-    characterDiv.innerHTML = `<div class="text-8xl animate-bounce">${animation.character}</div>`;
-    
-    funFactDiv.textContent = FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
-    
-    const updateAnimation = () => {
+    const updateStatus = () => {
         const elapsed = Date.now() - startTime;
-        const seconds = Math.floor(elapsed / 1000);
-        
-        timerDiv.textContent = `${seconds} seconden - Lex is hard aan het werk!`;
-        
         const progress = Math.min((elapsed / 30000) * 100, 95);
         progressBar.style.width = `${progress}%`;
         
-        if (elapsed - lastSpeechTime > 3000) {
-            speechIndex = (speechIndex + 1) % animation.speeches.length;
-            speechDiv.textContent = animation.speeches[speechIndex];
-            lastSpeechTime = elapsed;
-        }
-        
-        if (elapsed > 40000) {
-            speechDiv.textContent = "Wow, dit is een lastige vraag! 😅";
-            characterDiv.innerHTML = `<div class="text-8xl animate-pulse">😰📚</div>`;
-        }
+        const action = LEX_ACTIONS[actionIndex % LEX_ACTIONS.length];
+        characterDiv.textContent = action.char;
+        speechDiv.textContent = action.text;
     };
     
-    speechDiv.textContent = animation.speeches[0];
+    const runAcrossScreen = () => {
+        if (isRunning) return;
+        isRunning = true;
+        
+        const screenWidth = window.innerWidth;
+        const startPos = -100;
+        const endPos = screenWidth + 100;
+        
+        runnerDiv.textContent = '🏃‍♂️💨';
+        runnerDiv.style.left = startPos + 'px';
+        runnerDiv.style.display = 'block';
+        
+        setTimeout(() => {
+            runnerDiv.style.left = endPos + 'px';
+        }, 100);
+        
+        setTimeout(() => {
+            runnerDiv.style.display = 'none';
+            isRunning = false;
+        }, 1100);
+    };
     
-    const interval = setInterval(updateAnimation, 500);
+    updateStatus();
     
-    return interval;
+    const statusInterval = setInterval(() => {
+        actionIndex++;
+        updateStatus();
+    }, 3000);
+    
+    const runInterval = setInterval(runAcrossScreen, 8000);
+    runAcrossScreen();
+    
+    return { statusInterval, runInterval };
 }
 
-function stopLexAnimation(interval) {
-    clearInterval(interval);
+function stopLexAnimation(intervals) {
+    clearInterval(intervals.statusInterval);
+    clearInterval(intervals.runInterval);
     
     const characterDiv = document.getElementById('lex-character');
     const speechDiv = document.getElementById('lex-speech');
     const progressBar = document.getElementById('lex-progress');
+    const runnerDiv = document.getElementById('lex-runner');
     
-    characterDiv.innerHTML = `<div class="text-8xl animate-ping">👋✨</div>`;
-    speechDiv.textContent = "Klaar! Hier is je antwoord! 🎉";
+    characterDiv.textContent = '🎉';
+    speechDiv.textContent = 'Gevonden!';
     progressBar.style.width = '100%';
+    runnerDiv.style.display = 'none';
     
     setTimeout(() => {
         document.getElementById('lex-loading').classList.add('hidden');
-    }, 1000);
+    }, 1500);
 }
 
 async function newChat() {
