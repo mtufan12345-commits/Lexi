@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex h-screen bg-gray-900">
+    <div class="flex-1 flex flex-col">
+        <div class="bg-gray-800 px-6 py-4 border-b border-gray-700">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-bold text-white">LEX CAO Expert - Gratis Trial</h1>
+                    <p class="text-sm text-gray-400">{{ guest_email }} • {{ questions_remaining }} vragen over</p>
+                </div>
+                <div class="flex gap-4">
+                    <a href="/prijzen" class="text-indigo-400 hover:text-indigo-300">Bekijk Plannen</a>
+                    <a href="/" class="text-gray-400 hover:text-white">← Home</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <div class="text-center text-gray-400 py-20">
+                <div class="text-6xl mb-4">🤖</div>
+                <p class="text-xl mb-2">Welkom bij LEX CAO Expert!</p>
+                <p class="text-sm">Stel jouw CAO vragen. Je hebt {{ questions_remaining }} gratis vragen.</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-6 border-t border-gray-700">
+            <form id="message-form" class="flex gap-4">
+                <input type="text" id="message-input" placeholder="Stel je CAO vraag..." 
+                       class="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                       {% if questions_remaining <= 0 %}disabled{% endif %}>
+                <button type="submit" id="send-button"
+                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-600 disabled:cursor-not-allowed"
+                        {% if questions_remaining <= 0 %}disabled{% endif %}>
+                    Verstuur
+                </button>
+            </form>
+            {% if questions_remaining <= 0 %}
+            <p class="text-yellow-400 text-sm mt-2">Je hebt je 3 gratis vragen gebruikt. <a href="/prijzen" class="underline">Kies een plan</a> voor onbeperkte vragen.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div id="upgrade-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+        <h2 class="text-3xl font-bold mb-4">Je gratis vragen zijn op! 🎉</h2>
+        <p class="text-gray-700 mb-6">
+            Je hebt LEX ervaren! Kies nu een plan voor unlimited vragen en volledige toegang.
+        </p>
+        
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <div class="border-2 border-gray-200 rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-2">Professional</h3>
+                <div class="text-3xl font-bold text-indigo-600 mb-4">€499<span class="text-sm text-gray-500">/maand</span></div>
+                <ul class="space-y-2 text-sm mb-4">
+                    <li>✓ 5 gebruikers</li>
+                    <li>✓ Unlimited vragen</li>
+                    <li>✓ Chat history</li>
+                    <li>✓ Priority support</li>
+                </ul>
+                <a href="/signup/tenant" class="block text-center bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700">
+                    Kies Professional
+                </a>
+            </div>
+            
+            <div class="border-2 border-indigo-600 rounded-lg p-6">
+                <div class="text-xs bg-indigo-600 text-white px-2 py-1 rounded inline-block mb-2">Populair</div>
+                <h3 class="text-xl font-bold mb-2">Enterprise</h3>
+                <div class="text-3xl font-bold text-indigo-600 mb-4">€1.199<span class="text-sm text-gray-500">/maand</span></div>
+                <ul class="space-y-2 text-sm mb-4">
+                    <li>✓ Unlimited gebruikers</li>
+                    <li>✓ Unlimited vragen</li>
+                    <li>✓ White-label branding</li>
+                    <li>✓ Dedicated support</li>
+                </ul>
+                <a href="/signup/tenant" class="block text-center bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700">
+                    Kies Enterprise
+                </a>
+            </div>
+        </div>
+        
+        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">Later misschien</button>
+    </div>
+</div>
+
+<script>
+let currentChatId = null;
+let questionsRemaining = {{ questions_remaining }};
+let isProcessing = false;
+
+const messagesContainer = document.getElementById('messages-container');
+const messageForm = document.getElementById('message-form');
+const messageInput = document.getElementById('message-input');
+const sendButton = document.getElementById('send-button');
+const upgradeModal = document.getElementById('upgrade-modal');
+
+async function createNewChat() {
+    const response = await fetch('/api/free-chat/new', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    });
+    const data = await response.json();
+    if (data.chat_id) {
+        currentChatId = data.chat_id;
+    }
+}
+
+function addMessage(role, content) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    
+    const bubble = document.createElement('div');
+    bubble.className = `max-w-3xl px-4 py-3 rounded-lg ${
+        role === 'user' 
+            ? 'bg-indigo-600 text-white' 
+            : 'bg-gray-800 text-gray-100 border border-gray-700'
+    }`;
+    bubble.textContent = content;
+    
+    messageDiv.appendChild(bubble);
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showUpgradeModal() {
+    upgradeModal.classList.remove('hidden');
+}
+
+function closeModal() {
+    upgradeModal.classList.add('hidden');
+}
+
+messageForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (isProcessing || questionsRemaining <= 0) return;
+    
+    const message = messageInput.value.trim();
+    if (!message) return;
+    
+    if (!currentChatId) {
+        await createNewChat();
+    }
+    
+    isProcessing = true;
+    sendButton.disabled = true;
+    messageInput.disabled = true;
+    
+    addMessage('user', message);
+    messageInput.value = '';
+    
+    try {
+        const response = await fetch(`/api/free-chat/${currentChatId}/message`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            addMessage('assistant', data.response);
+            questionsRemaining = data.questions_remaining;
+            
+            document.querySelector('.text-gray-400').textContent = 
+                `{{ guest_email }} • ${questionsRemaining} vragen over`;
+            
+            if (questionsRemaining <= 0) {
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                showUpgradeModal();
+            }
+        } else if (data.error === 'limit_reached') {
+            showUpgradeModal();
+        } else {
+            alert(data.error || 'Er ging iets mis');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Er ging iets mis bij het versturen van je bericht');
+    } finally {
+        isProcessing = false;
+        if (questionsRemaining > 0) {
+            sendButton.disabled = false;
+            messageInput.disabled = false;
+            messageInput.focus();
+        }
+    }
+});
+
+createNewChat();
+</script>
+{% endblock %}
