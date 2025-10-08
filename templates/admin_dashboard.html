@@ -12,16 +12,23 @@
     </nav>
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid md:grid-cols-3 gap-6 mb-8">
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-3xl font-bold text-indigo-600">{{ users|length }}</div>
-                <div class="text-gray-600">Gebruikers</div>
+                <div class="text-gray-600">Totaal Gebruikers</div>
                 <div class="text-sm text-gray-500 mt-1">Max: {{ tenant.max_users }}</div>
             </div>
             
             <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-3xl font-bold text-green-600">{{ total_chats }}</div>
-                <div class="text-gray-600">Totaal Chats</div>
+                <div class="text-3xl font-bold text-green-600">{{ active_users_count }}</div>
+                <div class="text-gray-600">Actieve Gebruikers</div>
+                <div class="text-sm text-gray-500 mt-1">Laatste 30 dagen</div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-3xl font-bold text-purple-600">{{ total_messages }}</div>
+                <div class="text-gray-600">Totaal Vragen</div>
+                <div class="text-sm text-green-600 mt-1">+{{ messages_this_month }} deze maand</div>
             </div>
             
             <div class="bg-white rounded-lg shadow p-6">
@@ -40,6 +47,26 @@
                 {% endif %}
             </div>
         </div>
+        
+        {% if top_users %}
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 class="text-lg font-semibold mb-4">Meest Actieve Gebruikers</h3>
+            <div class="space-y-3">
+                {% for user, chat_count in top_users %}
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="font-medium">{{ user.full_name }}</div>
+                        <div class="text-sm text-gray-500">{{ user.email }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-indigo-600">{{ chat_count }}</div>
+                        <div class="text-xs text-gray-500">chats</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
         
         <div class="grid md:grid-cols-3 gap-6">
             <a href="/admin/users" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition block">

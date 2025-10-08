@@ -521,11 +521,44 @@ def admin_dashboard():
     total_chats = Chat.query.filter_by(tenant_id=g.tenant.id).count()
     subscription = Subscription.query.filter_by(tenant_id=g.tenant.id).first()
     
+    total_messages = Message.query.filter_by(
+        tenant_id=g.tenant.id,
+        role='user'
+    ).count()
+    
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    messages_this_month = Message.query.filter(
+        Message.tenant_id == g.tenant.id,
+        Message.role == 'user',
+        Message.created_at >= thirty_days_ago
+    ).count()
+    
+    active_users_ids = db.session.query(Chat.user_id).filter(
+        Chat.tenant_id == g.tenant.id,
+        Chat.updated_at >= thirty_days_ago
+    ).distinct().all()
+    active_users_count = len(active_users_ids)
+    
+    top_users = db.session.query(
+        User,
+        db.func.count(Chat.id).label('chat_count')
+    ).join(Chat, User.id == Chat.user_id
+    ).filter(
+        User.tenant_id == g.tenant.id,
+        Chat.tenant_id == g.tenant.id
+    ).group_by(User.id
+    ).order_by(db.desc('chat_count')
+    ).limit(5).all()
+    
     return render_template('admin_dashboard.html', 
                          tenant=g.tenant, 
                          users=users, 
                          total_chats=total_chats,
-                         subscription=subscription)
+                         subscription=subscription,
+                         total_messages=total_messages,
+                         messages_this_month=messages_this_month,
+                         active_users_count=active_users_count,
+                         top_users=top_users)
 
 @app.route('/admin/users', methods=['GET', 'POST'])
 @login_required
