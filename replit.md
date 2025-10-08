@@ -43,12 +43,20 @@ SUPER ADMIN
 - super_admins: Super administrator accounts
 - tenants: Uitzendbureau accounts met subdomain, status, max_users
 - users: Payroll medewerkers per tenant
-- chats: Chat sessies per user
-- messages: Chat berichten (user/assistant)
+- chats: Chat sessies met s3_messages_key en message_count (messages in S3)
+- messages: Legacy table (deprecated - messages now in S3)
 - subscriptions: Stripe subscription data per tenant
 - templates: Document templates per tenant
 - uploaded_files: User-uploaded files in S3
 - artifacts: LEX-generated documents in S3
+
+## Chat Storage Architecture
+**All chat messages are stored in S3 (Hetzner Object Storage) as JSON files:**
+- Messages stored per chat in S3 (`chats/tenant_{id}/chat_{id}_messages.json`)
+- PostgreSQL stores only metadata (s3_messages_key, message_count, timestamps)
+- Triple fallback for question counting: message_count → S3 → PostgreSQL (legacy)
+- Error handling: S3 failures abort requests with 500 error
+- Migration script available: `migrate_chats_to_s3.py`
 
 ## Important Files
 - `main.py`: Flask applicatie met alle routes
