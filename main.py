@@ -121,17 +121,26 @@ def pricing():
     return render_template('pricing.html')
 
 def count_user_questions(user_id):
-    """Count total questions asked by user from S3 messages with PostgreSQL fallback"""
+    """Count total questions asked by user using message_count with fallbacks"""
     user_chats = Chat.query.filter_by(user_id=user_id).all()
     question_count = 0
     
     for c in user_chats:
-        if c.s3_messages_key:
-            # Try S3 first
+        if c.message_count and c.message_count > 0:
+            # Use message_count if available (most reliable)
+            # Divide by 2 since message_count includes both user and assistant messages
+            question_count += (c.message_count + 1) // 2
+        elif c.s3_messages_key:
+            # Try S3 if message_count not set
             messages = s3_service.get_chat_messages(c.s3_messages_key)
-            question_count += sum(1 for m in messages if m.get('role') == 'user')
+            if messages:
+                question_count += sum(1 for m in messages if m.get('role') == 'user')
+            else:
+                # S3 failed, try PostgreSQL
+                db_messages = Message.query.filter_by(chat_id=c.id, role='user').count()
+                question_count += db_messages
         else:
-            # Fallback to PostgreSQL for non-migrated chats
+            # No S3, use PostgreSQL
             db_messages = Message.query.filter_by(chat_id=c.id, role='user').count()
             question_count += db_messages
     
