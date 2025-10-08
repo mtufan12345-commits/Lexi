@@ -164,6 +164,48 @@
     </div>
 </div>
 
+<!-- Rename Modal -->
+<div id="rename-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Chat hernoemen</h3>
+            <input type="text" id="rename-input" 
+                   class="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Nieuwe naam...">
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeRenameModal()" 
+                        class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white rounded-lg font-medium transition">
+                    Annuleren
+                </button>
+                <button onclick="confirmRename()" 
+                        class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">
+                    Opslaan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Chat verwijderen?</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Deze actie kan niet ongedaan worden gemaakt.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" 
+                        class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white rounded-lg font-medium transition">
+                    Annuleren
+                </button>
+                <button onclick="confirmDelete()" 
+                        class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">
+                    Verwijderen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 let currentChatId = null;
 
@@ -427,46 +469,84 @@ async function updateChatList() {
     `).join('');
 }
 
-window.renameChatFromSidebar = async function(id, title) {
-    const newTitle = prompt('Nieuwe naam voor chat:', title);
-    if (newTitle && newTitle !== title) {
-        try {
-            const response = await fetch(`/api/chat/${id}/rename`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify({title: newTitle})
-            });
-            if (response.ok) {
-                updateChatList();
-            }
-        } catch (error) {
-            console.error('Error renaming chat:', error);
+let chatToRename = null;
+let chatToDelete = null;
+
+window.renameChatFromSidebar = function(id, title) {
+    chatToRename = id;
+    document.getElementById('rename-input').value = title;
+    document.getElementById('rename-modal').classList.remove('hidden');
+    setTimeout(() => document.getElementById('rename-input').focus(), 100);
+}
+
+window.closeRenameModal = function() {
+    document.getElementById('rename-modal').classList.add('hidden');
+    chatToRename = null;
+}
+
+window.confirmRename = async function() {
+    const newTitle = document.getElementById('rename-input').value.trim();
+    if (!newTitle || !chatToRename) return;
+    
+    try {
+        const response = await fetch(`/api/chat/${chatToRename}/rename`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({title: newTitle})
+        });
+        if (response.ok) {
+            updateChatList();
+            closeRenameModal();
         }
+    } catch (error) {
+        console.error('Error renaming chat:', error);
     }
 }
 
-window.deleteChatFromSidebar = async function(id) {
-    if (confirm('Weet je zeker dat je deze chat wilt verwijderen?')) {
-        try {
-            const response = await fetch(`/api/chat/${id}`, {
-                method: 'DELETE',
-                headers: {'X-CSRFToken': getCSRFToken()}
-            });
-            if (response.ok) {
-                if (currentChatId === id) {
-                    currentChatId = null;
-                    document.getElementById('messages-container').innerHTML = '<div class="max-w-3xl mx-auto"><div class="text-center py-16"><div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl mb-4"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg></div><h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Start a conversation</h2><p class="text-sm text-gray-500 dark:text-gray-400">Ask LEX anything about CAO regulations</p></div></div>';
-                }
-                updateChatList();
+window.deleteChatFromSidebar = function(id) {
+    chatToDelete = id;
+    document.getElementById('delete-modal').classList.remove('hidden');
+}
+
+window.closeDeleteModal = function() {
+    document.getElementById('delete-modal').classList.add('hidden');
+    chatToDelete = null;
+}
+
+window.confirmDelete = async function() {
+    if (!chatToDelete) return;
+    
+    try {
+        const response = await fetch(`/api/chat/${chatToDelete}/delete`, {
+            method: 'DELETE',
+            headers: {'X-CSRFToken': getCSRFToken()}
+        });
+        if (response.ok) {
+            if (currentChatId === chatToDelete) {
+                currentChatId = null;
+                document.getElementById('messages-container').innerHTML = '<div class="max-w-3xl mx-auto"><div class="text-center py-16"><div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl mb-4"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg></div><h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Start a conversation</h2><p class="text-sm text-gray-500 dark:text-gray-400">Ask LEX anything about CAO regulations</p></div></div>';
             }
-        } catch (error) {
-            console.error('Error deleting chat:', error);
+            updateChatList();
+            closeDeleteModal();
         }
+    } catch (error) {
+        console.error('Error deleting chat:', error);
     }
 }
+
+// Enter key support for rename modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !document.getElementById('rename-modal').classList.contains('hidden')) {
+        confirmRename();
+    }
+    if (e.key === 'Escape') {
+        if (!document.getElementById('rename-modal').classList.contains('hidden')) closeRenameModal();
+        if (!document.getElementById('delete-modal').classList.contains('hidden')) closeDeleteModal();
+    }
+});
 
 let uploadedFileId = null;
 
