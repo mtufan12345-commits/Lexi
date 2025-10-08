@@ -1,0 +1,103 @@
+STOP - You are using the WRONG library!
+
+Do NOT use google-cloud-aiplatform.
+Do NOT look for "Reasoning Engine".
+
+I use the google-genai SDK (NOT google-cloud-aiplatform).
+
+Install ONLY this package:
+pip install google-genai
+
+Then create backend/services/vertex_ai_service.py with this EXACT code that I provided:
+```python
+from google import genai
+from google.genai import types
+import os
+
+class VertexAIService:
+    def __init__(self):
+        # Authenticatie via service account JSON
+        credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        
+        # Parse JSON string naar dict als het een string is
+        if isinstance(credentials_json, str):
+            import json
+            credentials = json.loads(credentials_json)
+        else:
+            credentials = credentials_json
+            
+        self.client = genai.Client(
+            vertexai=True,
+            project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
+            location=os.environ.get("VERTEX_AI_LOCATION"),
+        )
+        
+        self.model = "gemini-2.5-pro"
+        self.rag_corpus = os.environ.get("VERTEX_AI_AGENT_ID")
+        
+        self.system_instruction = """Je bent Lex - Expert Loonadministrateur voor UZB (NBBU CAO).
+
+KERN INSTRUCTIES:
+- Gebruik je volledige kennisbank om de beste antwoorden te geven
+- UZB hanteert NBBU CAO als standaard
+- Geef concrete, bruikbare adviezen
+- Wees transparant over bronnen
+
+KRITIEKE BEPERKING - GEEN WEB ACCESS:
+- GEBRUIK NOOIT web_search of online bronnen
+- GEEN URLs of website links in antwoorden
+- ALLEEN interne TXT documenten uit kennisbank
+
+ANTWOORD STRUCTUUR:
+1. BESLUIT: [Duidelijke conclusie]
+2. BASIS: [Gevonden in documenten + citaten]  
+3. ACTIE: [Concrete stappen]"""
+
+    def send_message(self, user_message, conversation_history=None):
+        contents = []
+        
+        if conversation_history:
+            for msg in conversation_history:
+                contents.append(types.Content(
+                    role=msg.get('role', 'user'),
+                    parts=[types.Part.from_text(text=msg.get('content', ''))]
+                ))
+        
+        contents.append(types.Content(
+            role="user",
+            parts=[types.Part.from_text(text=user_message)]
+        ))
+        
+        tools = [
+            types.Tool(
+                retrieval=types.Retrieval(
+                    vertex_rag_store=types.VertexRagStore(
+                        rag_resources=[
+                            types.VertexRagStoreRagResource(
+                                rag_corpus=self.rag_corpus
+                            )
+                        ],
+                        similarity_top_k=20,
+                    )
+                )
+            )
+        ]
+        
+        config = types.GenerateContentConfig(
+            temperature=1,
+            top_p=0.95,
+            max_output_tokens=65535,
+            tools=tools,
+            system_instruction=[types.Part.from_text(text=self.system_instruction)],
+        )
+        
+        response_text = ""
+        for chunk in self.client.models.generate_content_stream(
+            model=self.model,
+            contents=contents,
+            config=config,
+        ):
+            if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
+                response_text += chunk.text
+        
+        return response_text

@@ -12,65 +12,108 @@ stripe.api_key = os.getenv('STRIPE_SECRET_KEY', '')
 
 class VertexAIService:
     def __init__(self):
-        project = os.getenv('GOOGLE_CLOUD_PROJECT')
-        location = os.getenv('VERTEX_AI_LOCATION', 'europe-west1')
-        agent_id = os.getenv('VERTEX_AI_AGENT_ID')
+        credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         
-        self.agent = None
-        self.enabled = False
-        
-        if project and agent_id:
-            try:
-                import vertexai
-                credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-                if credentials_json:
-                    credentials_dict = json.loads(credentials_json)
-                    from google.oauth2 import service_account
-                    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-                    vertexai.init(project=project, location=location, credentials=credentials)
-                else:
-                    vertexai.init(project=project, location=location)
-                
-                try:
-                    from vertexai.preview import reasoning_engines
-                    self.agent = reasoning_engines.ReasoningEngine(agent_id=agent_id)
-                    self.enabled = True
-                    print("Vertex AI agent initialized successfully")
-                except ImportError:
-                    from vertexai.generative_models import GenerativeModel
-                    self.model = GenerativeModel('gemini-pro')
-                    self.enabled = True
-                    self.use_fallback = True
-                    print("Vertex AI using Gemini fallback")
-            except Exception as e:
-                print(f"Vertex AI initialization failed: {e}")
-                self.enabled = False
+        if isinstance(credentials_json, str):
+            credentials = json.loads(credentials_json)
         else:
-            print("Vertex AI not configured (missing credentials)")
-            self.enabled = False
-    
-    def chat(self, message, context=None):
-        if not self.enabled:
-            return "LEX is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om LEX te activeren. Je kunt vragen stellen zodra de configuratie is voltooid."
+            credentials = credentials_json
         
         try:
-            if context:
-                full_message = f"{context}\n\n{message}"
-            else:
-                full_message = message
+            from google import genai
+            from google.genai import types
             
-            if self.agent:
-                response = self.agent.query(input=full_message)
-                return response.text if hasattr(response, 'text') else str(response)
-            elif hasattr(self, 'model'):
-                prompt = f"Je bent LEX, een expert op het gebied van Nederlandse CAO's (Collectieve Arbeidsovereenkomsten). Beantwoord de volgende vraag op basis van CAO kennis:\n\n{full_message}"
-                response = self.model.generate_content(prompt)
-                return response.text if hasattr(response, 'text') else str(response)
-            else:
-                return "LEX is momenteel niet correct geconfigureerd."
+            self.genai = genai
+            self.types = types
+            
+            self.client = genai.Client(
+                vertexai=True,
+                project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
+                location=os.environ.get("VERTEX_AI_LOCATION"),
+            )
+            
+            self.model = "gemini-2.0-flash-exp"
+            self.rag_corpus = os.environ.get("VERTEX_AI_AGENT_ID")
+            
+            self.system_instruction = """Je bent Lex - Expert Loonadministrateur voor UZB (NBBU CAO).
+
+KERN INSTRUCTIES:
+- Gebruik je volledige kennisbank om de beste antwoorden te geven
+- UZB hanteert NBBU CAO als standaard
+- Geef concrete, bruikbare adviezen
+- Wees transparant over bronnen
+
+KRITIEKE BEPERKING - GEEN WEB ACCESS:
+- GEBRUIK NOOIT web_search of online bronnen
+- GEEN URLs of website links in antwoorden
+- ALLEEN interne TXT documenten uit kennisbank
+
+ANTWOORD STRUCTUUR:
+1. BESLUIT: [Duidelijke conclusie]
+2. BASIS: [Gevonden in documenten + citaten]  
+3. ACTIE: [Concrete stappen]"""
+            
+            self.enabled = True
+            print("Vertex AI with google-genai SDK initialized successfully")
+        except Exception as e:
+            print(f"Vertex AI initialization failed: {e}")
+            self.enabled = False
+
+    def chat(self, message, conversation_history=None):
+        if not self.enabled:
+            return "LEX is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om LEX te activeren."
+        
+        try:
+            contents = []
+            
+            if conversation_history:
+                for msg in conversation_history:
+                    contents.append(self.types.Content(
+                        role=msg.get('role', 'user'),
+                        parts=[self.types.Part.from_text(text=msg.get('content', ''))]
+                    ))
+            
+            contents.append(self.types.Content(
+                role="user",
+                parts=[self.types.Part.from_text(text=message)]
+            ))
+            
+            tools = [
+                self.types.Tool(
+                    retrieval=self.types.Retrieval(
+                        vertex_rag_store=self.types.VertexRagStore(
+                            rag_resources=[
+                                self.types.VertexRagStoreRagResource(
+                                    rag_corpus=self.rag_corpus
+                                )
+                            ],
+                            similarity_top_k=20,
+                        )
+                    )
+                )
+            ]
+            
+            config = self.types.GenerateContentConfig(
+                temperature=1,
+                top_p=0.95,
+                max_output_tokens=65535,
+                tools=tools,
+                system_instruction=[self.types.Part.from_text(text=self.system_instruction)],
+            )
+            
+            response_text = ""
+            for chunk in self.client.models.generate_content_stream(
+                model=self.model,
+                contents=contents,
+                config=config,
+            ):
+                if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
+                    response_text += chunk.text
+            
+            return response_text
         except Exception as e:
             print(f"Vertex AI chat error: {e}")
-            return f"Er ging iets mis bij het verwerken van je vraag. LEX heeft wellicht nog geen toegang tot de CAO database. Configureer de Vertex AI agent voor volledige functionaliteit."
+            return f"Er ging iets mis bij het verwerken van je vraag: {str(e)}"
 
 class S3Service:
     def __init__(self):
