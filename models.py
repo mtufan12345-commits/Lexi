@@ -131,6 +131,7 @@ class UploadedFile(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     chat_id = db.Column(db.Integer, db.ForeignKey('chats.id'), nullable=True)
     filename = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255), nullable=False)
