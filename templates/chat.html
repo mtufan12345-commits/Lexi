@@ -175,7 +175,25 @@ async function newChat() {
     document.getElementById('chat-title').textContent = data.title;
     document.getElementById('chat-actions').classList.remove('hidden');
     
-    location.reload();
+    const chatList = document.getElementById('chat-list');
+    const newChatItem = document.createElement('div');
+    newChatItem.className = 'p-3 rounded-lg hover:bg-gray-100 cursor-pointer border border-gray-200 chat-item bg-indigo-50 border-indigo-300';
+    newChatItem.setAttribute('data-chat-id', data.id);
+    newChatItem.onclick = () => loadChat(data.id);
+    
+    const now = new Date();
+    const timeStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    newChatItem.innerHTML = `
+        <div class="font-medium text-sm truncate">${data.title}</div>
+        <div class="text-xs text-gray-500">${timeStr}</div>
+    `;
+    
+    document.querySelectorAll('.chat-item').forEach(item => {
+        item.classList.remove('bg-indigo-50', 'border-indigo-300');
+    });
+    
+    chatList.insertBefore(newChatItem, chatList.firstChild);
 }
 
 async function loadChat(chatId) {
@@ -246,8 +264,6 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
         const data = await response.json();
         stopLexAnimation(animationInterval);
         addMessageToUI('assistant', data.response);
-        
-        setTimeout(() => location.reload(), 1000);
     } catch (error) {
         stopLexAnimation(animationInterval);
         addMessageToUI('assistant', 'Er ging iets mis. Probeer het opnieuw.');
