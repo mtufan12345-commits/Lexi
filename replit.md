@@ -6,7 +6,7 @@ LEX CAO Expert is een multi-tenant SaaS platform voor uitzendbureaus in Nederlan
 ## Tech Stack
 - **Backend**: Flask (Python)
 - **Database**: PostgreSQL (Replit native)
-- **Frontend**: HTML + Vanilla JavaScript + Tailwind CSS
+- **Frontend**: HTML + Vanilla JavaScript + Tailwind CSS v3 (PostCSS build)
 - **AI**: Google Vertex AI (existing RAG agent)
 - **Payments**: Stripe
 - **Email**: SendGrid
@@ -63,7 +63,18 @@ SUPER ADMIN
 - `models.py`: Database models met SQLAlchemy
 - `services.py`: Vertex AI, S3, Stripe, en SendGrid services
 - `templates/`: Jinja2 templates voor alle paginas
+- `tailwind.config.js`: Tailwind CSS v3 configuration
+- `postcss.config.js`: PostCSS configuration voor CSS processing
+- `static/css/input.css`: Tailwind source file (build input)
+- `static/css/output.css`: Compiled CSS (auto-generated, git-ignored)
 - `.env.example`: Required environment variables
+
+## Recent Updates (October 2025)
+1. **Document Viewer Fix**: PDF viewer nu met presigned S3 URLs voor CORS-free viewing
+2. **Tailwind CSS Migration**: Upgraded van CDN naar PostCSS build setup
+   - Performance: 3+ MB CDN → ~36KB compiled CSS
+   - Build pipeline: tailwindcss v3 + postcss + autoprefixer
+   - Production-ready met minification
 
 ## Setup Notes
 1. Super admin account wordt automatisch aangemaakt bij eerste start:
@@ -77,7 +88,11 @@ SUPER ADMIN
 4. Stripe webhooks moeten worden geconfigureerd voor subscription events
 
 ## Development
-Run: `python main.py` (binds to 0.0.0.0:5000)
+1. **CSS Build**: Run `npm run build:css` to compile Tailwind CSS (output: static/css/output.css ~36KB)
+   - Watch mode: `npm run watch:css` for auto-rebuild during development
+2. **Server**: Run `python main.py` (binds to 0.0.0.0:5000)
+
+**Note**: Tailwind CSS is now production-optimized with PostCSS build instead of CDN (3+ MB → ~36KB)
 
 ## User Preferences
 - Nederlandse taal voor alle interfaces

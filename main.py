@@ -956,29 +956,27 @@ def view_file(file_id):
         user_id=current_user.id
     ).first_or_404()
     
-    # For PDF, return the raw file
+    # For PDF, return presigned URL for direct browser access
     if uploaded_file.mime_type == 'application/pdf':
         download_url = s3_service.get_file_url(uploaded_file.s3_key, expiration=3600)
         if not download_url:
             return jsonify({'error': 'Kon bestand niet ophalen'}), 500
         
-        # Fetch the file from S3 and return it
-        import requests
-        file_response = requests.get(download_url)
-        if file_response.status_code == 200:
-            return Response(
-                file_response.content,
-                mimetype='application/pdf',
-                headers={'Content-Disposition': f'inline; filename="{uploaded_file.original_filename}"'}
-            )
-        return jsonify({'error': 'Kon bestand niet laden'}), 500
+        return jsonify({
+            'type': 'pdf',
+            'url': download_url,
+            'filename': uploaded_file.original_filename
+        })
     
     # For text/docx, return extracted content
     content, error = s3_service.download_file_content(uploaded_file.s3_key, uploaded_file.mime_type)
     if error:
         return jsonify({'error': error}), 500
     
-    return jsonify({'content': content})
+    return jsonify({
+        'type': 'text',
+        'content': content
+    })
 
 @app.route('/api/upload', methods=['POST'])
 @login_required
