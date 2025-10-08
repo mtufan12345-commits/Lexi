@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex h-screen bg-gray-50 dark:bg-black overflow-hidden">
+<div class="flex h-screen bg-gray-50 dark:bg-black overflow-hidden {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
     {% if session.get('impersonating_from') == 'super_admin' %}
     <div class="absolute top-0 left-0 right-0 bg-orange-600 text-white py-2 px-4 z-50 flex justify-between items-center">
         <span class="text-sm">Super Admin Mode - {{ tenant.company_name }}</span>
@@ -11,8 +11,11 @@
     </div>
     {% endif %}
 
+    <!-- Backdrop for mobile -->
+    <div id="admin-sidebar-backdrop" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden" onclick="closeAdminSidebar()"></div>
+
     <!-- Admin Sidebar -->
-    <div class="w-64 bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 flex-shrink-0 flex flex-col">
+    <div id="admin-sidebar" class="fixed md:relative w-64 bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 flex-shrink-0 flex flex-col z-40 md:z-auto transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 h-full {% if session.get('impersonating_from') == 'super_admin' %}top-14{% else %}top-0{% endif %}">
         <div class="p-6 border-b border-gray-200 dark:border-zinc-800">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
@@ -70,11 +73,22 @@
 
     <!-- Main Content -->
     <div class="flex-1 overflow-y-auto">
-        <div class="p-8">
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Gebruikers</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-1">Beheer je teamleden</p>
+        <!-- Header with Hamburger -->
+        <div class="border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 md:px-8 py-4">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleAdminSidebar()" class="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="flex-1">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Gebruikers</h1>
+                    <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Beheer je teamleden</p>
+                </div>
             </div>
+        </div>
+
+        <div class="p-4 md:p-8">
 
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
@@ -89,7 +103,7 @@
             <!-- Add User Form -->
             <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Nieuwe Gebruiker Toevoegen</h3>
-                <form method="POST" action="/admin/users" class="grid md:grid-cols-6 gap-4">
+                <form method="POST" action="/admin/users" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="action" value="add">
                     <input type="email" name="email" placeholder="Email" required 
@@ -119,7 +133,8 @@
 
             <!-- Users Table -->
             <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
                     <thead class="bg-gray-50 dark:bg-zinc-900">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gebruiker</th>
@@ -193,6 +208,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>
@@ -201,6 +217,34 @@
 <script>
 if (localStorage.getItem('darkMode') === 'true') {
     document.documentElement.classList.add('dark');
+}
+
+let adminSidebarOpen = false;
+
+function toggleAdminSidebar() {
+    const sidebar = document.getElementById('admin-sidebar');
+    const backdrop = document.getElementById('admin-sidebar-backdrop');
+    
+    adminSidebarOpen = !adminSidebarOpen;
+    
+    if (adminSidebarOpen) {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+    }
+}
+
+function closeAdminSidebar() {
+    const sidebar = document.getElementById('admin-sidebar');
+    const backdrop = document.getElementById('admin-sidebar-backdrop');
+    
+    if (adminSidebarOpen) {
+        adminSidebarOpen = false;
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+    }
 }
 </script>
 {% endblock %}

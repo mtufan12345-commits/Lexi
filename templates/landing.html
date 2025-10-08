@@ -9,7 +9,9 @@
                     <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded"></div>
                     <span class="text-xl font-semibold text-gray-900 dark:text-white">LEX CAO Expert</span>
                 </a>
-                <div class="flex items-center space-x-8">
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
                     <a href="/prijzen" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition">Prijzen</a>
                     <a href="/login" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition">Inloggen</a>
                     <button onclick="toggleDarkMode()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition">
@@ -21,6 +23,34 @@
                         </svg>
                     </button>
                     <a href="/signup/tenant" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">
+                        Aan de slag
+                    </a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center space-x-4">
+                    <button onclick="toggleDarkMode()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition">
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                    <button onclick="toggleMobileMenu()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu Dropdown -->
+            <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-zinc-800 pt-4">
+                <div class="flex flex-col space-y-4">
+                    <a href="/prijzen" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition px-2 py-2">Prijzen</a>
+                    <a href="/login" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition px-2 py-2">Inloggen</a>
+                    <a href="/signup/tenant" class="bg-blue-600 text-white px-5 py-3 rounded-lg font-medium hover:bg-blue-700 transition text-center">
                         Aan de slag
                     </a>
                 </div>
@@ -60,7 +90,7 @@
         </div>
 
         <!-- Stats Bar -->
-        <div class="grid grid-cols-3 gap-8 py-12 border-y border-gray-200 dark:border-zinc-800 mb-20">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-12 border-y border-gray-200 dark:border-zinc-800 mb-20">
             <div class="text-center">
                 <div class="text-4xl font-bold text-gray-900 dark:text-white mb-2">70+</div>
                 <div class="text-sm text-gray-600 dark:text-gray-400 font-medium">CAO Documenten</div>
@@ -76,7 +106,7 @@
         </div>
 
         <!-- Features Grid -->
-        <div class="grid md:grid-cols-3 gap-8 mb-20">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
             <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-2xl p-8 border border-transparent dark:border-zinc-800">
                 <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-6">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,6 +214,11 @@ function toggleDarkMode() {
         html.classList.add('dark');
         localStorage.setItem('darkMode', 'true');
     }
+}
+
+function toggleMobileMenu() {
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileMenu.classList.toggle('hidden');
 }
 
 document.getElementById('free-trial-form').addEventListener('submit', async (e) => {
