@@ -110,6 +110,10 @@ def index():
         return redirect(url_for('login'))
     return render_template('landing.html')
 
+@app.route('/prijzen')
+def pricing():
+    return render_template('pricing.html')
+
 @app.route('/signup/tenant', methods=['GET', 'POST'])
 def signup_tenant():
     if request.method == 'POST':
