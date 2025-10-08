@@ -57,6 +57,7 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default='user')
     is_active = db.Column(db.Boolean, default=True)
+    avatar_url = db.Column(db.String(500), nullable=True)
     session_token = db.Column(db.String(255), unique=True, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
