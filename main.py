@@ -572,6 +572,23 @@ def admin_users():
                 user.is_active = not user.is_active
                 db.session.commit()
                 flash('Gebruiker status gewijzigd.', 'success')
+        
+        elif action == 'delete':
+            user_id = request.form.get('user_id')
+            user = User.query.filter_by(id=user_id, tenant_id=g.tenant.id).first()
+            if user and user.id != current_user.id:
+                db.session.delete(user)
+                db.session.commit()
+                flash('Gebruiker verwijderd.', 'success')
+        
+        elif action == 'change_role':
+            user_id = request.form.get('user_id')
+            new_role = request.form.get('role')
+            user = User.query.filter_by(id=user_id, tenant_id=g.tenant.id).first()
+            if user and user.id != current_user.id and new_role in ['user', 'admin']:
+                user.role = new_role
+                db.session.commit()
+                flash(f'Gebruiker rol gewijzigd naar {new_role}.', 'success')
     
     users = User.query.filter_by(tenant_id=g.tenant.id).all()
     return render_template('admin_users.html', tenant=g.tenant, users=users)
