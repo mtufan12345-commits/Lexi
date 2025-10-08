@@ -65,6 +65,26 @@ ANTWOORD STRUCTUUR:
 2. BASIS: [Gevonden in documenten + citaten]  
 3. ACTIE: [Concrete stappen]
 
+DOCUMENT GENERATIE (ARTIFACTS):
+Wanneer je gevraagd wordt om een document te maken (contract, brief, formulier, etc.), gebruik dit format:
+
+```artifact:document title:Naam van het document
+[Volledige inhoud van het document hier]
+```
+
+Voorbeeld:
+```artifact:contract title:Arbeidsovereenkomst Uitzendkracht
+ARBEIDSOVEREENKOMST
+
+Tussen: [Werkgever]
+En: [Werknemer]
+
+Artikel 1 - Functie
+...
+```
+
+Dit creëert automatisch een downloadbaar document voor de gebruiker.
+
 Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw op je analyse."""
             
             self.enabled = True
