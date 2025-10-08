@@ -1,85 +1,170 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex h-screen bg-gray-900">
-    <div class="flex-1 flex flex-col">
-        <div class="bg-gray-800 px-6 py-4 border-b border-gray-700">
+<div class="flex h-screen bg-gray-50">
+    <div class="flex-1 flex flex-col max-w-5xl mx-auto w-full">
+        <!-- Header -->
+        <div class="bg-white border-b border-gray-200 px-8 py-4">
             <div class="flex justify-between items-center">
-                <div>
-                    <a href="/" class="text-xl font-bold text-white hover:text-gray-200 transition">LEX CAO Expert - Gratis Trial</a>
-                    <p id="questions-counter" class="text-sm text-gray-400">{{ guest_email }} • {{ questions_remaining }} vragen over</p>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded"></div>
+                        <span class="text-lg font-semibold text-gray-900">LEX CAO Expert</span>
+                    </a>
+                    <span class="text-sm text-gray-400">|</span>
+                    <span class="text-sm font-medium text-gray-600">Gratis Trial</span>
                 </div>
-                <div class="flex gap-4">
-                    <a href="/prijzen" class="text-indigo-400 hover:text-indigo-300">Bekijk Plannen</a>
+                <div class="flex items-center gap-6">
+                    <div id="questions-counter" class="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        <span class="text-sm font-medium text-blue-700">{{ questions_remaining }} vragen over</span>
+                    </div>
+                    <a href="/prijzen" class="text-sm font-medium text-blue-600 hover:text-blue-700">Bekijk plannen</a>
                 </div>
             </div>
         </div>
 
-        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4">
-            <div class="text-center text-gray-400 py-20">
-                <div class="text-6xl mb-4">🤖</div>
-                <p class="text-xl mb-2">Welkom bij LEX CAO Expert!</p>
-                <p class="text-sm">Stel jouw CAO vragen. Je hebt {{ questions_remaining }} gratis vragen.</p>
+        <!-- Messages Container -->
+        <div id="messages-container" class="flex-1 overflow-y-auto px-8 py-8">
+            <div class="text-center py-20">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl mb-6">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold text-gray-900 mb-3">Stel uw CAO vraag</h2>
+                <p class="text-gray-600 max-w-md mx-auto">
+                    U heeft {{ questions_remaining }} gratis vragen. LEX geeft direct toegang tot relevante CAO informatie.
+                </p>
             </div>
         </div>
 
-        <div class="bg-gray-800 p-6 border-t border-gray-700">
-            <form id="message-form" class="flex gap-4">
-                <input type="text" id="message-input" placeholder="Stel je CAO vraag..." 
-                       class="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-                       {% if questions_remaining <= 0 %}disabled{% endif %}>
-                <button type="submit" id="send-button"
-                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-600 disabled:cursor-not-allowed"
-                        {% if questions_remaining <= 0 %}disabled{% endif %}>
-                    Verstuur
-                </button>
+        <!-- Input Area -->
+        <div class="bg-white border-t border-gray-200 px-8 py-6">
+            <form id="message-form" class="max-w-4xl mx-auto">
+                <div class="flex gap-3">
+                    <input type="text" id="message-input" 
+                           placeholder="Typ uw CAO vraag..." 
+                           class="flex-1 px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+                           {% if questions_remaining <= 0 %}disabled{% endif %}>
+                    <button type="submit" id="send-button"
+                            class="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                            {% if questions_remaining <= 0 %}disabled{% endif %}>
+                        <span>Verstuur</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </button>
+                </div>
+                {% if questions_remaining <= 0 %}
+                <p class="text-amber-600 text-sm mt-3 text-center">
+                    U heeft uw gratis vragen gebruikt. <a href="/prijzen" class="underline font-medium">Bekijk onze plannen</a> voor onbeperkte toegang.
+                </p>
+                {% endif %}
             </form>
-            {% if questions_remaining <= 0 %}
-            <p class="text-yellow-400 text-sm mt-2">Je hebt je 3 gratis vragen gebruikt. <a href="/prijzen" class="underline">Kies een plan</a> voor onbeperkte vragen.</p>
-            {% endif %}
         </div>
     </div>
 </div>
 
-<div id="upgrade-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
-        <h2 class="text-3xl font-bold mb-4">Je gratis vragen zijn op! 🎉</h2>
-        <p class="text-gray-700 mb-6">
-            Je hebt LEX ervaren! Kies nu een plan voor unlimited vragen en volledige toegang.
-        </p>
+<!-- Upgrade Modal -->
+<div id="upgrade-modal" class="hidden fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-4xl w-full shadow-2xl">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-2xl mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-900 mb-3">U heeft LEX ervaren</h2>
+            <p class="text-lg text-gray-600">
+                Kies nu een plan voor onbeperkte toegang tot CAO kennis voor uw team.
+            </p>
+        </div>
         
-        <div class="grid md:grid-cols-2 gap-6 mb-6">
-            <div class="border-2 border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-bold mb-2">Professional</h3>
-                <div class="text-3xl font-bold text-indigo-600 mb-4">€499<span class="text-sm text-gray-500">/maand</span></div>
-                <ul class="space-y-2 text-sm mb-4">
-                    <li>✓ 5 gebruikers</li>
-                    <li>✓ Unlimited vragen</li>
-                    <li>✓ Chat history</li>
-                    <li>✓ Priority support</li>
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-500 transition">
+                <div class="text-sm font-semibold text-blue-600 mb-2">PROFESSIONAL</div>
+                <div class="flex items-baseline mb-4">
+                    <span class="text-4xl font-bold text-gray-900">€499</span>
+                    <span class="text-gray-500 ml-2">/maand</span>
+                </div>
+                <ul class="space-y-3 mb-6">
+                    <li class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700">5 gebruikers</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700">Onbeperkte vragen</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700">Chat geschiedenis</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700">Priority support</span>
+                    </li>
                 </ul>
-                <a href="/signup/tenant" class="block text-center bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700">
+                <a href="/signup/tenant" class="block text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
                     Kies Professional
                 </a>
             </div>
             
-            <div class="border-2 border-indigo-600 rounded-lg p-6">
-                <div class="text-xs bg-indigo-600 text-white px-2 py-1 rounded inline-block mb-2">Populair</div>
-                <h3 class="text-xl font-bold mb-2">Enterprise</h3>
-                <div class="text-3xl font-bold text-indigo-600 mb-4">€1.199<span class="text-sm text-gray-500">/maand</span></div>
-                <ul class="space-y-2 text-sm mb-4">
-                    <li>✓ Unlimited gebruikers</li>
-                    <li>✓ Unlimited vragen</li>
-                    <li>✓ White-label branding</li>
-                    <li>✓ Dedicated support</li>
+            <div class="border-2 border-blue-600 rounded-xl p-6 relative bg-gradient-to-br from-blue-50 to-indigo-50">
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAIR</span>
+                </div>
+                <div class="text-sm font-semibold text-blue-600 mb-2">ENTERPRISE</div>
+                <div class="flex items-baseline mb-4">
+                    <span class="text-4xl font-bold text-gray-900">€1.199</span>
+                    <span class="text-gray-500 ml-2">/maand</span>
+                </div>
+                <ul class="space-y-3 mb-6">
+                    <li class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700 font-medium">Onbeperkte gebruikers</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700 font-medium">Onbeperkte vragen</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700 font-medium">White-label branding</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700 font-medium">Dedicated support</span>
+                    </li>
                 </ul>
-                <a href="/signup/tenant" class="block text-center bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700">
+                <a href="/signup/tenant" class="block text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-600/30">
                     Kies Enterprise
                 </a>
             </div>
         </div>
         
-        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">Later misschien</button>
+        <button onclick="closeModal()" class="w-full text-gray-500 hover:text-gray-700 font-medium">
+            Misschien later
+        </button>
     </div>
 </div>
 
@@ -107,14 +192,15 @@ async function createNewChat() {
 
 function addMessage(role, content) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
     
     const bubble = document.createElement('div');
-    bubble.className = `max-w-3xl px-4 py-3 rounded-lg ${
+    bubble.className = `max-w-3xl px-6 py-4 rounded-2xl ${
         role === 'user' 
-            ? 'bg-indigo-600 text-white' 
-            : 'bg-gray-800 text-gray-100 border border-gray-700'
+            ? 'bg-blue-600 text-white' 
+            : 'bg-white border border-gray-200 text-gray-900'
     }`;
+    bubble.style.whiteSpace = 'pre-wrap';
     bubble.textContent = content;
     
     messageDiv.appendChild(bubble);
@@ -162,8 +248,22 @@ messageForm.addEventListener('submit', async (e) => {
             addMessage('assistant', data.response);
             questionsRemaining = data.questions_remaining;
             
-            document.getElementById('questions-counter').textContent = 
-                `{{ guest_email }} • ${questionsRemaining} vragen over`;
+            const counterEl = document.getElementById('questions-counter');
+            if (questionsRemaining > 0) {
+                counterEl.innerHTML = `
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                    <span class="text-sm font-medium text-blue-700">${questionsRemaining} vragen over</span>
+                `;
+            } else {
+                counterEl.innerHTML = `
+                    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <span class="text-sm font-medium text-amber-700">Geen vragen over</span>
+                `;
+            }
             
             if (questionsRemaining <= 0) {
                 messageInput.disabled = true;
@@ -173,11 +273,11 @@ messageForm.addEventListener('submit', async (e) => {
         } else if (data.error === 'limit_reached') {
             showUpgradeModal();
         } else {
-            alert(data.error || 'Er ging iets mis');
+            alert(data.error || 'Er is een fout opgetreden');
         }
     } catch (error) {
         console.error(error);
-        alert('Er ging iets mis bij het versturen van je bericht');
+        alert('Er is een fout opgetreden bij het versturen van uw bericht');
     } finally {
         isProcessing = false;
         if (questionsRemaining > 0) {
