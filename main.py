@@ -104,6 +104,14 @@ def super_admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@app.after_request
+def add_cache_headers(response):
+    """Add cache headers for faster page loads"""
+    if request.endpoint and request.endpoint in ['index', 'pricing', 'login']:
+        # Cache static pages for 5 minutes
+        response.headers['Cache-Control'] = 'public, max-age=300'
+    return response
+
 @app.route('/')
 def index():
     return render_template('landing.html')
