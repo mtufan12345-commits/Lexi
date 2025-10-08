@@ -1,0 +1,59 @@
+Create an animated LEX mascot character that entertains users during the 20-30 second wait time!
+
+REQUIREMENTS:
+
+1. CREATE ANIMATED LEX CHARACTER:
+   - Design a friendly, professional cartoon character representing "Lex" the CAO expert
+   - Style: Modern, friendly, professional (not childish)
+   - Character traits: Smart, hardworking, focused
+   - Visual: Person with glasses, papers/documents, maybe a calculator or briefcase
+
+2. FUNNY ANIMATIONS DURING LOADING (rotate randomly):
+   
+   Animation 1: "Document Detective" (0-8 seconds)
+   - Lex with magnifying glass examining flying CAO documents
+   - Papers flying around, Lex catching them
+   - Speech bubble: "Hmm, was het artikel 7 of artikel 8...? 🤔"
+   
+   Animation 2: "Speed Reader" (8-16 seconds)
+   - Lex rapidly flipping through a giant stack of papers
+   - Eyes moving left-right super fast
+   - Speech bubble: "70+ CAO's... geen probleem! 📚"
+   
+   Animation 3: "Calculator Master" (16-24 seconds)
+   - Lex frantically typing on calculator
+   - Numbers floating around
+   - Speech bubble: "Even het minimumloon herberekenen... ⚡"
+   
+   Animation 4: "Coffee Break" (if >25 seconds)
+   - Lex takes quick coffee sip, then back to work
+   - Speech bubble: "Bijna klaar... nog even dit artikel checken! ☕"
+   
+   Animation 5: "Eureka Moment" (final 2 seconds before response)
+   - Lex with lightbulb above head
+   - Speech bubble: "Aha! Gevonden! 💡"
+
+3. TECHNICAL IMPLEMENTATION:
+   - Use CSS animations or Lottie for smooth animations
+   - Character size: ~200x200px center of chat area
+   - Show random fun facts below character:
+     * "Wist je dat de NBBU CAO 127 pagina's heeft?"
+     * "Lex kent alle 70+ CAO's uit zijn hoofd!"
+     * "Even checken of dit ook geldt voor uitzendkrachten..."
+   - Progress bar below character showing actual progress (0-30s)
+   - Elapsed time: "12 seconden - Lex is hard aan het werk!"
+
+4. DESIGN STYLE:
+   - Colors: Match the blue theme of the app
+   - Animation: Smooth, not distracting
+   - Professional but playful
+   - Make it memorable and brand-able
+
+5. REPLACE current loading indicator with this animated character.
+
+BONUS IDEAS (optional):
+- Easter egg: If user waits >40 seconds, Lex gets slightly panicked: "Wow, dit is een lastige vraag! 😅"
+- Sound effects toggle: Subtle "paper shuffling" sounds (optional, can be muted)
+- Character can wave when answer arrives
+
+Create this animated Lex character now. Make it fun, professional, and entertaining!
