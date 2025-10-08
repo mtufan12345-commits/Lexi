@@ -830,6 +830,25 @@ def delete_chat(chat_id):
         user_id=current_user.id
     ).first_or_404()
     
+    # Delete uploaded files and their S3 objects
+    uploaded_files = UploadedFile.query.filter_by(chat_id=chat.id).all()
+    for uploaded_file in uploaded_files:
+        if uploaded_file.s3_key:
+            s3_service.delete_file(uploaded_file.s3_key)
+        db.session.delete(uploaded_file)
+    
+    # Delete artifacts and their S3 objects
+    artifacts = Artifact.query.filter_by(chat_id=chat.id).all()
+    for artifact in artifacts:
+        if artifact.s3_key:
+            s3_service.delete_file(artifact.s3_key)
+        db.session.delete(artifact)
+    
+    # Delete S3 messages file
+    if chat.s3_messages_key:
+        s3_service.delete_file(chat.s3_messages_key)
+    
+    # Finally delete the chat itself (cascade will delete messages)
     db.session.delete(chat)
     db.session.commit()
     
