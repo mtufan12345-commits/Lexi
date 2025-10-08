@@ -343,6 +343,22 @@ class S3Service:
             print(f"S3 get chat messages error: {e}")
             return []
     
+    def get_messages(self, s3_key):
+        """Get chat messages from S3 wrapped in messages dict"""
+        if not self.enabled:
+            return {'messages': []}
+        
+        try:
+            response = self.s3_client.get_object(Bucket=self.bucket, Key=s3_key)
+            content = response['Body'].read().decode('utf-8')
+            messages = json.loads(content)
+            return {'messages': messages}
+        except self.s3_client.exceptions.NoSuchKey:
+            return {'messages': []}
+        except Exception as e:
+            print(f"S3 get messages error: {e}")
+            return {'messages': []}
+    
     def append_chat_message(self, s3_key, chat_id, tenant_id, message):
         """Append a new message to existing chat in S3"""
         if not self.enabled:

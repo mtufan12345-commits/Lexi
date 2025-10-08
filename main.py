@@ -869,6 +869,46 @@ def get_chats():
         'updated_at': chat.updated_at.strftime('%d/%m %H:%M')
     } for chat in chats])
 
+@app.route('/api/chats/search', methods=['POST'])
+@login_required
+@tenant_required
+def search_chats():
+    query = request.json.get('query', '').strip().lower()
+    if not query:
+        return jsonify([])
+    
+    chats = Chat.query.filter_by(
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).all()
+    
+    results = []
+    for chat in chats:
+        if query in chat.title.lower():
+            results.append({
+                'id': chat.id,
+                'title': chat.title,
+                'updated_at': chat.updated_at.strftime('%d/%m %H:%M'),
+                'match_type': 'title'
+            })
+            continue
+        
+        if chat.s3_messages_key:
+            messages_data = s3_service.get_messages(chat.s3_messages_key)
+            if messages_data and 'messages' in messages_data:
+                for msg in messages_data['messages']:
+                    if query in msg.get('content', '').lower():
+                        results.append({
+                            'id': chat.id,
+                            'title': chat.title,
+                            'updated_at': chat.updated_at.strftime('%d/%m %H:%M'),
+                            'match_type': 'content',
+                            'snippet': msg.get('content', '')[:100] + '...'
+                        })
+                        break
+    
+    return jsonify(results)
+
 @app.route('/api/chat/<int:chat_id>/export', methods=['GET'])
 @login_required
 @tenant_required
@@ -970,9 +1010,35 @@ def get_chat_files(chat_id):
         'files': [{
             'id': f.id,
             'filename': f.original_filename,
+            'file_size': f.file_size,
+            'mime_type': f.mime_type,
             'created_at': f.created_at.isoformat()
         } for f in files]
     })
+
+@app.route('/api/files/<int:file_id>', methods=['DELETE'])
+@login_required
+@tenant_required
+def delete_file(file_id):
+    if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
+        return jsonify({'error': 'Subscription niet actief'}), 403
+    
+    uploaded_file = UploadedFile.query.filter_by(
+        id=file_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    # Delete from S3
+    s3_deleted = s3_service.delete_file(uploaded_file.s3_key)
+    if not s3_deleted:
+        return jsonify({'error': 'Kon bestand niet verwijderen uit opslag'}), 500
+    
+    # Delete from database
+    db.session.delete(uploaded_file)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Bestand verwijderd'})
 
 @app.route('/api/file/<int:file_id>/view', methods=['GET'])
 @login_required

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex h-screen bg-gray-50 dark:bg-black overflow-hidden {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
+<div class="flex h-screen bg-gradient-to-br from-blue-50/30 via-white to-purple-50/30 dark:bg-black overflow-hidden {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
     {% if session.get('impersonating_from') == 'super_admin' %}
     <div class="absolute top-0 left-0 right-0 bg-orange-600 text-white py-2 px-4 z-50 flex justify-between items-center">
         <span class="text-sm">Super Admin Mode - {{ tenant.company_name }}</span>
@@ -29,7 +29,7 @@
         </div>
 
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-            <a href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+            <a href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                 </svg>
@@ -74,7 +74,7 @@
     <!-- Main Content -->
     <div class="flex-1 overflow-y-auto">
         <!-- Header with Hamburger -->
-        <div class="border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 md:px-8 py-4">
+        <div class="border-b border-gray-200 dark:border-zinc-800 bg-gradient-to-r from-blue-50/30 to-purple-50/30 dark:bg-zinc-950 px-4 md:px-8 py-4">
             <div class="flex items-center gap-4">
                 <button onclick="toggleAdminSidebar()" class="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition md:hidden">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,45 +91,53 @@
         <div class="p-4 md:p-8">
             <!-- Stats Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-sm text-gray-500 dark:text-gray-400">Gebruikers</div>
-                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:bg-transparent flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                        </div>
                     </div>
                     <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ users|length }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">van {{ tenant.max_users }} max</div>
                 </div>
 
-                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-sm text-gray-500 dark:text-gray-400">Actief</div>
-                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 dark:bg-transparent flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white dark:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
                     </div>
                     <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ active_users_count }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">laatste 30 dagen</div>
                 </div>
 
-                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-sm text-gray-500 dark:text-gray-400">Vragen</div>
-                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-                        </svg>
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 dark:bg-transparent flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white dark:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                            </svg>
+                        </div>
                     </div>
                     <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_messages }}</div>
                     <div class="text-xs text-green-600 dark:text-green-400 mt-1">+{{ messages_this_month }} deze maand</div>
                 </div>
 
-                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
-                        <svg class="w-5 h-5 {% if tenant.status == 'active' %}text-green-500{% elif tenant.status == 'trial' %}text-blue-500{% else %}text-red-500{% endif %}" fill="currentColor" viewBox="0 0 20 20">
-                            <circle cx="10" cy="10" r="4"/>
-                        </svg>
+                        <div class="w-10 h-10 rounded-lg {% if tenant.status == 'active' %}bg-gradient-to-br from-green-500 to-emerald-600{% elif tenant.status == 'trial' %}bg-gradient-to-br from-blue-500 to-indigo-600{% else %}bg-gradient-to-br from-red-500 to-rose-600{% endif %} dark:bg-transparent flex items-center justify-center">
+                            <svg class="w-5 h-5 {% if tenant.status == 'active' %}text-white dark:text-green-500{% elif tenant.status == 'trial' %}text-white dark:text-blue-500{% else %}text-white dark:text-red-500{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                                <circle cx="10" cy="10" r="4"/>
+                            </svg>
+                        </div>
                     </div>
                     <div class="text-xl font-bold {% if tenant.status == 'active' %}text-green-600{% elif tenant.status == 'trial' %}text-blue-600{% else %}text-red-600{% endif %}">
                         {% if tenant.status == 'trial' %}Trial{% elif tenant.status == 'active' %}Actief{% else %}{{ tenant.status }}{% endif %}
@@ -142,7 +150,7 @@
 
             <!-- Top Users -->
             {% if top_users %}
-            <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+            <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Meest Actieve Gebruikers</h3>
                 <div class="space-y-3">
                     {% for user, chat_count in top_users %}
