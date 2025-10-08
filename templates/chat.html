@@ -37,14 +37,21 @@
                 <div class="p-3 rounded-lg hover:bg-gray-100 border border-gray-200 chat-item relative group" 
                      data-chat-id="{{ chat.id }}">
                     <div onclick="loadChat({{ chat.id }})" class="cursor-pointer">
-                        <div class="font-medium text-sm truncate pr-6">{{ chat.title }}</div>
+                        <div class="font-medium text-sm truncate pr-14">{{ chat.title }}</div>
                         <div class="text-xs text-gray-500">{{ chat.updated_at.strftime('%d-%m %H:%M') }}</div>
                     </div>
-                    <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" 
-                            class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-indigo-600"
-                            title="Naam wijzigen">
-                        ✏️
-                    </button>
+                    <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" 
+                                class="text-gray-400 hover:text-indigo-600"
+                                title="Naam wijzigen">
+                            ✏️
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteChatFromSidebar({{ chat.id }})" 
+                                class="text-gray-400 hover:text-red-600"
+                                title="Verwijderen">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -812,6 +819,30 @@ async function renameChatFromSidebar(chatId, currentTitle) {
             if (currentChatId === chatId) {
                 document.getElementById('chat-title').textContent = newTitle.trim();
             }
+        }
+    }
+}
+
+async function deleteChatFromSidebar(chatId) {
+    if (confirm('Weet je zeker dat je deze chat wilt verwijderen?')) {
+        await fetchWithCSRF(`/api/chat/${chatId}/delete`, { method: 'DELETE' });
+        
+        const chatItem = document.querySelector(`[data-chat-id="${chatId}"]`);
+        if (chatItem) {
+            chatItem.remove();
+        }
+        
+        if (currentChatId === chatId) {
+            currentChatId = null;
+            document.getElementById('messages-container').innerHTML = `
+                <div class="text-center text-gray-500 py-20">
+                    <div class="text-6xl mb-4">🤖</div>
+                    <p class="text-xl">Chat verwijderd</p>
+                    <p class="text-sm">Start een nieuwe chat of selecteer een bestaande.</p>
+                </div>
+            `;
+            document.getElementById('chat-title').textContent = 'Selecteer of start een chat';
+            document.getElementById('chat-actions').classList.add('hidden');
         }
     }
 }
