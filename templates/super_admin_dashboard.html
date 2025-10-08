@@ -12,22 +12,58 @@
     </nav>
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid md:grid-cols-3 gap-6 mb-8">
+        <div class="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             <div class="bg-gray-800 rounded-lg shadow p-6">
                 <div class="text-3xl font-bold text-indigo-400">{{ tenants|length }}</div>
-                <div class="text-gray-400">Totaal Tenants</div>
+                <div class="text-gray-400 text-sm">Totaal Tenants</div>
             </div>
             
             <div class="bg-gray-800 rounded-lg shadow p-6">
                 <div class="text-3xl font-bold text-green-400">{{ total_users }}</div>
-                <div class="text-gray-400">Totaal Gebruikers</div>
+                <div class="text-gray-400 text-sm">Totaal Gebruikers</div>
             </div>
             
             <div class="bg-gray-800 rounded-lg shadow p-6">
                 <div class="text-3xl font-bold text-blue-400">
                     {{ tenants|selectattr('status', 'equalto', 'active')|list|length }}
                 </div>
-                <div class="text-gray-400">Actieve Tenants</div>
+                <div class="text-gray-400 text-sm">Actieve Tenants</div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-3xl font-bold text-purple-400">€{{ "{:,.0f}".format(current_mrr) }}</div>
+                <div class="text-gray-400 text-sm">MRR</div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-3xl font-bold text-pink-400">€{{ "{:,.0f}".format(arr) }}</div>
+                <div class="text-gray-400 text-sm">ARR</div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-3xl font-bold {% if growth_percentage >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {{ "{:+.1f}".format(growth_percentage) }}%
+                </div>
+                <div class="text-gray-400 text-sm">Groei MoM</div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Financieel Overzicht</h3>
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-gray-300">Professional ({{ professional_count }} tenants)</span>
+                        <span class="font-bold text-purple-400">€{{ "{:,.0f}".format(professional_mrr) }}/maand</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300">Enterprise ({{ enterprise_count }} tenants)</span>
+                        <span class="font-bold text-pink-400">€{{ "{:,.0f}".format(enterprise_mrr) }}/maand</span>
+                    </div>
+                </div>
+                <div>
+                    <canvas id="mrrChart" class="w-full" style="max-height: 150px;"></canvas>
+                </div>
             </div>
         </div>
         
@@ -50,20 +86,30 @@
         </div>
         
         <div class="bg-gray-800 rounded-lg shadow overflow-hidden">
+            <div class="p-4 border-b border-gray-700">
+                <div class="flex gap-2">
+                    <button onclick="filterTenants('all')" class="filter-btn px-4 py-2 rounded bg-indigo-600 text-white text-sm" data-filter="all">Alle</button>
+                    <button onclick="filterTenants('professional')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="professional">Professional</button>
+                    <button onclick="filterTenants('enterprise')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="enterprise">Enterprise</button>
+                    <button onclick="filterTenants('trial')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="trial">Trial</button>
+                </div>
+            </div>
             <table class="min-w-full divide-y divide-gray-700">
                 <thead class="bg-gray-900">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Bedrijf</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Subdomain</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Contact</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Tier</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">MRR</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Gebruikers</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Acties</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-700">
                     {% for tenant in tenants %}
-                    <tr>
+                    <tr class="tenant-row" data-tier="{{ tenant.subscription_tier }}">
                         <td class="px-6 py-4 whitespace-nowrap">{{ tenant.company_name }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <a href="https://{{ tenant.subdomain }}.lex-cao.replit.app" target="_blank" class="text-indigo-400 hover:text-indigo-300">
@@ -72,12 +118,30 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">{{ tenant.contact_email }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            {% if tenant.status == 'trial' %}
+                            {% if tenant.subscription_tier == 'professional' %}
+                            <span class="px-2 py-1 text-xs bg-purple-900 text-purple-300 rounded">Professional</span>
+                            {% elif tenant.subscription_tier == 'enterprise' %}
+                            <span class="px-2 py-1 text-xs bg-pink-900 text-pink-300 rounded">Enterprise</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">Trial</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if tenant.subscription_status == 'trial' %}
                             <span class="px-2 py-1 text-xs bg-blue-900 text-blue-300 rounded">Trial</span>
-                            {% elif tenant.status == 'active' %}
+                            {% elif tenant.subscription_status == 'active' %}
                             <span class="px-2 py-1 text-xs bg-green-900 text-green-300 rounded">Actief</span>
                             {% else %}
-                            <span class="px-2 py-1 text-xs bg-red-900 text-red-300 rounded">{{ tenant.status }}</span>
+                            <span class="px-2 py-1 text-xs bg-red-900 text-red-300 rounded">{{ tenant.subscription_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap font-bold text-green-400">
+                            {% if tenant.subscription_tier == 'professional' and tenant.subscription_status == 'active' %}
+                            €499
+                            {% elif tenant.subscription_tier == 'enterprise' and tenant.subscription_status == 'active' %}
+                            €1.199
+                            {% else %}
+                            €0
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ tenant.users|length }} / {{ tenant.max_users }}</td>
@@ -99,4 +163,79 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('mrrChart');
+    const mrrHistory = {{ mrr_history|tojson }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: mrrHistory.map(d => d.month),
+            datasets: [{
+                label: 'MRR',
+                data: mrrHistory.map(d => d.mrr),
+                borderColor: 'rgb(147, 51, 234)',
+                backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#9CA3AF',
+                        callback: function(value) {
+                            return '€' + value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: '#374151'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#9CA3AF'
+                    },
+                    grid: {
+                        color: '#374151'
+                    }
+                }
+            }
+        }
+    });
+
+    function filterTenants(tier) {
+        const rows = document.querySelectorAll('.tenant-row');
+        const buttons = document.querySelectorAll('.filter-btn');
+        
+        buttons.forEach(btn => {
+            if (btn.dataset.filter === tier) {
+                btn.classList.remove('bg-gray-700', 'text-gray-300');
+                btn.classList.add('bg-indigo-600', 'text-white');
+            } else {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('bg-gray-700', 'text-gray-300');
+            }
+        });
+        
+        rows.forEach(row => {
+            if (tier === 'all' || row.dataset.tier === tier) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+</script>
 {% endblock %}
