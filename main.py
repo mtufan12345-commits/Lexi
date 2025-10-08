@@ -459,6 +459,36 @@ def user_profile():
     
     return render_template('user_profile.html', tenant=g.tenant, user=current_user)
 
+@app.route('/api/profile/avatar', methods=['POST'])
+@login_required
+@tenant_required
+def upload_avatar():
+    if 'avatar' not in request.files:
+        return jsonify({'error': 'Geen bestand'}), 400
+    
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({'error': 'Geen bestand geselecteerd'}), 400
+    
+    # Check file type
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+        return jsonify({'error': 'Alleen afbeeldingen toegestaan (PNG, JPG, GIF, WEBP)'}), 400
+    
+    # Upload to S3
+    s3_key = s3_service.upload_file(file, g.tenant.id, folder='avatars')
+    if not s3_key:
+        return jsonify({'error': 'Upload mislukt'}), 500
+    
+    # Get URL
+    avatar_url = s3_service.get_file_url(s3_key)
+    
+    # Update user
+    current_user.avatar_url = avatar_url
+    db.session.commit()
+    
+    return jsonify({'success': True, 'avatar_url': avatar_url})
+
 @app.route('/chat')
 @login_required
 @tenant_required
