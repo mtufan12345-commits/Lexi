@@ -171,10 +171,11 @@
         </div>
         
         <div class="flex gap-4">
-            <button onclick="alert('Impersonate functie wordt geïmplementeerd in Optie C')" 
-                    class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                🔐 Inloggen als deze tenant
-            </button>
+            <form method="POST" action="{{ url_for('super_admin_impersonate', tenant_id=tenant.id) }}" class="inline">
+                <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    🔐 Inloggen als deze tenant
+                </button>
+            </form>
             <button onclick="alert('Subscription wijzigen functionaliteit volgt')" 
                     class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
                 💳 Wijzig subscription

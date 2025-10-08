@@ -220,6 +220,7 @@ def super_admin_login():
         admin = SuperAdmin.query.filter_by(email=email).first()
         if admin and admin.check_password(password):
             login_user(admin)
+            session['super_admin_id'] = admin.id
             session['is_super_admin'] = True
             return redirect(url_for('super_admin_dashboard'))
         
@@ -819,6 +820,61 @@ def super_admin_update_tenant_status(tenant_id):
         flash('Tenant status bijgewerkt!', 'success')
     
     return redirect(url_for('super_admin_dashboard'))
+
+@app.route('/super-admin/impersonate/<int:tenant_id>', methods=['POST'])
+@super_admin_required
+def super_admin_impersonate(tenant_id):
+    tenant = Tenant.query.get_or_404(tenant_id)
+    
+    admin_user = User.query.filter_by(tenant_id=tenant_id, role='admin').first()
+    
+    if not admin_user:
+        flash('Geen admin user gevonden voor deze tenant!', 'error')
+        return redirect(url_for('super_admin_tenant_detail', tenant_id=tenant_id))
+    
+    session['impersonating_super_admin_id'] = session.get('super_admin_id')
+    session['impersonating_from'] = 'super_admin'
+    
+    session.pop('super_admin_id', None)
+    session.pop('is_super_admin', None)
+    
+    logout_user()
+    login_user(admin_user)
+    
+    session['tenant_id'] = tenant_id
+    
+    flash(f'Nu ingelogd als {admin_user.full_name} ({tenant.company_name})', 'success')
+    return redirect('/chat')
+
+@app.route('/stop-impersonate', methods=['POST'])
+def stop_impersonate():
+    if session.get('impersonating_from') == 'super_admin':
+        super_admin_id = session.get('impersonating_super_admin_id')
+        
+        if not super_admin_id:
+            flash('Impersonation context verloren', 'error')
+            return redirect(url_for('index'))
+        
+        super_admin = SuperAdmin.query.get(super_admin_id)
+        if not super_admin:
+            flash('Super admin niet gevonden', 'error')
+            return redirect(url_for('index'))
+        
+        logout_user()
+        
+        session.pop('tenant_id', None)
+        session.pop('impersonating_from', None)
+        session.pop('impersonating_super_admin_id', None)
+        
+        login_user(super_admin)
+        session['super_admin_id'] = super_admin.id
+        session['is_super_admin'] = True
+        
+        flash('Impersonation gestopt', 'success')
+        return redirect(url_for('super_admin_dashboard'))
+    
+    flash('Je was niet aan het impersonaten', 'error')
+    return redirect(url_for('index'))
 
 @app.route('/super-admin/tenants/<int:tenant_id>')
 @super_admin_required
