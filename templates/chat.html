@@ -113,9 +113,19 @@
         <div class="border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4">
             <div id="drop-zone" class="max-w-3xl mx-auto">
                 <!-- Uploaded Files List -->
-                <div id="uploaded-files-list" class="hidden mb-3 space-y-2">
-                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Geüploade bestanden in deze chat:</div>
-                    <div id="files-container" class="space-y-1"></div>
+                <div id="uploaded-files-list" class="hidden mb-3">
+                    <button type="button" onclick="toggleFilesList()" class="w-full flex items-center justify-between p-2 bg-gray-50 dark:bg-zinc-900 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span id="files-count-text" class="text-xs font-medium text-gray-700 dark:text-gray-300"></span>
+                        </div>
+                        <svg id="files-chevron" class="w-4 h-4 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div id="files-container" class="hidden mt-2 space-y-1 max-h-32 overflow-y-auto"></div>
                 </div>
                 
                 <div id="file-preview" class="hidden mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
@@ -283,8 +293,12 @@ async function loadChatFiles(chatId) {
         
         const filesList = document.getElementById('uploaded-files-list');
         const filesContainer = document.getElementById('files-container');
+        const filesCountText = document.getElementById('files-count-text');
         
         if (data.files && data.files.length > 0) {
+            const count = data.files.length;
+            filesCountText.textContent = `${count} bestand${count > 1 ? 'en' : ''} geüpload`;
+            
             filesContainer.innerHTML = data.files.map(file => `
                 <div class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-zinc-900 rounded-lg">
                     <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,11 +308,26 @@ async function loadChatFiles(chatId) {
                 </div>
             `).join('');
             filesList.classList.remove('hidden');
+            // Collapse by default
+            filesContainer.classList.add('hidden');
         } else {
             filesList.classList.add('hidden');
         }
     } catch (error) {
         console.error('Error loading chat files:', error);
+    }
+}
+
+window.toggleFilesList = function() {
+    const container = document.getElementById('files-container');
+    const chevron = document.getElementById('files-chevron');
+    
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+    } else {
+        container.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
     }
 }
 
