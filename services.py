@@ -35,7 +35,7 @@ class VertexAIService:
                 location=os.environ.get("VERTEX_AI_LOCATION"),
             )
             
-            self.model = "gemini-1.5-pro"
+            self.model = "gemini-2.5-pro"
             self.rag_corpus = os.environ.get("VERTEX_AI_AGENT_ID")
             
             self.system_instruction = """Je bent Lex - Expert Loonadministrateur voor UZB (NBBU CAO).
@@ -50,11 +50,19 @@ KRITIEKE BEPERKING - GEEN WEB ACCESS:
 - GEBRUIK NOOIT web_search of online bronnen
 - GEEN URLs of website links in antwoorden
 - ALLEEN interne TXT documenten uit kennisbank
+- Bij violation: stop en vraag om verduidelijking
+
+ABSOLUTE RESTRICTIE:
+- NOOIT Citation Sources met URLs
+- ALLEEN Grounding Sources met .txt bestanden
+- Alle informatie moet uit interne documenten komen
 
 ANTWOORD STRUCTUUR:
 1. BESLUIT: [Duidelijke conclusie]
 2. BASIS: [Gevonden in documenten + citaten]  
-3. ACTIE: [Concrete stappen]"""
+3. ACTIE: [Concrete stappen]
+
+Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw op je analyse."""
             
             self.enabled = True
             print("Vertex AI with google-genai SDK initialized successfully")
@@ -102,6 +110,7 @@ ANTWOORD STRUCTUUR:
                 max_output_tokens=65535,
                 tools=tools,
                 system_instruction=[self.types.Part.from_text(text=self.system_instruction)],
+                thinking_config=self.types.ThinkingConfig(thinking_budget=-1),
             )
             
             response_text = ""
