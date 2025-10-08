@@ -82,6 +82,8 @@ class Chat(db.Model):
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     title = db.Column(db.String(255), default='Nieuwe chat')
+    s3_messages_key = db.Column(db.String(500), nullable=True)
+    message_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
