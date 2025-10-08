@@ -834,24 +834,20 @@ window.viewDocument = async function(fileId, filename, mimeType) {
     
     try {
         const response = await fetch(`/api/file/${fileId}/view`);
+        const data = await response.json();
         
-        if (mimeType === 'application/pdf') {
-            // For PDF, use iframe with blob URL
-            const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            content.innerHTML = `<iframe src="${blobUrl}" class="w-full h-full border-0"></iframe>`;
-        } else {
+        if (data.type === 'pdf' && data.url) {
+            // For PDF, use iframe with presigned S3 URL
+            content.innerHTML = `<iframe src="${data.url}" class="w-full h-full border-0"></iframe>`;
+        } else if (data.type === 'text' && data.content) {
             // For text/docx, show extracted text
-            const data = await response.json();
-            if (data.content) {
-                content.innerHTML = `
-                    <div class="h-full overflow-y-auto p-6 bg-gray-50 dark:bg-zinc-900">
-                        <pre class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono">${escapeHtml(data.content)}</pre>
-                    </div>
-                `;
-            } else {
-                content.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">Kon document niet laden</div>';
-            }
+            content.innerHTML = `
+                <div class="h-full overflow-y-auto p-6 bg-gray-50 dark:bg-zinc-900">
+                    <pre class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono">${escapeHtml(data.content)}</pre>
+                </div>
+            `;
+        } else {
+            content.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">Kon document niet laden</div>';
         }
     } catch (error) {
         console.error('Error loading document:', error);

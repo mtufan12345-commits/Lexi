@@ -29,3 +29,10 @@ instance/
 .coverage
 htmlcov/
 *.log
+
+# Node
+node_modules/
+package-lock.json
+
+# Generated CSS
+static/css/output.css
