@@ -820,6 +820,77 @@ def super_admin_update_tenant_status(tenant_id):
     
     return redirect(url_for('super_admin_dashboard'))
 
+@app.route('/super-admin/tenants/<int:tenant_id>')
+@super_admin_required
+def super_admin_tenant_detail(tenant_id):
+    tenant = Tenant.query.get_or_404(tenant_id)
+    
+    users = User.query.filter_by(tenant_id=tenant_id).all()
+    
+    total_questions = db.session.query(Message).join(Chat).filter(
+        Chat.tenant_id == tenant_id,
+        Message.role == 'user'
+    ).count()
+    
+    from datetime import datetime, timedelta
+    from dateutil.relativedelta import relativedelta
+    
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    questions_this_month = db.session.query(Message).join(Chat).filter(
+        Chat.tenant_id == tenant_id,
+        Message.role == 'user',
+        Message.created_at >= thirty_days_ago
+    ).count()
+    
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    questions_today = db.session.query(Message).join(Chat).filter(
+        Chat.tenant_id == tenant_id,
+        Message.role == 'user',
+        Message.created_at >= today
+    ).count()
+    
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    active_users_count = db.session.query(Chat.user_id).filter(
+        Chat.tenant_id == tenant_id,
+        Chat.created_at >= seven_days_ago
+    ).distinct().count()
+    
+    avg_questions = total_questions / len(users) if users else 0
+    
+    top_questions = db.session.query(
+        Message.content, 
+        db.func.count(Message.id).label('count')
+    ).join(Chat).filter(
+        Chat.tenant_id == tenant_id,
+        Message.role == 'user'
+    ).group_by(Message.content).order_by(db.desc('count')).limit(5).all()
+    
+    for user in users:
+        user.question_count = db.session.query(Message).join(Chat).filter(
+            Chat.user_id == user.id,
+            Message.role == 'user'
+        ).count()
+        user.last_activity = db.session.query(db.func.max(Chat.updated_at)).filter(
+            Chat.user_id == user.id
+        ).scalar()
+    
+    trial_days_left = None
+    if tenant.trial_ends_at and tenant.subscription_status == 'trial':
+        trial_days_left = (tenant.trial_ends_at - datetime.utcnow()).days
+        if trial_days_left < 0:
+            trial_days_left = 0
+    
+    return render_template('super_admin_tenant_detail.html',
+                         tenant=tenant,
+                         users=users,
+                         total_questions=total_questions,
+                         questions_this_month=questions_this_month,
+                         questions_today=questions_today,
+                         active_users_count=active_users_count,
+                         avg_questions=avg_questions,
+                         top_questions=top_questions,
+                         trial_days_left=trial_days_left)
+
 def init_db():
     try:
         with app.app_context():
