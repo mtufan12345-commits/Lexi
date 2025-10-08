@@ -947,6 +947,153 @@ def super_admin_tenant_detail(tenant_id):
                          top_questions=top_questions,
                          trial_days_left=trial_days_left)
 
+@app.route('/super-admin/analytics/export')
+@super_admin_required
+def super_admin_analytics_export():
+    import csv
+    from io import StringIO
+    from flask import Response
+    
+    tenants = Tenant.query.all()
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(['Tenant ID', 'Company Name', 'Subdomain', 'Status', 'Tier', 'MRR', 'Users', 'Questions', 'Created At'])
+    
+    mrr_prices = {'professional': 499, 'enterprise': 1199, 'trial': 0}
+    
+    for tenant in tenants:
+        users_count = User.query.filter_by(tenant_id=tenant.id).count()
+        questions_count = db.session.query(Message).join(Chat).filter(
+            Chat.tenant_id == tenant.id,
+            Message.role == 'user'
+        ).count()
+        
+        mrr = mrr_prices.get(tenant.subscription_tier, 0) if tenant.subscription_status == 'active' else 0
+        
+        writer.writerow([
+            tenant.id,
+            tenant.company_name,
+            tenant.subdomain,
+            tenant.subscription_status,
+            tenant.subscription_tier,
+            mrr,
+            users_count,
+            questions_count,
+            tenant.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        ])
+    
+    output.seek(0)
+    
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=analytics_export.csv'}
+    )
+
+@app.route('/super-admin/analytics')
+@super_admin_required
+def super_admin_analytics():
+    from dateutil.relativedelta import relativedelta
+    from datetime import datetime, timedelta
+    
+    tenants = Tenant.query.all()
+    all_users = User.query.all()
+    
+    mrr_prices = {'professional': 499, 'enterprise': 1199, 'trial': 0}
+    
+    current_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in tenants if t.subscription_status == 'active')
+    total_revenue = current_mrr * 12
+    
+    active_tenants = sum(1 for t in tenants if t.subscription_status == 'active')
+    trial_tenants = sum(1 for t in tenants if t.subscription_status == 'trial')
+    
+    last_month = datetime.utcnow() - relativedelta(months=1)
+    last_month_tenants = [t for t in tenants if t.created_at < last_month and t.subscription_status == 'active']
+    last_month_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in last_month_tenants)
+    
+    growth_rate = 0
+    if last_month_mrr > 0:
+        growth_rate = ((current_mrr - last_month_mrr) / last_month_mrr) * 100
+    elif current_mrr > 0 and last_month_mrr == 0:
+        growth_rate = 100
+    
+    total_questions = db.session.query(Message).filter(Message.role == 'user').count()
+    
+    mrr_history = []
+    questions_history = []
+    for i in range(12, 0, -1):
+        month_date = datetime.utcnow() - relativedelta(months=i)
+        month_tenants = [t for t in tenants if t.created_at <= month_date and t.subscription_status == 'active']
+        month_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in month_tenants)
+        
+        month_start = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_end = (month_start + relativedelta(months=1)) - timedelta(seconds=1)
+        month_questions = db.session.query(Message).filter(
+            Message.role == 'user',
+            Message.created_at >= month_start,
+            Message.created_at <= month_end
+        ).count()
+        
+        mrr_history.append({
+            'month': month_date.strftime('%b %Y'),
+            'mrr': month_mrr
+        })
+        questions_history.append({
+            'month': month_date.strftime('%b %Y'),
+            'count': month_questions
+        })
+    
+    tier_distribution = {
+        'professional': sum(1 for t in tenants if t.subscription_tier == 'professional' and t.subscription_status == 'active'),
+        'enterprise': sum(1 for t in tenants if t.subscription_tier == 'enterprise' and t.subscription_status == 'active'),
+        'trial': sum(1 for t in tenants if t.subscription_tier == 'trial')
+    }
+    
+    top_tenants = []
+    for tenant in tenants:
+        tenant_questions = db.session.query(Message).join(Chat).filter(
+            Chat.tenant_id == tenant.id,
+            Message.role == 'user'
+        ).count()
+        if tenant_questions > 0:
+            top_tenants.append({
+                'tenant': tenant,
+                'questions': tenant_questions
+            })
+    top_tenants = sorted(top_tenants, key=lambda x: x['questions'], reverse=True)[:10]
+    
+    top_questions = db.session.query(
+        Message.content,
+        db.func.count(Message.id).label('count')
+    ).filter(
+        Message.role == 'user'
+    ).group_by(Message.content).order_by(db.desc('count')).limit(10).all()
+    
+    recent_activity = db.session.query(Chat).order_by(Chat.updated_at.desc()).limit(20).all()
+    
+    conversion_funnel = {
+        'signups': len(tenants),
+        'trials': trial_tenants,
+        'active': active_tenants,
+        'conversion_rate': (active_tenants / len(tenants) * 100) if tenants else 0
+    }
+    
+    return render_template('super_admin_analytics.html',
+                         current_mrr=current_mrr,
+                         total_revenue=total_revenue,
+                         active_tenants=active_tenants,
+                         growth_rate=growth_rate,
+                         total_questions=total_questions,
+                         mrr_history=mrr_history,
+                         questions_history=questions_history,
+                         tier_distribution=tier_distribution,
+                         top_tenants=top_tenants,
+                         top_questions=top_questions,
+                         recent_activity=recent_activity,
+                         conversion_funnel=conversion_funnel)
+
 def init_db():
     try:
         with app.app_context():
