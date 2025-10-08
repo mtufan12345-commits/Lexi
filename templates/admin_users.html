@@ -32,7 +32,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="bg-white rounded-lg shadow p-6 mb-6">
             <h3 class="text-lg font-semibold mb-4">Nieuwe Gebruiker Toevoegen</h3>
-            <form method="POST" action="/admin/users" class="grid md:grid-cols-5 gap-4">
+            <form method="POST" action="/admin/users" class="grid md:grid-cols-6 gap-4">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="action" value="add">
                 <input type="email" name="email" placeholder="Email" required 
@@ -43,6 +43,10 @@
                        class="px-3 py-2 border border-gray-300 rounded-md">
                 <input type="password" name="password" placeholder="Wachtwoord" required 
                        class="px-3 py-2 border border-gray-300 rounded-md">
+                <select name="role" class="px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="user">Gebruiker</option>
+                    <option value="admin">Admin</option>
+                </select>
                 <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
                     Toevoegen
                 </button>
