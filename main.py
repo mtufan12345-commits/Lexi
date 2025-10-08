@@ -943,6 +943,43 @@ def get_chat_files(chat_id):
         } for f in files]
     })
 
+@app.route('/api/file/<int:file_id>/view', methods=['GET'])
+@login_required
+@tenant_required
+def view_file(file_id):
+    if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
+        return jsonify({'error': 'Subscription niet actief'}), 403
+    
+    uploaded_file = UploadedFile.query.filter_by(
+        id=file_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    # For PDF, return the raw file
+    if uploaded_file.mime_type == 'application/pdf':
+        download_url = s3_service.get_file_url(uploaded_file.s3_key, expiration=3600)
+        if not download_url:
+            return jsonify({'error': 'Kon bestand niet ophalen'}), 500
+        
+        # Fetch the file from S3 and return it
+        import requests
+        file_response = requests.get(download_url)
+        if file_response.status_code == 200:
+            return Response(
+                file_response.content,
+                mimetype='application/pdf',
+                headers={'Content-Disposition': f'inline; filename="{uploaded_file.original_filename}"'}
+            )
+        return jsonify({'error': 'Kon bestand niet laden'}), 500
+    
+    # For text/docx, return extracted content
+    content, error = s3_service.download_file_content(uploaded_file.s3_key, uploaded_file.mime_type)
+    if error:
+        return jsonify({'error': error}), 500
+    
+    return jsonify({'content': content})
+
 @app.route('/api/upload', methods=['POST'])
 @login_required
 @tenant_required
