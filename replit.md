@@ -15,7 +15,7 @@ LEX CAO Expert is een multi-tenant SaaS platform voor uitzendbureaus in Nederlan
 ## Business Model
 - Professional: €499/maand (5 users, unlimited questions)
 - Enterprise: €1.199/maand (unlimited users, unlimited questions)
-- 14-day free trial (no credit card required)
+- 3 free questions (no credit card required) - replaced 14-day trial
 
 ## Architecture
 Multi-Tenant Hierarchy:
@@ -74,4 +74,7 @@ Run: `python main.py` (binds to 0.0.0.0:5000)
 ## User Preferences
 - Nederlandse taal voor alle interfaces
 - Focus op uitzendbureau gebruikers
-- Clean, professional design met Tailwind CSS
+- Modern, professional enterprise design
+- Dark mode support met toggle
+- SVG icons in plaats van emoji's voor corporate uitstraling
+- Strakke, zakelijke interface met gradient accents

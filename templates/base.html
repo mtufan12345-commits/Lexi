@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}LEX CAO Expert{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <style>
         .lex-animation {
             font-family: monospace;
@@ -22,9 +27,14 @@
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
+    <script>
+        if (localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 h-full">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="fixed top-4 right-4 z-50 space-y-2">
