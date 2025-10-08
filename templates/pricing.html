@@ -1,17 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen bg-white">
-    <nav class="border-b border-gray-200 bg-white">
+<div class="min-h-screen bg-white dark:bg-black">
+    <nav class="border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-black">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex justify-between items-center">
                 <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition">
                     <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded"></div>
-                    <span class="text-xl font-semibold text-gray-900">LEX CAO Expert</span>
+                    <span class="text-xl font-semibold text-gray-900 dark:text-white">LEX CAO Expert</span>
                 </a>
                 <div class="flex items-center space-x-8">
-                    <a href="/" class="text-gray-600 hover:text-gray-900 font-medium transition">Home</a>
-                    <a href="/select-tenant" class="text-gray-600 hover:text-gray-900 font-medium transition">Inloggen</a>
+                    <a href="/" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition">Home</a>
+                    <a href="/select-tenant" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition">Inloggen</a>
+                    <button onclick="toggleDarkMode()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition">
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
                     <a href="/signup/tenant" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">
                         Aan de slag
                     </a>
@@ -22,31 +30,31 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="text-center mb-16">
-            <div class="inline-flex items-center px-4 py-2 bg-blue-50 rounded-full mb-6">
-                <span class="text-sm font-medium text-blue-700">Transparante prijzen voor uw organisatie</span>
+            <div class="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-full mb-6">
+                <span class="text-sm font-medium text-blue-700 dark:text-blue-300">Transparante prijzen voor uw organisatie</span>
             </div>
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 Kies het juiste plan voor uw team
             </h1>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
                 Professionele CAO ondersteuning voor uitzendbureaus. Geen verborgen kosten, opzegbaar wanneer u wilt.
             </p>
         </div>
 
         <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
             <!-- Professional Plan -->
-            <div class="bg-white border-2 border-gray-200 rounded-2xl p-8 hover:border-blue-500 transition">
+            <div class="bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-2xl p-8 hover:border-blue-500 dark:hover:border-blue-600 transition">
                 <div class="flex justify-between items-start mb-6">
                     <div>
-                        <h3 class="text-sm font-bold text-blue-600 mb-2">PROFESSIONAL</h3>
+                        <h3 class="text-sm font-bold text-blue-600 dark:text-blue-400 mb-2">PROFESSIONAL</h3>
                         <div class="flex items-baseline">
-                            <span class="text-5xl font-bold text-gray-900">€499</span>
-                            <span class="text-gray-500 ml-2">/maand</span>
+                            <span class="text-5xl font-bold text-gray-900 dark:text-white">€499</span>
+                            <span class="text-gray-500 dark:text-gray-400 ml-2">/maand</span>
                         </div>
                     </div>
                 </div>
                 
-                <p class="text-gray-600 mb-8">
+                <p class="text-gray-600 dark:text-gray-300 mb-8">
                     Perfect voor kleine tot middelgrote payroll teams die directe toegang tot CAO kennis nodig hebben.
                 </p>
 
@@ -56,8 +64,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                         <div>
-                            <div class="font-semibold text-gray-900">5 gebruikers</div>
-                            <div class="text-sm text-gray-500">Genoeg voor kleine payroll teams</div>
+                            <div class="font-semibold text-gray-900 dark:text-white">5 gebruikers</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Genoeg voor kleine payroll teams</div>
                         </div>
                     </li>
                     <li class="flex items-start gap-3">
@@ -65,8 +73,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                         <div>
-                            <div class="font-semibold text-gray-900">Onbeperkte vragen</div>
-                            <div class="text-sm text-gray-500">Geen limieten op AI queries</div>
+                            <div class="font-semibold text-gray-900 dark:text-white">Onbeperkte vragen</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Geen limieten op AI queries</div>
                         </div>
                     </li>
                     <li class="flex items-start gap-3">
@@ -74,8 +82,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                         <div>
-                            <div class="font-semibold text-gray-900">Chat geschiedenis</div>
-                            <div class="text-sm text-gray-500">Toegang tot eerdere gesprekken</div>
+                            <div class="font-semibold text-gray-900 dark:text-white">Chat geschiedenis</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Toegang tot eerdere gesprekken</div>
                         </div>
                     </li>
                     <li class="flex items-start gap-3">
@@ -83,8 +91,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                         <div>
-                            <div class="font-semibold text-gray-900">File uploads</div>
-                            <div class="text-sm text-gray-500">Upload documenten voor analyse</div>
+                            <div class="font-semibold text-gray-900 dark:text-white">File uploads</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Upload documenten voor analyse</div>
                         </div>
                     </li>
                     <li class="flex items-start gap-3">
@@ -92,8 +100,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                         <div>
-                            <div class="font-semibold text-gray-900">Priority support</div>
-                            <div class="text-sm text-gray-500">Snelle reactie op vragen</div>
+                            <div class="font-semibold text-gray-900 dark:text-white">Priority support</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Snelle reactie op vragen</div>
                         </div>
                     </li>
                 </ul>
@@ -184,41 +192,56 @@
 
         <!-- FAQ Section -->
         <div class="max-w-3xl mx-auto mt-20">
-            <h2 class="text-3xl font-bold text-gray-900 text-center mb-12">Veelgestelde vragen</h2>
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">Veelgestelde vragen</h2>
             <div class="space-y-6">
-                <div class="bg-gray-50 rounded-xl p-6">
-                    <h3 class="font-semibold text-gray-900 mb-2">Kan ik het abonnement opzeggen?</h3>
-                    <p class="text-gray-600">Ja, u kunt uw abonnement op elk moment opzeggen. Er zijn geen lange termijn contracten.</p>
+                <div class="bg-gray-50 dark:bg-zinc-900 rounded-xl p-6 border border-transparent dark:border-zinc-800">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Kan ik het abonnement opzeggen?</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Ja, u kunt uw abonnement op elk moment opzeggen. Er zijn geen lange termijn contracten.</p>
                 </div>
-                <div class="bg-gray-50 rounded-xl p-6">
-                    <h3 class="font-semibold text-gray-900 mb-2">Welke CAO's zijn beschikbaar?</h3>
-                    <p class="text-gray-600">We hebben 70+ CAO documenten beschikbaar, waaronder Glastuinbouw, ABU, NBBU en alle relevante uitzendbureau CAO's.</p>
+                <div class="bg-gray-50 dark:bg-zinc-900 rounded-xl p-6 border border-transparent dark:border-zinc-800">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Welke CAO's zijn beschikbaar?</h3>
+                    <p class="text-gray-600 dark:text-gray-300">We hebben 70+ CAO documenten beschikbaar, waaronder Glastuinbouw, ABU, NBBU en alle relevante uitzendbureau CAO's.</p>
                 </div>
-                <div class="bg-gray-50 rounded-xl p-6">
-                    <h3 class="font-semibold text-gray-900 mb-2">Hoe snel krijg ik antwoord?</h3>
-                    <p class="text-gray-600">LEX geeft binnen 5 seconden een antwoord op uw CAO vraag, met directe verwijzing naar de relevante artikelen.</p>
+                <div class="bg-gray-50 dark:bg-zinc-900 rounded-xl p-6 border border-transparent dark:border-zinc-800">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Hoe snel krijg ik antwoord?</h3>
+                    <p class="text-gray-600 dark:text-gray-300">LEX geeft binnen 5 seconden een antwoord op uw CAO vraag, met directe verwijzing naar de relevante artikelen.</p>
                 </div>
-                <div class="bg-gray-50 rounded-xl p-6">
-                    <h3 class="font-semibold text-gray-900 mb-2">Is mijn data veilig?</h3>
-                    <p class="text-gray-600">Ja, we hanteren enterprise-grade beveiliging met multi-tenant isolatie. Uw data blijft volledig privé en wordt nooit gedeeld.</p>
+                <div class="bg-gray-50 dark:bg-zinc-900 rounded-xl p-6 border border-transparent dark:border-zinc-800">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Is mijn data veilig?</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Ja, we hanteren enterprise-grade beveiliging met multi-tenant isolatie. Uw data blijft volledig privé en wordt nooit gedeeld.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="border-t border-gray-200 bg-gray-50 py-12 mt-20">
+    <footer class="border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900 py-12 mt-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-3">
                     <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded"></div>
-                    <span class="text-lg font-semibold text-gray-900">LEX CAO Expert</span>
+                    <span class="text-lg font-semibold text-gray-900 dark:text-white">LEX CAO Expert</span>
                 </div>
-                <div class="text-sm text-gray-500">
+                <div class="text-sm text-gray-500 dark:text-gray-400">
                     © 2024 LEX CAO Expert. Enterprise HR Solutions.
                 </div>
             </div>
         </div>
     </footer>
 </div>
+
+<script>
+function toggleDarkMode() {
+    const html = document.documentElement;
+    const isDark = html.classList.contains('dark');
+    
+    if (isDark) {
+        html.classList.remove('dark');
+        localStorage.setItem('darkMode', 'false');
+    } else {
+        html.classList.add('dark');
+        localStorage.setItem('darkMode', 'true');
+    }
+}
+</script>
 {% endblock %}
