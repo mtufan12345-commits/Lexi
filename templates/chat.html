@@ -60,40 +60,8 @@
         </div>
         
         <div id="lex-animation-container" class="hidden relative h-64 bg-gradient-to-b from-indigo-50 to-white border-b border-indigo-100 overflow-hidden">
-            <div id="lex-scene" class="absolute inset-0 flex items-end justify-center pb-4">
-                <!-- Boekenplank -->
-                <div id="bookshelf" class="absolute left-1/2 transform -translate-x-1/2" style="bottom: 120px;">
-                    <div class="flex space-x-1">
-                        <div class="w-8 h-24 bg-red-500 rounded-sm"></div>
-                        <div class="w-8 h-20 bg-blue-500 rounded-sm"></div>
-                        <div class="w-8 h-28 bg-green-500 rounded-sm"></div>
-                        <div class="w-8 h-24 bg-yellow-500 rounded-sm"></div>
-                        <div class="w-8 h-20 bg-purple-500 rounded-sm"></div>
-                    </div>
-                </div>
-                
-                <!-- Ladder -->
-                <div id="ladder" class="absolute hidden" style="bottom: 20px; left: 50%; transform: translateX(-50%);">
-                    <div class="w-2 h-40 bg-amber-700 rounded relative">
-                        <div class="absolute w-16 h-1 bg-amber-700 left-1/2 transform -translate-x-1/2" style="top: 20%"></div>
-                        <div class="absolute w-16 h-1 bg-amber-700 left-1/2 transform -translate-x-1/2" style="top: 40%"></div>
-                        <div class="absolute w-16 h-1 bg-amber-700 left-1/2 transform -translate-x-1/2" style="top: 60%"></div>
-                        <div class="absolute w-16 h-1 bg-amber-700 left-1/2 transform -translate-x-1/2" style="top: 80%"></div>
-                    </div>
-                </div>
-                
-                <!-- LEX poppetje -->
-                <div id="lex-character" class="absolute text-5xl transition-all duration-500 ease-in-out" style="bottom: 20px; left: 10%;"></div>
-                
-                <!-- Boeken op de grond -->
-                <div id="floor-books" class="absolute flex space-x-2" style="bottom: 20px; left: 60%;">
-                    <div class="w-6 h-8 bg-indigo-400 rounded-sm transform rotate-12"></div>
-                    <div class="w-6 h-8 bg-pink-400 rounded-sm transform -rotate-6"></div>
-                </div>
-            </div>
-            
             <!-- Status tekst -->
-            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 text-center">
+            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 text-center z-10">
                 <div id="lex-speech" class="text-lg font-semibold text-indigo-700 mb-2"></div>
                 <div class="max-w-md mx-auto bg-white rounded-full px-4 py-1">
                     <div class="w-full bg-gray-200 rounded-full h-2">
@@ -101,7 +69,60 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Grond lijn -->
+            <div class="absolute bottom-16 left-0 right-0 h-0.5 bg-gray-300"></div>
+            
+            <!-- LEX Stick Figure -->
+            <svg id="lex-stickman" class="absolute transition-all duration-500" style="bottom: 60px; left: 10%; width: 80px; height: 100px;">
+                <!-- Hoofd -->
+                <circle id="lex-head" cx="40" cy="15" r="12" fill="none" stroke="#4F46E5" stroke-width="3"/>
+                <!-- Lichaam -->
+                <line id="lex-body" x1="40" y1="27" x2="40" y2="60" stroke="#4F46E5" stroke-width="3"/>
+                <!-- Linker arm -->
+                <line id="lex-arm-left" x1="40" y1="35" x2="20" y2="50" stroke="#4F46E5" stroke-width="3"/>
+                <!-- Rechter arm -->
+                <line id="lex-arm-right" x1="40" y1="35" x2="60" y2="50" stroke="#4F46E5" stroke-width="3"/>
+                <!-- Linker been -->
+                <line id="lex-leg-left" x1="40" y1="60" x2="25" y2="85" stroke="#4F46E5" stroke-width="3"/>
+                <!-- Rechter been -->
+                <line id="lex-leg-right" x1="40" y1="60" x2="55" y2="85" stroke="#4F46E5" stroke-width="3"/>
+            </svg>
+            
+            <!-- Vallende onderdelen -->
+            <svg id="lex-parts" class="absolute" style="bottom: 60px; left: 10%; width: 80px; height: 100px; pointer-events: none;">
+                <circle id="falling-head" cx="40" cy="15" r="12" fill="none" stroke="#4F46E5" stroke-width="3" class="hidden"/>
+                <line id="falling-arm-left" x1="40" y1="35" x2="20" y2="50" stroke="#4F46E5" stroke-width="3" class="hidden"/>
+                <line id="falling-arm-right" x1="40" y1="35" x2="60" y2="50" stroke="#4F46E5" stroke-width="3" class="hidden"/>
+                <line id="falling-leg-left" x1="40" y1="60" x2="25" y2="85" stroke="#4F46E5" stroke-width="3" class="hidden"/>
+                <line id="falling-leg-right" x1="40" y1="60" x2="55" y2="85" stroke="#4F46E5" stroke-width="3" class="hidden"/>
+            </svg>
         </div>
+        
+        <style>
+            @keyframes run-cycle {
+                0%, 100% {
+                    transform: rotate(0deg);
+                }
+                25% {
+                    transform: rotate(25deg);
+                }
+                75% {
+                    transform: rotate(-25deg);
+                }
+            }
+            
+            @keyframes fall-part {
+                0% {
+                    opacity: 1;
+                    transform: translateY(0) rotate(0deg);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translateY(50px) rotate(180deg);
+                }
+            }
+        </style>
         
         <div class="bg-white border-t border-gray-200 p-4">
             <form id="message-form" class="max-w-3xl mx-auto flex space-x-2">
@@ -133,95 +154,176 @@ function fetchWithCSRF(url, options = {}) {
     return fetch(url, options);
 }
 
+function animateLimbs(isRunning) {
+    const armLeft = document.getElementById('lex-arm-left');
+    const armRight = document.getElementById('lex-arm-right');
+    const legLeft = document.getElementById('lex-leg-left');
+    const legRight = document.getElementById('lex-leg-right');
+    
+    if (!isRunning) {
+        armLeft.setAttribute('x2', '20');
+        armLeft.setAttribute('y2', '50');
+        armRight.setAttribute('x2', '60');
+        armRight.setAttribute('y2', '50');
+        legLeft.setAttribute('x2', '25');
+        legLeft.setAttribute('y2', '85');
+        legRight.setAttribute('x2', '55');
+        legRight.setAttribute('y2', '85');
+        return;
+    }
+    
+    let frame = 0;
+    return setInterval(() => {
+        frame++;
+        const swing = Math.sin(frame * 0.3) * 15;
+        
+        armLeft.setAttribute('x2', 20 + swing);
+        armLeft.setAttribute('y2', 50 - Math.abs(swing) * 0.5);
+        armRight.setAttribute('x2', 60 - swing);
+        armRight.setAttribute('y2', 50 - Math.abs(swing) * 0.5);
+        
+        legLeft.setAttribute('x2', 25 - swing);
+        legLeft.setAttribute('y2', 85 - Math.abs(swing) * 0.3);
+        legRight.setAttribute('x2', 55 + swing);
+        legRight.setAttribute('y2', 85 - Math.abs(swing) * 0.3);
+    }, 50);
+}
+
+function fallApart() {
+    const stickman = document.getElementById('lex-stickman');
+    const parts = ['head', 'arm-left', 'arm-right', 'leg-left', 'leg-right'];
+    
+    parts.forEach((part, i) => {
+        const original = document.getElementById(`lex-${part}`);
+        const falling = document.getElementById(`falling-${part}`);
+        
+        original.style.opacity = '0';
+        falling.classList.remove('hidden');
+        falling.style.animation = `fall-part 1s ease-out ${i * 0.1}s forwards`;
+    });
+}
+
+function reassemble() {
+    const parts = ['head', 'arm-left', 'arm-right', 'leg-left', 'leg-right'];
+    
+    parts.forEach(part => {
+        const original = document.getElementById(`lex-${part}`);
+        const falling = document.getElementById(`falling-${part}`);
+        
+        falling.classList.add('hidden');
+        falling.style.animation = '';
+        original.style.opacity = '1';
+    });
+}
+
 const LEX_SCENARIOS = [
     {
-        name: 'ladder_climb',
-        steps: [
-            { action: 'show_ladder', duration: 500 },
-            { char: '🚶‍♂️', pos: '10%', bottom: '20px', text: 'Ah, ik zie het boek daar!', duration: 1000 },
-            { char: '🧗‍♂️', pos: '50%', bottom: '40px', text: 'Klimmen...', duration: 1000 },
-            { char: '🧗‍♂️', pos: '50%', bottom: '80px', text: 'Bijna...', duration: 1000 },
-            { char: '📚', pos: '50%', bottom: '120px', text: 'Gevonden! Artikel 7.3!', duration: 1500 },
-            { char: '😅', pos: '50%', bottom: '20px', text: '*PLOF* Oeps!', duration: 1000 },
-            { action: 'hide_ladder', duration: 500 }
-        ]
+        name: 'run_and_fall',
+        text: 'Rennen naar de boeken... *PLOF!*',
+        action: (stickman, speech) => {
+            speech.textContent = 'Snel naar de CAO boeken!';
+            stickman.style.left = '10%';
+            const limbInterval = animateLimbs(true);
+            
+            setTimeout(() => {
+                stickman.style.left = '60%';
+            }, 100);
+            
+            setTimeout(() => {
+                clearInterval(limbInterval);
+                speech.textContent = 'Au! Gestruikeld!';
+                fallApart();
+            }, 2000);
+            
+            setTimeout(() => {
+                speech.textContent = 'Ugh... weer opkrabbelen...';
+                reassemble();
+                animateLimbs(false);
+            }, 3500);
+        }
     },
     {
-        name: 'stumble_books',
-        steps: [
-            { char: '🏃‍♂️', pos: '10%', bottom: '20px', text: 'Snel even de CAO checken!', duration: 800 },
-            { char: '🏃‍♂️', pos: '30%', bottom: '20px', text: 'Rennen rennen...', duration: 800 },
-            { char: '🏃‍♂️', pos: '50%', bottom: '20px', text: 'Bijna bij de...', duration: 500 },
-            { char: '🤕', pos: '55%', bottom: '10px', text: '*STRUIKEL* Au!', duration: 1200 },
-            { char: '😤', pos: '55%', bottom: '20px', text: 'Wie laat hier boeken liggen?!', duration: 1500 },
-            { char: '🔍', pos: '55%', bottom: '20px', text: 'Oh wacht... dit is het boek!', duration: 1200 }
-        ]
+        name: 'back_and_forth',
+        text: 'Heen en weer rennen zoekend',
+        action: (stickman, speech) => {
+            speech.textContent = 'Waar was dat artikel ook alweer?';
+            const limbInterval = animateLimbs(true);
+            let direction = 1;
+            let position = 10;
+            
+            const moveInterval = setInterval(() => {
+                position += direction * 15;
+                if (position > 70 || position < 10) direction *= -1;
+                stickman.style.left = position + '%';
+                
+                if (direction > 0) {
+                    stickman.style.transform = 'scaleX(1)';
+                } else {
+                    stickman.style.transform = 'scaleX(-1)';
+                }
+            }, 200);
+            
+            setTimeout(() => {
+                clearInterval(moveInterval);
+                clearInterval(limbInterval);
+                speech.textContent = 'Gevonden!';
+                stickman.style.transform = 'scaleX(1)';
+                animateLimbs(false);
+            }, 4000);
+        }
     },
     {
-        name: 'speed_reading',
-        steps: [
-            { char: '🚶‍♂️', pos: '10%', bottom: '20px', text: 'Even zoeken...', duration: 800 },
-            { char: '📖', pos: '30%', bottom: '20px', text: 'Blader blader...', duration: 1000 },
-            { char: '📖', pos: '50%', bottom: '20px', text: 'Pagina 47... nee...', duration: 1000 },
-            { char: '📖', pos: '50%', bottom: '20px', text: 'Pagina 89... nee...', duration: 1000 },
-            { char: '💡', pos: '50%', bottom: '20px', text: 'AHA! Pagina 134!', duration: 1500 }
-        ]
-    },
-    {
-        name: 'bookshelf_search',
-        steps: [
-            { char: '🤔', pos: '20%', bottom: '20px', text: 'Welk boek was het ook alweer?', duration: 1000 },
-            { char: '🚶‍♂️', pos: '48%', bottom: '20px', text: 'Naar de kast...', duration: 800 },
-            { char: '🔍', pos: '48%', bottom: '120px', text: 'NBBU CAO... ABU CAO...', duration: 1200 },
-            { char: '🤓', pos: '48%', bottom: '120px', text: 'Gevonden! De juiste CAO!', duration: 1000 },
-            { char: '📚', pos: '48%', bottom: '20px', text: 'Lezen maar!', duration: 1200 }
-        ]
-    },
-    {
-        name: 'coffee_break',
-        steps: [
-            { char: '🚶‍♂️', pos: '10%', bottom: '20px', text: 'Even zoeken...', duration: 800 },
-            { char: '😴', pos: '30%', bottom: '20px', text: 'Ugh, dit is veel tekst...', duration: 1200 },
-            { char: '☕', pos: '30%', bottom: '20px', text: 'Eerst koffie!', duration: 1500 },
-            { char: '😊', pos: '30%', bottom: '20px', text: 'Ahhh, beter!', duration: 1000 },
-            { char: '💪', pos: '50%', bottom: '20px', text: 'Nu kan ik weer door!', duration: 1000 }
-        ]
+        name: 'stumble_recover',
+        text: 'Struikelen en herstellen',
+        action: (stickman, speech) => {
+            speech.textContent = 'Rennen rennen...';
+            const limbInterval = animateLimbs(true);
+            stickman.style.left = '10%';
+            
+            setTimeout(() => {
+                stickman.style.left = '50%';
+            }, 100);
+            
+            setTimeout(() => {
+                clearInterval(limbInterval);
+                speech.textContent = 'Oeps! *struikel*';
+                stickman.style.transform = 'rotate(45deg)';
+                stickman.style.bottom = '40px';
+            }, 2000);
+            
+            setTimeout(() => {
+                speech.textContent = 'Gauw weer opstaan!';
+                stickman.style.transform = 'rotate(0deg)';
+                stickman.style.bottom = '60px';
+                animateLimbs(false);
+            }, 3000);
+        }
     }
 ];
 
 function startLexAnimation() {
     const container = document.getElementById('lex-animation-container');
-    const characterDiv = document.getElementById('lex-character');
-    const speechDiv = document.getElementById('lex-speech');
+    const stickman = document.getElementById('lex-stickman');
+    const speech = document.getElementById('lex-speech');
     const progressBar = document.getElementById('lex-progress');
-    const ladder = document.getElementById('ladder');
     
     container.classList.remove('hidden');
+    reassemble();
+    stickman.style.left = '10%';
+    stickman.style.bottom = '60px';
+    stickman.style.transform = 'scaleX(1) rotate(0deg)';
     
     const scenario = LEX_SCENARIOS[Math.floor(Math.random() * LEX_SCENARIOS.length)];
-    let stepIndex = 0;
     let startTime = Date.now();
+    let scenarioCount = 0;
     
-    const executeStep = () => {
-        if (stepIndex >= scenario.steps.length) {
-            stepIndex = 0;
-        }
-        
-        const step = scenario.steps[stepIndex];
-        
-        if (step.action === 'show_ladder') {
-            ladder.classList.remove('hidden');
-        } else if (step.action === 'hide_ladder') {
-            ladder.classList.add('hidden');
-        } else {
-            characterDiv.textContent = step.char;
-            characterDiv.style.left = step.pos;
-            characterDiv.style.bottom = step.bottom;
-            speechDiv.textContent = step.text;
-        }
-        
-        stepIndex++;
+    const runScenario = () => {
+        scenario.action(stickman, speech);
+        scenarioCount++;
     };
+    
+    runScenario();
+    const scenarioInterval = setInterval(runScenario, 5000);
     
     const progressInterval = setInterval(() => {
         const elapsed = Date.now() - startTime;
@@ -229,30 +331,26 @@ function startLexAnimation() {
         progressBar.style.width = `${progress}%`;
     }, 500);
     
-    executeStep();
-    const animationInterval = setInterval(() => {
-        executeStep();
-    }, 1500);
-    
-    return { progressInterval, animationInterval };
+    return { progressInterval, scenarioInterval };
 }
 
 function stopLexAnimation(intervals) {
     clearInterval(intervals.progressInterval);
-    clearInterval(intervals.animationInterval);
+    clearInterval(intervals.scenarioInterval);
     
     const container = document.getElementById('lex-animation-container');
-    const characterDiv = document.getElementById('lex-character');
-    const speechDiv = document.getElementById('lex-speech');
+    const stickman = document.getElementById('lex-stickman');
+    const speech = document.getElementById('lex-speech');
     const progressBar = document.getElementById('lex-progress');
-    const ladder = document.getElementById('ladder');
     
-    characterDiv.textContent = '🎉';
-    characterDiv.style.left = '50%';
-    characterDiv.style.bottom = '20px';
-    speechDiv.textContent = 'Gevonden! Het antwoord is klaar!';
+    reassemble();
+    animateLimbs(false);
+    stickman.style.left = '50%';
+    stickman.style.bottom = '60px';
+    stickman.style.transform = 'scaleX(1) rotate(0deg)';
+    
+    speech.textContent = 'Gevonden! Het antwoord is klaar!';
     progressBar.style.width = '100%';
-    ladder.classList.add('hidden');
     
     setTimeout(() => {
         container.classList.add('hidden');
