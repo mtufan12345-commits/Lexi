@@ -1,6 +1,6 @@
 import os
 import re
-from flask import Flask, render_template, request, redirect, url_for, jsonify, g, session, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, g, session, flash, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
