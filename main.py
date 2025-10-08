@@ -1,4 +1,5 @@
 import os
+import re
 from flask import Flask, render_template, request, redirect, url_for, jsonify, g, session, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
@@ -290,8 +291,24 @@ def get_chat(chat_id):
         user_id=current_user.id
     ).first_or_404()
     
-    messages = [{'role': m.role, 'content': m.content, 'created_at': m.created_at.isoformat()} 
-                for m in chat.messages]
+    messages = []
+    for m in chat.messages:
+        msg_data = {
+            'role': m.role,
+            'content': m.content,
+            'created_at': m.created_at.isoformat()
+        }
+        
+        if m.role == 'assistant':
+            artifacts = Artifact.query.filter_by(message_id=m.id, tenant_id=g.tenant.id).all()
+            if artifacts:
+                msg_data['artifacts'] = [{
+                    'id': a.id,
+                    'title': a.title,
+                    'type': a.artifact_type
+                } for a in artifacts]
+        
+        messages.append(msg_data)
     
     return jsonify({'id': chat.id, 'title': chat.title, 'messages': messages})
 
@@ -363,8 +380,51 @@ def send_message(chat_id):
     db.session.add(assistant_message)
     db.session.commit()
     
+    artifacts_created = []
+    artifact_pattern = r'```artifact:(\w+)\s+title:([^\n]+)\n(.*?)```'
+    matches = re.finditer(artifact_pattern, lex_response, re.DOTALL)
+    
+    artifacts_to_commit = []
+    for match in matches:
+        artifact_type = match.group(1).strip()
+        title = match.group(2).strip()
+        content = match.group(3).strip()
+        
+        s3_key = s3_service.upload_content(
+            content=content,
+            filename=f"{title}.txt",
+            tenant_id=g.tenant.id,
+            folder='artifacts'
+        )
+        
+        if s3_key:
+            artifact = Artifact(
+                tenant_id=g.tenant.id,
+                chat_id=chat.id,
+                message_id=assistant_message.id,
+                title=title,
+                content=content,
+                artifact_type=artifact_type,
+                s3_key=s3_key
+            )
+            db.session.add(artifact)
+            artifacts_to_commit.append(artifact)
+    
+    if artifacts_to_commit:
+        db.session.commit()
+        for artifact in artifacts_to_commit:
+            artifacts_created.append({
+                'id': artifact.id,
+                'title': artifact.title,
+                'type': artifact.artifact_type
+            })
+        print(f"[DEBUG] Created {len(artifacts_created)} artifacts")
+    
     print("[DEBUG] Response sent successfully")
-    return jsonify({'response': lex_response})
+    return jsonify({
+        'response': lex_response,
+        'artifacts': artifacts_created
+    })
 
 @app.route('/api/chat/<int:chat_id>/rename', methods=['POST'])
 @login_required
@@ -400,6 +460,26 @@ def delete_chat(chat_id):
     db.session.commit()
     
     return jsonify({'success': True})
+
+@app.route('/api/artifact/<int:artifact_id>/download')
+@login_required
+@tenant_required
+def download_artifact(artifact_id):
+    artifact = Artifact.query.filter_by(
+        id=artifact_id,
+        tenant_id=g.tenant.id
+    ).first_or_404()
+    
+    download_url = s3_service.get_file_url(artifact.s3_key, expiration=300)
+    
+    if not download_url:
+        return jsonify({'error': 'Download niet beschikbaar'}), 500
+    
+    return jsonify({
+        'download_url': download_url,
+        'title': artifact.title,
+        'type': artifact.artifact_type
+    })
 
 @app.route('/api/upload', methods=['POST'])
 @login_required

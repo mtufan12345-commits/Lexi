@@ -577,7 +577,7 @@ async function loadChat(chatId) {
     container.innerHTML = '';
     
     data.messages.forEach(msg => {
-        addMessageToUI(msg.role, msg.content);
+        addMessageToUI(msg.role, msg.content, msg.artifacts || []);
     });
     
     document.querySelectorAll('.chat-item').forEach(item => {
@@ -586,15 +586,33 @@ async function loadChat(chatId) {
     document.querySelector(`[data-chat-id="${chatId}"]`)?.classList.add('bg-indigo-50', 'border-indigo-300');
 }
 
-function addMessageToUI(role, content) {
+function addMessageToUI(role, content, artifacts = []) {
     const container = document.getElementById('messages-container');
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    
+    let artifactsHtml = '';
+    if (artifacts && artifacts.length > 0) {
+        artifactsHtml = '<div class="mt-3 space-y-2 border-t pt-3">';
+        artifacts.forEach(artifact => {
+            artifactsHtml += `
+                <button onclick="downloadArtifact(${artifact.id})" 
+                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors w-full">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span>Download: ${artifact.title}</span>
+                </button>
+            `;
+        });
+        artifactsHtml += '</div>';
+    }
     
     messageDiv.innerHTML = `
         <div class="max-w-2xl ${role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200'} rounded-lg p-4">
             <div class="font-semibold text-sm mb-1">${role === 'user' ? 'Jij' : 'LEX 🤖'}</div>
             <div class="whitespace-pre-wrap">${content}</div>
+            ${artifactsHtml}
         </div>
     `;
     
@@ -636,7 +654,7 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
         
         const data = await response.json();
         stopLexAnimation(animationInterval);
-        addMessageToUI('assistant', data.response);
+        addMessageToUI('assistant', data.response, data.artifacts || []);
         
         if (isNewChat && newChatId) {
             const newTitle = message.substring(0, 50) + (message.length > 50 ? '...' : '');
@@ -738,6 +756,24 @@ async function handleFileUpload(event) {
         }
     } catch (error) {
         alert('Upload mislukt. Probeer het opnieuw.');
+    }
+}
+
+async function downloadArtifact(artifactId) {
+    try {
+        const response = await fetch(`/api/artifact/${artifactId}/download`);
+        const data = await response.json();
+        
+        if (data.download_url) {
+            const link = document.createElement('a');
+            link.href = data.download_url;
+            link.download = data.title;
+            link.click();
+        } else {
+            alert('Download niet beschikbaar');
+        }
+    } catch (error) {
+        alert('Download mislukt');
     }
 }
 </script>
