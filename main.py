@@ -120,6 +120,23 @@ def index():
 def pricing():
     return render_template('pricing.html')
 
+def count_user_questions(user_id):
+    """Count total questions asked by user from S3 messages with PostgreSQL fallback"""
+    user_chats = Chat.query.filter_by(user_id=user_id).all()
+    question_count = 0
+    
+    for c in user_chats:
+        if c.s3_messages_key:
+            # Try S3 first
+            messages = s3_service.get_chat_messages(c.s3_messages_key)
+            question_count += sum(1 for m in messages if m.get('role') == 'user')
+        else:
+            # Fallback to PostgreSQL for non-migrated chats
+            db_messages = Message.query.filter_by(chat_id=c.id, role='user').count()
+            question_count += db_messages
+    
+    return question_count
+
 @app.route('/api/free-trial', methods=['POST'])
 def start_free_trial():
     data = request.json
@@ -154,10 +171,7 @@ def start_free_trial():
         db.session.add(guest_user)
         db.session.commit()
     
-    question_count = db.session.query(Message).join(Chat).filter(
-        Chat.user_id == guest_user.id,
-        Message.role == 'user'
-    ).count()
+    question_count = count_user_questions(guest_user.id)
     
     if question_count >= 3:
         return jsonify({'error': 'limit_reached', 'message': 'Je hebt je 3 gratis vragen gebruikt'}), 403
@@ -183,10 +197,7 @@ def free_chat():
     if not guest_user:
         return redirect(url_for('index'))
     
-    question_count = db.session.query(Message).join(Chat).filter(
-        Chat.user_id == guest_user.id,
-        Message.role == 'user'
-    ).count()
+    question_count = count_user_questions(guest_user.id)
     
     return render_template('free_chat.html', 
                          guest_email=session.get('guest_email'),
@@ -219,10 +230,8 @@ def send_free_chat_message(chat_id):
     guest_user_id = session.get('guest_user_id')
     guest_user = User.query.get(guest_user_id)
     
-    question_count = db.session.query(Message).join(Chat).filter(
-        Chat.user_id == guest_user.id,
-        Message.role == 'user'
-    ).count()
+    # Count questions from S3 messages
+    question_count = count_user_questions(guest_user.id)
     
     if question_count >= 3:
         return jsonify({'error': 'limit_reached', 'message': 'Je hebt je 3 gratis vragen gebruikt'}), 403
@@ -237,25 +246,56 @@ def send_free_chat_message(chat_id):
     if not chat:
         return jsonify({'error': 'Chat not found'}), 404
     
-    user_msg = Message(
-        tenant_id=session.get('tenant_id'),
-        chat_id=chat.id,
-        role='user',
-        content=user_message
+    tenant_id = session.get('tenant_id')
+    
+    # Create user message dict for S3
+    user_msg_dict = {
+        'role': 'user',
+        'content': user_message,
+        'created_at': datetime.utcnow().isoformat()
+    }
+    
+    # Append to S3
+    s3_key = s3_service.append_chat_message(
+        chat.s3_messages_key,
+        chat.id,
+        tenant_id,
+        user_msg_dict
     )
-    db.session.add(user_msg)
-    db.session.flush()
+    
+    if s3_key:
+        chat.s3_messages_key = s3_key
+        chat.message_count = chat.message_count + 1
+    
+    if chat.message_count <= 1:
+        chat.title = user_message[:50] + ('...' if len(user_message) > 50 else '')
+    
+    chat.updated_at = datetime.utcnow()
+    db.session.commit()
     
     try:
         lex_response = vertex_ai_service.chat(user_message, [])
         
-        assistant_msg = Message(
-            tenant_id=session.get('tenant_id'),
-            chat_id=chat.id,
-            role='assistant',
-            content=lex_response
+        # Create assistant message dict for S3
+        assistant_msg_dict = {
+            'role': 'assistant',
+            'content': lex_response,
+            'created_at': datetime.utcnow().isoformat()
+        }
+        
+        # Append to S3
+        s3_key = s3_service.append_chat_message(
+            chat.s3_messages_key,
+            chat.id,
+            tenant_id,
+            assistant_msg_dict
         )
-        db.session.add(assistant_msg)
+        
+        if s3_key:
+            chat.s3_messages_key = s3_key
+            chat.message_count = chat.message_count + 1
+        
+        chat.updated_at = datetime.utcnow()
         db.session.commit()
         
         new_question_count = question_count + 1
