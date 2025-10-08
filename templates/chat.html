@@ -64,6 +64,9 @@
         <div class="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
             <h3 id="chat-title" class="text-lg font-semibold">Selecteer of start een chat</h3>
             <div id="chat-actions" class="hidden space-x-2">
+                <button onclick="exportChat()" class="text-sm text-indigo-600 hover:text-indigo-800">
+                    📥 Export
+                </button>
                 <button onclick="renameChat()" class="text-sm text-gray-600 hover:text-gray-800">
                     ✏️ Hernoemen
                 </button>
@@ -637,7 +640,7 @@ async function loadChat(chatId) {
     container.innerHTML = '';
     
     data.messages.forEach(msg => {
-        addMessageToUI(msg.role, msg.content, msg.artifacts || []);
+        addMessageToUI(msg.role, msg.content, msg.artifacts || [], msg.id, msg.feedback_rating);
     });
     
     document.querySelectorAll('.chat-item').forEach(item => {
@@ -646,10 +649,11 @@ async function loadChat(chatId) {
     document.querySelector(`[data-chat-id="${chatId}"]`)?.classList.add('bg-indigo-50', 'border-indigo-300');
 }
 
-function addMessageToUI(role, content, artifacts = []) {
+function addMessageToUI(role, content, artifacts = [], messageId = null, feedbackRating = null) {
     const container = document.getElementById('messages-container');
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    messageDiv.setAttribute('data-message-id', messageId);
     
     let artifactsHtml = '';
     if (artifacts && artifacts.length > 0) {
@@ -668,11 +672,28 @@ function addMessageToUI(role, content, artifacts = []) {
         artifactsHtml += '</div>';
     }
     
+    let feedbackHtml = '';
+    if (role === 'assistant' && messageId) {
+        const disabled = feedbackRating ? 'opacity-50 pointer-events-none' : '';
+        feedbackHtml = `
+            <div class="mt-2 pt-2 border-t flex gap-2 items-center">
+                <span class="text-xs text-gray-500">Hoe nuttig was dit antwoord?</span>
+                <button onclick="submitFeedback(${messageId}, 1)" class="feedback-btn ${disabled} text-gray-400 hover:text-green-600 transition">
+                    👍
+                </button>
+                <button onclick="submitFeedback(${messageId}, -1)" class="feedback-btn ${disabled} text-gray-400 hover:text-red-600 transition">
+                    👎
+                </button>
+            </div>
+        `;
+    }
+    
     messageDiv.innerHTML = `
         <div class="max-w-2xl ${role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200'} rounded-lg p-4">
             <div class="font-semibold text-sm mb-1">${role === 'user' ? 'Jij' : 'LEX 🤖'}</div>
             <div class="whitespace-pre-wrap">${content}</div>
             ${artifactsHtml}
+            ${feedbackHtml}
         </div>
     `;
     
@@ -714,7 +735,7 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
         
         const data = await response.json();
         stopLexAnimation(animationInterval);
-        addMessageToUI('assistant', data.response, data.artifacts || []);
+        addMessageToUI('assistant', data.response, data.artifacts || [], data.message_id, data.feedback_rating);
         
         if (isNewChat && newChatId) {
             const newTitle = message.substring(0, 50) + (message.length > 50 ? '...' : '');
@@ -789,6 +810,30 @@ async function deleteChat() {
         document.getElementById('chat-title').textContent = 'Selecteer of start een chat';
         document.getElementById('chat-actions').classList.add('hidden');
     }
+}
+
+function exportChat() {
+    if (!currentChatId) return;
+    window.location.href = `/api/chat/${currentChatId}/export`;
+}
+
+async function submitFeedback(messageId, rating) {
+    const comment = prompt('Optionele opmerking over dit antwoord:');
+    
+    await fetchWithCSRF('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message_id: messageId,
+            rating: rating,
+            comment: comment || ''
+        })
+    });
+    
+    const feedbackBtns = document.querySelectorAll(`[data-message-id="${messageId}"] .feedback-btn`);
+    feedbackBtns.forEach(btn => btn.classList.add('opacity-50', 'pointer-events-none'));
+    
+    alert('Bedankt voor je feedback!');
 }
 
 async function handleFileUpload(event) {

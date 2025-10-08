@@ -94,6 +94,8 @@ class Message(db.Model):
     chat_id = db.Column(db.Integer, db.ForeignKey('chats.id'), nullable=False)
     role = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    feedback_rating = db.Column(db.Integer, nullable=True)
+    feedback_comment = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Subscription(db.Model):
