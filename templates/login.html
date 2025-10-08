@@ -1,24 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+<div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-zinc-900 px-4">
+    <div class="max-w-md w-full bg-white dark:bg-black rounded-lg shadow-lg p-8 border border-transparent dark:border-zinc-800">
         <div class="text-center mb-6">
-            <a href="/" class="text-3xl font-bold text-indigo-600 hover:text-indigo-700 transition block mb-2">LEX CAO Expert</a>
-            <p class="text-gray-600 dark:text-gray-300">{{ tenant.company_name }}</p>
+            <a href="/" class="flex items-center justify-center space-x-3 hover:opacity-80 transition mb-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded"></div>
+                <span class="text-3xl font-bold text-gray-900 dark:text-white">LEX CAO Expert</span>
+            </a>
+            <p class="text-gray-600 dark:text-gray-400">Log in op uw account</p>
         </div>
         
         {% if show_force_login %}
-        <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-            <p class="text-sm text-yellow-800 mb-4">⚠️ Er is al een actieve sessie op een ander apparaat.</p>
+        <div class="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+            <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-4">⚠️ Er is al een actieve sessie op een ander apparaat.</p>
             <form method="POST" action="/login">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="email" value="{{ email }}"/>
                 <input type="hidden" name="force_login" value="true"/>
                 <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Wachtwoord om te bevestigen</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wachtwoord om te bevestigen</label>
                     <input type="password" name="password" required 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
                 </div>
                 <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-md font-semibold hover:bg-red-700 transition">
                     ✓ Uitloggen op ander apparaat en hier inloggen
@@ -31,28 +34,28 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                     <input type="email" name="email" value="{{ email or '' }}" required 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Wachtwoord</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wachtwoord</label>
                     <input type="password" name="password" required 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 
-                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-md font-semibold hover:bg-indigo-700 transition">
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-md font-semibold hover:bg-blue-700 transition">
                     Inloggen
                 </button>
             </div>
         </form>
         
-        {% if tenant.status == 'trial' %}
-        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700 text-center">
-            Trial actief tot {{ tenant.trial_ends_at.strftime('%d-%m-%Y') }}
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Nog geen account? <a href="/signup/tenant" class="text-blue-600 hover:text-blue-700 font-medium">Registreer hier</a>
+            </p>
         </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}
