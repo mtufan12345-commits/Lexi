@@ -75,6 +75,33 @@ SUPER ADMIN
    - Performance: 3+ MB CDN → ~36KB compiled CSS
    - Build pipeline: tailwindcss v3 + postcss + autoprefixer
    - Production-ready met minification
+3. **Volledig Responsive Design** (October 8, 2025):
+   - Alle pagina's responsive voor mobile, tablet en desktop
+   - Inklapbare sidebar voor chat interface (mobile + desktop toggle)
+   - Hamburger menu voor admin panel navigation
+   - Fixed impersonation banner overlay issue met viewport-based positioning
+4. **Chat Zoekfunctie** (October 8, 2025):
+   - Doorzoekt chat titels én message content (S3)
+   - Live search met debouncing (300ms)
+   - Match indicators: "📌 In titel" (groen) / "📝 In bericht" (blauw)
+   - Snippet preview voor content matches
+5. **Enhanced Chat Avatars** (October 8, 2025):
+   - Grotere avatars (w-8→w-12) voor betere zichtbaarheid
+   - Toon gebruikersfoto's in chat berichten
+   - Fallback naar initials wanneer geen foto beschikbaar
+   - Consistent voor server-rendered en client-side berichten
+6. **Document Upload Redesign** (October 8, 2025):
+   - Echte delete functie: verwijdert uit PostgreSQL + S3
+   - Sidebar transformatie met tabs: "Chats" / "Bijlagen" views
+   - Bijlagen sidebar: file list, upload, delete, size display
+   - Delete confirmation modal voor veiligheid
+   - State management tussen chat history en file management
+7. **Light Mode Visual Enhancements** (October 8, 2025):
+   - Subtiele gradient achtergronden (blue/purple/indigo)
+   - Betere shadows: shadow-md → shadow-lg met hover effecten
+   - Kleurrijke gradient icon backgrounds voor admin stats
+   - Gradient headers en improved card styling
+   - Dark mode onveranderd, alleen light mode verbeterd
 
 ## Setup Notes
 1. Super admin account wordt automatisch aangemaakt bij eerste start:
