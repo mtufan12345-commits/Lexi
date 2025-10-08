@@ -209,14 +209,20 @@
 
 <script>
 let currentChatId = null;
-const userName = "{{ user.full_name }}";
+const userName = "{{ user.full_name if user and user.full_name else 'User' }}";
 
 function getUserInitials() {
-    const names = userName.split(' ');
+    if (!userName || userName === 'undefined') {
+        return 'U';
+    }
+    const names = userName.trim().split(' ').filter(n => n.length > 0);
     if (names.length >= 2) {
         return (names[0][0] + names[names.length - 1][0]).toUpperCase();
     }
-    return names[0].substring(0, 2).toUpperCase();
+    if (names.length === 1 && names[0].length >= 2) {
+        return names[0].substring(0, 2).toUpperCase();
+    }
+    return 'U';
 }
 
 window.getCSRFToken = function() {
