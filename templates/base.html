@@ -32,6 +32,43 @@
         .page-fade.hiding {
             opacity: 0;
         }
+        
+        /* Custom scrollbar for light mode */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        
+        /* Custom scrollbar for dark mode */
+        .dark ::-webkit-scrollbar-track {
+            background: #18181b;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+            border-radius: 5px;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #52525b;
+        }
+        
+        /* Firefox scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #d1d5db #f1f1f1;
+        }
+        .dark * {
+            scrollbar-color: #3f3f46 #18181b;
+        }
     </style>
     <script>
         if (localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {

@@ -312,7 +312,12 @@ function addMessageToDOM(role, content, container = null) {
     }
     
     container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
+    
+    // Scroll the actual messages container
+    const messagesContainer = document.getElementById('messages-container');
+    setTimeout(() => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 10);
 }
 
 function showLoadingMessage() {
@@ -333,7 +338,12 @@ function showLoadingMessage() {
         </div>
     `;
     container.appendChild(loadingDiv);
-    container.scrollTop = container.scrollHeight;
+    
+    // Scroll the actual messages container
+    const messagesContainer = document.getElementById('messages-container');
+    setTimeout(() => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 10);
 }
 
 function removeLoadingMessage() {
