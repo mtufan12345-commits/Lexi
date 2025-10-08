@@ -35,7 +35,7 @@ class VertexAIService:
                 location=os.environ.get("VERTEX_AI_LOCATION"),
             )
             
-            self.model = "gemini-2.0-flash-exp"
+            self.model = "gemini-1.5-pro"
             self.rag_corpus = os.environ.get("VERTEX_AI_AGENT_ID")
             
             self.system_instruction = """Je bent Lex - Expert Loonadministrateur voor UZB (NBBU CAO).
