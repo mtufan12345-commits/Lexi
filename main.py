@@ -534,26 +534,29 @@ def get_chat(chat_id):
         user_id=current_user.id
     ).first_or_404()
     
+    # Get messages from S3
     messages = []
-    for m in chat.messages:
-        msg_data = {
-            'id': m.id,
-            'role': m.role,
-            'content': m.content,
-            'created_at': m.created_at.isoformat(),
-            'feedback_rating': m.feedback_rating
-        }
-        
-        if m.role == 'assistant':
-            artifacts = Artifact.query.filter_by(message_id=m.id, tenant_id=g.tenant.id).all()
-            if artifacts:
-                msg_data['artifacts'] = [{
-                    'id': a.id,
-                    'title': a.title,
-                    'type': a.artifact_type
-                } for a in artifacts]
-        
-        messages.append(msg_data)
+    if chat.s3_messages_key:
+        s3_messages = s3_service.get_chat_messages(chat.s3_messages_key)
+        for idx, m in enumerate(s3_messages):
+            msg_data = {
+                'id': idx + 1,
+                'role': m.get('role'),
+                'content': m.get('content'),
+                'created_at': m.get('created_at'),
+                'feedback_rating': m.get('feedback_rating')
+            }
+            
+            if m.get('role') == 'assistant':
+                artifacts = Artifact.query.filter_by(message_id=idx + 1, chat_id=chat.id, tenant_id=g.tenant.id).all()
+                if artifacts:
+                    msg_data['artifacts'] = [{
+                        'id': a.id,
+                        'title': a.title,
+                        'type': a.artifact_type
+                    } for a in artifacts]
+            
+            messages.append(msg_data)
     
     return jsonify({'id': chat.id, 'title': chat.title, 'messages': messages})
 
