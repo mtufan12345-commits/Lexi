@@ -143,7 +143,8 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
                 config=config,
             ):
                 if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
-                    response_text += chunk.text
+                    if chunk.text:
+                        response_text += chunk.text
             
             return response_text
         except Exception as e:
@@ -304,6 +305,58 @@ class S3Service:
         except Exception as e:
             print(f"S3 delete error: {e}")
             return False
+    
+    def save_chat_messages(self, chat_id, tenant_id, messages):
+        """Save chat messages to S3 as JSON"""
+        if not self.enabled:
+            return None
+        
+        try:
+            s3_key = f"chats/tenant_{tenant_id}/chat_{chat_id}_messages.json"
+            
+            messages_data = json.dumps(messages, ensure_ascii=False, indent=2)
+            
+            self.s3_client.put_object(
+                Bucket=self.bucket,
+                Key=s3_key,
+                Body=messages_data.encode('utf-8'),
+                ContentType='application/json'
+            )
+            
+            return s3_key
+        except Exception as e:
+            print(f"S3 save chat messages error: {e}")
+            return None
+    
+    def get_chat_messages(self, s3_key):
+        """Get chat messages from S3"""
+        if not self.enabled:
+            return []
+        
+        try:
+            response = self.s3_client.get_object(Bucket=self.bucket, Key=s3_key)
+            content = response['Body'].read().decode('utf-8')
+            return json.loads(content)
+        except self.s3_client.exceptions.NoSuchKey:
+            return []
+        except Exception as e:
+            print(f"S3 get chat messages error: {e}")
+            return []
+    
+    def append_chat_message(self, s3_key, chat_id, tenant_id, message):
+        """Append a new message to existing chat in S3"""
+        if not self.enabled:
+            return False
+        
+        try:
+            messages = self.get_chat_messages(s3_key) if s3_key else []
+            messages.append(message)
+            
+            new_s3_key = self.save_chat_messages(chat_id, tenant_id, messages)
+            return new_s3_key
+        except Exception as e:
+            print(f"S3 append chat message error: {e}")
+            return None
 
 class StripeService:
     @staticmethod
