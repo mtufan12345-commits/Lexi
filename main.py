@@ -272,9 +272,11 @@ def send_free_chat_message(chat_id):
         user_msg_dict
     )
     
-    if s3_key:
-        chat.s3_messages_key = s3_key
-        chat.message_count = chat.message_count + 1
+    if not s3_key:
+        return jsonify({'error': 'Kon bericht niet opslaan. Probeer het opnieuw.'}), 500
+    
+    chat.s3_messages_key = s3_key
+    chat.message_count = (chat.message_count or 0) + 1
     
     if chat.message_count <= 1:
         chat.title = user_message[:50] + ('...' if len(user_message) > 50 else '')
@@ -300,10 +302,11 @@ def send_free_chat_message(chat_id):
             assistant_msg_dict
         )
         
-        if s3_key:
-            chat.s3_messages_key = s3_key
-            chat.message_count = chat.message_count + 1
+        if not s3_key:
+            return jsonify({'error': 'Kon AI response niet opslaan. Probeer het opnieuw.'}), 500
         
+        chat.s3_messages_key = s3_key
+        chat.message_count = (chat.message_count or 0) + 1
         chat.updated_at = datetime.utcnow()
         db.session.commit()
         
@@ -643,9 +646,11 @@ def send_message(chat_id):
         user_msg_dict
     )
     
-    if s3_key:
-        chat.s3_messages_key = s3_key
-        chat.message_count = chat.message_count + 1
+    if not s3_key:
+        return jsonify({'error': 'Kon bericht niet opslaan. Probeer het opnieuw.'}), 500
+    
+    chat.s3_messages_key = s3_key
+    chat.message_count = (chat.message_count or 0) + 1
     
     if chat.message_count <= 1:
         chat.title = user_message[:50] + ('...' if len(user_message) > 50 else '')
@@ -697,10 +702,11 @@ def send_message(chat_id):
         assistant_msg_dict
     )
     
-    if s3_key:
-        chat.s3_messages_key = s3_key
-        chat.message_count = chat.message_count + 1
+    if not s3_key:
+        return jsonify({'error': 'Kon AI response niet opslaan. Probeer het opnieuw.'}), 500
     
+    chat.s3_messages_key = s3_key
+    chat.message_count = (chat.message_count or 0) + 1
     chat.updated_at = datetime.utcnow()
     db.session.commit()
     
