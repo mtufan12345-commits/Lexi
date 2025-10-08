@@ -14,17 +14,20 @@ class VertexAIService:
     def __init__(self):
         credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         
-        if isinstance(credentials_json, str):
-            credentials = json.loads(credentials_json)
-        else:
-            credentials = credentials_json
-        
         try:
             from google import genai
             from google.genai import types
+            import tempfile
             
             self.genai = genai
             self.types = types
+            
+            if isinstance(credentials_json, str):
+                credentials_dict = json.loads(credentials_json)
+                temp_cred_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
+                json.dump(credentials_dict, temp_cred_file)
+                temp_cred_file.close()
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_cred_file.name
             
             self.client = genai.Client(
                 vertexai=True,

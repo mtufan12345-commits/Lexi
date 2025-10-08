@@ -1,0 +1,31 @@
+LEX CAO Expert
+test1
+
++ Nieuwe Chat
+Nieuwe chat
+08-10 09:58
+Nieuwe chat
+08-10 09:58
+Nieuwe chat
+08-10 09:40
+Nieuwe chat
+08-10 09:40
+Nieuwe chat
+07-10 15:13
+test
+⚙️ Dashboard
+Uitloggen
+Selecteer of start een chat
+✏️ Hernoemen 🗑️ Verwijderen
+🤖
+Welkom bij LEX!
+
+Stel me een vraag over CAO's en ik help je direct.
+
+Jij
+wie ben je
+LEX 🤖
+Er ging iets mis bij het verwerken van je vraag: File {   "type": "service_account",   "project_id": "uzb-agent",   "private_key_id": "a9f377f8bf98106c4766da08225a962a4e6d0b4a",   "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDLJjnheGf5PCLy\nSaYaUkNFaUGLBP3vU/puCf0EZiQhFlzV37XhIOknrg5hbjRDviOEOQidUbP59CDL\n3AJ+IFb9fJTBaajJtt9/2rGYmcuTXDw/6DvZduqO/TKmApaleL0Tfe60jX4YTAcm\nRxQPwep6WpD9SYZtJRta4kIFcxwQw29p3kD/k0HVuujd9wSpfDGXnognPWeZkO9o\nTEbd4o/bTLlNq1Xhv6VzB1aRrP8QwBA1rS+Wb/WV4vuAeorE2P/IEN3dZxHQbig8\nxU4dU1KTX2CJRg1YNrl9M2qRW1tiTLEtnFGgBz7TMFjhkLyjR8y2+7xFs9wUwuKo\nRK1pX3NxAgMBAAECggEAEtq044a7y6d3rNoGBwpcgPwwX5kygjxekUjvCTH7p3B+\nZEEzjbXyvcKLRiKmyiTDAhoTARrco9WzF4iPWKpiuHsQCVVnm3UUEDc5ZWrcuIwG\ncX351AiT43p/cWXrGmd20PDOr0Y0jke8ICLXq1C5lOqD62YgClA31jsKmpvg3nNC\npyeh2I8hlOEcNJkMdSuXeFqCyhJsSyJtxpZA90UvxoPbOVQmKUTorxNR4quDEwC9\ncHGLvWA31gBH2GHvyHMQAMV9xnSxpT6+CTcmDfIAQgNFfhXbdVJnd5xbe3HKKAoC\nScdK5w281y14RSxLmm7ddV5WgfHfU/G2eEA6xLaWOwKBgQDYLrmLLgiW6SGPxWtp\nxj/dJldUZa/i5o3i/St4r8xvOQ0t7dvlV/HbLRhU5tcZBzdiTw6eCs7vZTsQV6x2\nOpXEtTTR4IVOrCmbal5hg1t1GXBWupvD2FHkOpm2AJLbuNPdMkjCAxJRvewrTvKi\ndwDjj5r1ztaU1v0Z2bPhvousTwKBgQDwkPhD66MdZywQJhDfzCX5qTwghLSqcyJS\n2hzjlKtelCoMaHxbwBLGNlxlDveUaDKR3NBERnWPOB8jonLI1CIsM9tUUXV8mtWS\nx3OPb4/xASk+6ELP4P8gN9q0zi2W9wMYIY9W3S1UE2wkifHYfC6sM1xRs07HLOTD\nx2b6+gA0PwKBgQCSBG1arssqc2kx3NzCYx+71iviW5TDo4puqSX1rHhfH5/hR+nh\nLNe1fO4UWp8qzo8AHfn3kcFYPX35ed6JNOT4KpT0tbwU+YBY8y2wm7LokzgnvH99\ndt1JVLOCFT0cn+iqXU57jOuQvsGINxj3132INvUp1n1lpxjpnvw7HCLnTQKBgQDG\nCaHHUDFMoEV+2cdkZQwSFgaAgp6z/uoPqKzFkPrudiyTYGSXp2wNLm0raIHZ81lG\nCLCOtC5NA5dm33F88F1dZCc3p4N/W3tcRMNWHjIx5ZHNzqhJt2BvZmuuElkngRtT\n/zSf/p41K3QINGMao0hMzE9AlsrQXp3IqduV2r7WQwKBgQCj/0mtVkvaKRcA86Zq\nqfGTDY0qOI4QKQk7oJ3vJ3AkPzGc4+dH+CDX58sjGB0sbZXbK08V8Ch0aU1JgzXR\n1enD1YGfsg6DUEBV8541ky6LT+PKPNCcfSw5I8KyHvbo93Dtfd36VwYVCzmWAVnq\nZr5VCc8zlTk6thXwWio3+83+7w==\n-----END PRIVATE KEY-----\n",   "client_email": "uzb-agent@appspot.gserviceaccount.com",   "client_id": "101731341374382173293",   "auth_uri": "https://accounts.google.com/o/oauth2/auth",   "token_uri": "https://oauth2.googleapis.com/token",   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/uzb-agent%40appspot.gserviceaccount.com",   "universe_domain": "googleapis.com" } was not found.
+📎
+Stel een vraag over CAO's...
+Verstuur
