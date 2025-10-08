@@ -68,83 +68,83 @@
             </div>
             
             <!-- Grond lijn -->
-            <div class="absolute bottom-16 left-0 right-0 h-0.5 bg-gray-300"></div>
+            <div class="absolute bottom-16 left-0 right-0 h-0.5 bg-gray-400"></div>
             
-            <!-- Boekenplank -->
-            <div id="bookshelf" class="absolute left-1/2 transform -translate-x-1/2" style="bottom: 120px;">
-                <div class="flex space-x-1">
-                    <div class="w-6 h-20 bg-red-500 rounded-sm"></div>
-                    <div class="w-6 h-16 bg-blue-500 rounded-sm"></div>
-                    <div class="w-6 h-24 bg-green-500 rounded-sm"></div>
-                    <div class="w-6 h-20 bg-yellow-500 rounded-sm"></div>
-                    <div class="w-6 h-16 bg-purple-500 rounded-sm"></div>
-                </div>
-            </div>
-            
-            <!-- Ladder -->
-            <div id="ladder" class="absolute hidden" style="bottom: 16px; left: 48%;">
-                <div class="w-1.5 h-32 bg-amber-700 rounded relative">
-                    <div class="absolute w-12 h-0.5 bg-amber-700 left-1/2 transform -translate-x-1/2" style="top: 20%"></div>
-                    <div class="absolute w-12 h-0.5 bg-amber-700 left-1/2 transform -translate-x-1/2" style="top: 40%"></div>
-                    <div class="absolute w-12 h-0.5 bg-amber-700 left-1/2 transform -translate-x-1/2" style="top: 60%"></div>
-                    <div class="absolute w-12 h-0.5 bg-amber-700 left-1/2 transform -translate-x-1/2" style="top: 80%"></div>
-                </div>
-            </div>
-            
-            <!-- Boeken op grond -->
-            <div id="floor-books" class="absolute" style="bottom: 16px; left: 25%;">
-                <div class="flex space-x-1">
-                    <div class="w-5 h-7 bg-indigo-400 rounded-sm transform rotate-12"></div>
-                    <div class="w-5 h-7 bg-pink-400 rounded-sm transform -rotate-6"></div>
-                </div>
-            </div>
-            
-            <!-- LEX - Complex stick figure uit duizenden streepjes -->
+            <!-- LEX - Ultra gedetailleerd poppetje uit honderden streepjes -->
             <svg id="lex-stickman" class="absolute transition-all duration-300" style="bottom: 60px; left: 10%; width: 100px; height: 120px;">
-                <!-- Hoofd (gedetailleerd met veel lijntjes) -->
+                <!-- Hoofd (vele concentrische cirkels) -->
                 <g id="lex-head-group">
                     <circle cx="50" cy="20" r="15" fill="none" stroke="#4F46E5" stroke-width="2"/>
-                    <circle cx="50" cy="20" r="13" fill="none" stroke="#4F46E5" stroke-width="0.5" opacity="0.6"/>
-                    <circle cx="50" cy="20" r="11" fill="none" stroke="#4F46E5" stroke-width="0.5" opacity="0.4"/>
-                    <!-- Gezicht details -->
-                    <circle cx="45" cy="18" r="2" fill="#4F46E5"/>
-                    <circle cx="55" cy="18" r="2" fill="#4F46E5"/>
-                    <path d="M 45 25 Q 50 27 55 25" fill="none" stroke="#4F46E5" stroke-width="1.5"/>
+                    <circle cx="50" cy="20" r="14" fill="none" stroke="#4F46E5" stroke-width="0.3" opacity="0.7"/>
+                    <circle cx="50" cy="20" r="13" fill="none" stroke="#4F46E5" stroke-width="0.3" opacity="0.6"/>
+                    <circle cx="50" cy="20" r="12" fill="none" stroke="#4F46E5" stroke-width="0.3" opacity="0.5"/>
+                    <circle cx="50" cy="20" r="11" fill="none" stroke="#4F46E5" stroke-width="0.3" opacity="0.4"/>
+                    <circle cx="50" cy="20" r="10" fill="none" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
+                    <circle cx="50" cy="20" r="9" fill="none" stroke="#4F46E5" stroke-width="0.3" opacity="0.2"/>
+                    <!-- Gezicht -->
+                    <circle cx="44" cy="18" r="2.5" fill="#4F46E5"/>
+                    <circle cx="56" cy="18" r="2.5" fill="#4F46E5"/>
+                    <circle cx="44" cy="18" r="1.5" fill="none" stroke="#4F46E5" stroke-width="0.5"/>
+                    <circle cx="56" cy="18" r="1.5" fill="none" stroke="#4F46E5" stroke-width="0.5"/>
+                    <path d="M 44 25 Q 50 28 56 25" fill="none" stroke="#4F46E5" stroke-width="2"/>
+                    <path d="M 44 25 Q 50 27 56 25" fill="none" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
                 </g>
                 
-                <!-- Lichaam (meerdere lijnen voor dikte) -->
+                <!-- Lichaam (vele parallelle lijnen) -->
                 <g id="lex-body-group">
                     <line x1="50" y1="35" x2="50" y2="70" stroke="#4F46E5" stroke-width="3"/>
-                    <line x1="49" y1="35" x2="49" y2="70" stroke="#4F46E5" stroke-width="1" opacity="0.5"/>
-                    <line x1="51" y1="35" x2="51" y2="70" stroke="#4F46E5" stroke-width="1" opacity="0.5"/>
+                    <line x1="48" y1="35" x2="48" y2="70" stroke="#4F46E5" stroke-width="0.5" opacity="0.6"/>
+                    <line x1="49" y1="35" x2="49" y2="70" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="51" y1="35" x2="51" y2="70" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="52" y1="35" x2="52" y2="70" stroke="#4F46E5" stroke-width="0.5" opacity="0.6"/>
+                    <line x1="47" y1="35" x2="47" y2="70" stroke="#4F46E5" stroke-width="0.3" opacity="0.4"/>
+                    <line x1="53" y1="35" x2="53" y2="70" stroke="#4F46E5" stroke-width="0.3" opacity="0.4"/>
+                    <line x1="46" y1="35" x2="46" y2="70" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
+                    <line x1="54" y1="35" x2="54" y2="70" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
                 </g>
                 
-                <!-- Linker arm (gedetailleerd) -->
+                <!-- Linker arm (vele lijnen) -->
                 <g id="lex-arm-left-group">
-                    <line id="lex-arm-left" x1="50" y1="45" x2="25" y2="60" stroke="#4F46E5" stroke-width="2.5"/>
-                    <line x1="50" y1="45" x2="26" y2="61" stroke="#4F46E5" stroke-width="1" opacity="0.4"/>
-                    <line x1="50" y1="45" x2="24" y2="59" stroke="#4F46E5" stroke-width="1" opacity="0.4"/>
+                    <line id="lex-arm-left" x1="50" y1="45" x2="25" y2="60" stroke="#4F46E5" stroke-width="3"/>
+                    <line x1="50" y1="45" x2="26" y2="61" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="50" y1="45" x2="24" y2="59" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="50" y1="46" x2="25" y2="61" stroke="#4F46E5" stroke-width="0.4" opacity="0.4"/>
+                    <line x1="50" y1="44" x2="25" y2="59" stroke="#4F46E5" stroke-width="0.4" opacity="0.4"/>
+                    <line x1="50" y1="47" x2="25" y2="62" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
+                    <line x1="50" y1="43" x2="25" y2="58" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
                 </g>
                 
-                <!-- Rechter arm (gedetailleerd) -->
+                <!-- Rechter arm (vele lijnen) -->
                 <g id="lex-arm-right-group">
-                    <line id="lex-arm-right" x1="50" y1="45" x2="75" y2="60" stroke="#4F46E5" stroke-width="2.5"/>
-                    <line x1="50" y1="45" x2="74" y2="61" stroke="#4F46E5" stroke-width="1" opacity="0.4"/>
-                    <line x1="50" y1="45" x2="76" y2="59" stroke="#4F46E5" stroke-width="1" opacity="0.4"/>
+                    <line id="lex-arm-right" x1="50" y1="45" x2="75" y2="60" stroke="#4F46E5" stroke-width="3"/>
+                    <line x1="50" y1="45" x2="74" y2="61" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="50" y1="45" x2="76" y2="59" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="50" y1="46" x2="75" y2="61" stroke="#4F46E5" stroke-width="0.4" opacity="0.4"/>
+                    <line x1="50" y1="44" x2="75" y2="59" stroke="#4F46E5" stroke-width="0.4" opacity="0.4"/>
+                    <line x1="50" y1="47" x2="75" y2="62" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
+                    <line x1="50" y1="43" x2="75" y2="58" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
                 </g>
                 
-                <!-- Linker been (gedetailleerd) -->
+                <!-- Linker been (vele lijnen) -->
                 <g id="lex-leg-left-group">
-                    <line id="lex-leg-left" x1="50" y1="70" x2="35" y2="100" stroke="#4F46E5" stroke-width="2.5"/>
-                    <line x1="50" y1="70" x2="36" y2="101" stroke="#4F46E5" stroke-width="1" opacity="0.4"/>
-                    <line x1="50" y1="70" x2="34" y2="99" stroke="#4F46E5" stroke-width="1" opacity="0.4"/>
+                    <line id="lex-leg-left" x1="50" y1="70" x2="35" y2="100" stroke="#4F46E5" stroke-width="3"/>
+                    <line x1="50" y1="70" x2="36" y2="101" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="50" y1="70" x2="34" y2="99" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="50" y1="71" x2="35" y2="101" stroke="#4F46E5" stroke-width="0.4" opacity="0.4"/>
+                    <line x1="50" y1="69" x2="35" y2="99" stroke="#4F46E5" stroke-width="0.4" opacity="0.4"/>
+                    <line x1="50" y1="72" x2="35" y2="102" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
+                    <line x1="50" y1="68" x2="35" y2="98" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
                 </g>
                 
-                <!-- Rechter been (gedetailleerd) -->
+                <!-- Rechter been (vele lijnen) -->
                 <g id="lex-leg-right-group">
-                    <line id="lex-leg-right" x1="50" y1="70" x2="65" y2="100" stroke="#4F46E5" stroke-width="2.5"/>
-                    <line x1="50" y1="70" x2="64" y2="101" stroke="#4F46E5" stroke-width="1" opacity="0.4"/>
-                    <line x1="50" y1="70" x2="66" y2="99" stroke="#4F46E5" stroke-width="1" opacity="0.4"/>
+                    <line id="lex-leg-right" x1="50" y1="70" x2="65" y2="100" stroke="#4F46E5" stroke-width="3"/>
+                    <line x1="50" y1="70" x2="64" y2="101" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="50" y1="70" x2="66" y2="99" stroke="#4F46E5" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="50" y1="71" x2="65" y2="101" stroke="#4F46E5" stroke-width="0.4" opacity="0.4"/>
+                    <line x1="50" y1="69" x2="65" y2="99" stroke="#4F46E5" stroke-width="0.4" opacity="0.4"/>
+                    <line x1="50" y1="72" x2="65" y2="102" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
+                    <line x1="50" y1="68" x2="65" y2="98" stroke="#4F46E5" stroke-width="0.3" opacity="0.3"/>
                 </g>
             </svg>
             
@@ -275,95 +275,75 @@ function reassemble() {
 
 const LEX_SCENARIOS = [
     {
-        name: 'run_pick_book',
-        action: (stickman, ladder) => {
+        name: 'crazy_jump_spin',
+        action: (stickman) => {
             const limbInterval = animateLimbs(true);
-            stickman.style.left = '10%';
-            
-            setTimeout(() => stickman.style.left = '23%', 100);
+            stickman.style.left = '5%';
+            setTimeout(() => stickman.style.left = '30%', 100);
             setTimeout(() => {
                 clearInterval(limbInterval);
-                stickman.style.transform = 'rotate(-30deg)';
-            }, 1500);
+                stickman.style.bottom = '100px';
+                stickman.style.transform = 'rotate(360deg)';
+            }, 1200);
             setTimeout(() => {
-                stickman.style.transform = 'rotate(0deg)';
-                const limbInterval2 = animateLimbs(true);
-                setTimeout(() => {
-                    stickman.style.left = '50%';
-                    clearInterval(limbInterval2);
-                    animateLimbs(false);
-                }, 800);
-            }, 2200);
-        }
-    },
-    {
-        name: 'ladder_climb_fall',
-        action: (stickman, ladder) => {
-            ladder.classList.remove('hidden');
-            const limbInterval = animateLimbs(true);
-            stickman.style.left = '10%';
-            
-            setTimeout(() => stickman.style.left = '46%', 100);
-            setTimeout(() => {
-                clearInterval(limbInterval);
-                stickman.style.bottom = '80px';
-            }, 1500);
-            setTimeout(() => stickman.style.bottom = '110px', 2000);
-            setTimeout(() => stickman.style.bottom = '140px', 2500);
-            setTimeout(() => {
-                explodeIntoPieces();
                 stickman.style.bottom = '60px';
-            }, 3200);
-            setTimeout(() => {
-                reassemble();
-                ladder.classList.add('hidden');
-                animateLimbs(false);
-            }, 4800);
-        }
-    },
-    {
-        name: 'back_forth_search',
-        action: (stickman, ladder) => {
-            const limbInterval = animateLimbs(true);
-            let pos = 10;
-            let dir = 1;
-            let bounces = 0;
-            
-            const moveInterval = setInterval(() => {
-                pos += dir * 12;
-                if (pos > 70 || pos < 10) {
-                    dir *= -1;
-                    bounces++;
-                    stickman.style.transform = dir > 0 ? 'scaleX(1)' : 'scaleX(-1)';
-                }
-                stickman.style.left = pos + '%';
-                
-                if (bounces >= 4) {
-                    clearInterval(moveInterval);
-                    clearInterval(limbInterval);
-                    stickman.style.transform = 'scaleX(1)';
-                    animateLimbs(false);
-                }
-            }, 200);
-        }
-    },
-    {
-        name: 'run_stumble_explode',
-        action: (stickman, ladder) => {
-            const limbInterval = animateLimbs(true);
-            stickman.style.left = '10%';
-            
-            setTimeout(() => stickman.style.left = '40%', 100);
-            setTimeout(() => {
-                clearInterval(limbInterval);
-                stickman.style.transform = 'rotate(90deg)';
-                stickman.style.bottom = '40px';
+                stickman.style.transform = 'rotate(720deg)';
             }, 1800);
             setTimeout(() => {
                 explodeIntoPieces();
-                stickman.style.bottom = '60px';
                 stickman.style.transform = 'rotate(0deg)';
-            }, 2500);
+            }, 2200);
+            setTimeout(() => {
+                reassemble();
+                animateLimbs(false);
+            }, 3800);
+        }
+    },
+    {
+        name: 'zigzag_run',
+        action: (stickman) => {
+            const limbInterval = animateLimbs(true);
+            let pos = 5;
+            let height = 60;
+            let zigzags = 0;
+            const zigzagInterval = setInterval(() => {
+                pos += 10;
+                height = zigzags % 2 === 0 ? 80 : 60;
+                stickman.style.left = pos + '%';
+                stickman.style.bottom = height + 'px';
+                zigzags++;
+                if (zigzags > 7) {
+                    clearInterval(zigzagInterval);
+                    clearInterval(limbInterval);
+                    stickman.style.bottom = '60px';
+                    animateLimbs(false);
+                }
+            }, 300);
+        }
+    },
+    {
+        name: 'backflip_explode',
+        action: (stickman) => {
+            const limbInterval = animateLimbs(true);
+            stickman.style.left = '10%';
+            setTimeout(() => stickman.style.left = '35%', 100);
+            setTimeout(() => {
+                clearInterval(limbInterval);
+                stickman.style.bottom = '120px';
+                stickman.style.transform = 'rotate(180deg)';
+            }, 1500);
+            setTimeout(() => {
+                stickman.style.bottom = '90px';
+                stickman.style.transform = 'rotate(270deg)';
+            }, 1900);
+            setTimeout(() => {
+                stickman.style.bottom = '60px';
+                stickman.style.transform = 'rotate(360deg)';
+            }, 2300);
+            setTimeout(() => {
+                explodeIntoPieces();
+                stickman.style.transform = 'rotate(0deg)';
+            }, 2600);
             setTimeout(() => {
                 reassemble();
                 animateLimbs(false);
@@ -371,52 +351,125 @@ const LEX_SCENARIOS = [
         }
     },
     {
-        name: 'bookshelf_read',
-        action: (stickman, ladder) => {
+        name: 'moonwalk_dance',
+        action: (stickman) => {
             const limbInterval = animateLimbs(true);
-            stickman.style.left = '10%';
-            
-            setTimeout(() => stickman.style.left = '48%', 100);
-            setTimeout(() => {
-                clearInterval(limbInterval);
-                stickman.style.bottom = '120px';
-            }, 1500);
-            
-            let readFrame = 0;
-            const readInterval = setInterval(() => {
-                readFrame++;
-                const armLeft = document.getElementById('lex-arm-left');
-                const armRight = document.getElementById('lex-arm-right');
-                const tilt = Math.sin(readFrame * 0.2) * 5;
-                armLeft?.setAttribute('y2', String(60 + tilt));
-                armRight?.setAttribute('y2', String(60 - tilt));
-            }, 100);
-            
-            setTimeout(() => {
-                clearInterval(readInterval);
-                stickman.style.bottom = '60px';
-                animateLimbs(false);
-            }, 3500);
+            stickman.style.left = '60%';
+            stickman.style.transform = 'scaleX(-1)';
+            let pos = 60;
+            const moonwalkInterval = setInterval(() => {
+                pos -= 8;
+                stickman.style.left = pos + '%';
+                if (pos < 15) {
+                    clearInterval(moonwalkInterval);
+                    clearInterval(limbInterval);
+                    stickman.style.transform = 'scaleX(1)';
+                    stickman.style.bottom = '70px';
+                    setTimeout(() => {
+                        stickman.style.bottom = '60px';
+                    }, 200);
+                    setTimeout(() => {
+                        stickman.style.bottom = '70px';
+                    }, 400);
+                    setTimeout(() => {
+                        stickman.style.bottom = '60px';
+                        animateLimbs(false);
+                    }, 600);
+                }
+            }, 200);
         }
     },
     {
-        name: 'fast_sprint_crash',
-        action: (stickman, ladder) => {
+        name: 'speed_dash_crash',
+        action: (stickman) => {
             const limbInterval = animateLimbs(true);
-            stickman.style.left = '5%';
-            stickman.style.transition = 'left 0.8s linear';
-            
-            setTimeout(() => stickman.style.left = '75%', 100);
+            stickman.style.left = '3%';
+            stickman.style.transition = 'left 0.6s cubic-bezier(0, 0.5, 0.5, 1)';
+            setTimeout(() => stickman.style.left = '80%', 100);
             setTimeout(() => {
                 clearInterval(limbInterval);
+                stickman.style.transform = 'rotate(180deg) scaleY(-1)';
+            }, 700);
+            setTimeout(() => {
                 explodeIntoPieces();
+                stickman.style.transform = 'rotate(0deg)';
                 stickman.style.transition = 'left 0.3s';
-            }, 900);
+            }, 1000);
             setTimeout(() => {
                 reassemble();
-                stickman.style.left = '30%';
+                stickman.style.left = '40%';
                 animateLimbs(false);
             }, 2800);
+        }
+    },
+    {
+        name: 'confused_spin',
+        action: (stickman) => {
+            let spins = 0;
+            const spinInterval = setInterval(() => {
+                stickman.style.transform = `rotate(${spins * 120}deg)`;
+                spins++;
+                if (spins > 5) {
+                    clearInterval(spinInterval);
+                    stickman.style.transform = 'rotate(0deg) scaleX(-1)';
+                    setTimeout(() => {
+                        stickman.style.transform = 'rotate(0deg) scaleX(1)';
+                    }, 300);
+                }
+            }, 250);
+        }
+    },
+    {
+        name: 'triple_bounce',
+        action: (stickman) => {
+            const limbInterval = animateLimbs(true);
+            stickman.style.left = '10%';
+            setTimeout(() => stickman.style.left = '25%', 100);
+            setTimeout(() => {
+                stickman.style.bottom = '110px';
+            }, 1000);
+            setTimeout(() => {
+                stickman.style.bottom = '60px';
+                stickman.style.left = '40%';
+            }, 1400);
+            setTimeout(() => {
+                stickman.style.bottom = '100px';
+            }, 1800);
+            setTimeout(() => {
+                stickman.style.bottom = '60px';
+                stickman.style.left = '55%';
+            }, 2200);
+            setTimeout(() => {
+                stickman.style.bottom = '90px';
+            }, 2600);
+            setTimeout(() => {
+                stickman.style.bottom = '60px';
+                clearInterval(limbInterval);
+                animateLimbs(false);
+            }, 3000);
+        }
+    },
+    {
+        name: 'wall_bonk',
+        action: (stickman) => {
+            const limbInterval = animateLimbs(true);
+            stickman.style.left = '10%';
+            stickman.style.transition = 'left 1.2s linear';
+            setTimeout(() => stickman.style.left = '85%', 100);
+            setTimeout(() => {
+                clearInterval(limbInterval);
+                stickman.style.transform = 'scaleX(-1)';
+            }, 1300);
+            setTimeout(() => {
+                explodeIntoPieces();
+                stickman.style.transform = 'scaleX(1)';
+                stickman.style.transition = 'left 0.3s';
+            }, 1500);
+            setTimeout(() => {
+                reassemble();
+                stickman.style.left = '40%';
+                animateLimbs(false);
+            }, 3300);
         }
     }
 ];
@@ -424,28 +477,26 @@ const LEX_SCENARIOS = [
 function startLexAnimation() {
     const container = document.getElementById('lex-animation-container');
     const stickman = document.getElementById('lex-stickman');
-    const ladder = document.getElementById('ladder');
     const progressBar = document.getElementById('lex-progress');
     
     container.classList.remove('hidden');
     reassemble();
-    ladder.classList.add('hidden');
     stickman.style.left = '10%';
     stickman.style.bottom = '60px';
     stickman.style.transform = 'scaleX(1) rotate(0deg)';
-    stickman.style.transition = 'left 0.3s, bottom 0.3s';
+    stickman.style.transition = 'left 0.3s, bottom 0.3s, transform 0.3s';
     
     let startTime = Date.now();
-    let currentScenario = 0;
+    let currentScenario = Math.floor(Math.random() * LEX_SCENARIOS.length);
     
     const runScenario = () => {
         const scenario = LEX_SCENARIOS[currentScenario % LEX_SCENARIOS.length];
-        scenario.action(stickman, ladder);
+        scenario.action(stickman);
         currentScenario++;
     };
     
     runScenario();
-    const scenarioInterval = setInterval(runScenario, 5500);
+    const scenarioInterval = setInterval(runScenario, 4500);
     
     const progressInterval = setInterval(() => {
         const elapsed = Date.now() - startTime;
@@ -462,11 +513,9 @@ function stopLexAnimation(intervals) {
     
     const container = document.getElementById('lex-animation-container');
     const stickman = document.getElementById('lex-stickman');
-    const ladder = document.getElementById('ladder');
     const progressBar = document.getElementById('lex-progress');
     
     reassemble();
-    ladder.classList.add('hidden');
     animateLimbs(false);
     stickman.style.left = '50%';
     stickman.style.bottom = '60px';
