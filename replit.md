@@ -27,14 +27,17 @@ SUPER ADMIN
 ```
 
 ## Key Features
-1. **Multi-tenant isolatie**: Subdomain routing (bedrijf.lex-cao.replit.app)
-2. **Chat interface**: Met LEX animatie tijdens AI response (5 random scenarios)
-3. **File uploads**: S3 storage voor documents die LEX kan analyseren
-4. **Artifact generatie**: LEX kan documenten genereren en opslaan
-5. **Template database**: Tenant admins kunnen templates beheren (arbeidsovereenkomsten, etc)
-6. **Session management**: Voorkomt multiple concurrent logins per user
-7. **Stripe integratie**: Checkout + webhooks voor subscription management
-8. **Email notificaties**: Welcome, trial expiring, payment failed
+1. **Multi-tenant isolatie**: Subdomain routing (production) + session-based (development)
+2. **Chat interface**: Met LEX animatie (8 visual-only scenarios) tijdens AI response
+3. **Chat history sidebar**: Snelle toegang tot eerdere chats met datum/tijd
+4. **File uploads**: PDF, DOCX, en text bestanden die LEX kan analyseren
+5. **Artifact generatie**: LEX kan documenten genereren (contracten, brieven) met download buttons
+6. **User management**: Add/delete/deactivate users, role changes (admin/user), user limits
+7. **Dashboard analytics**: Totaal vragen, actieve users, usage per maand, top users
+8. **Template database**: Tenant admins kunnen templates beheren
+9. **Session management**: Voorkomt multiple concurrent logins per user
+10. **Stripe integratie**: Checkout + webhooks voor subscription management
+11. **Email notificaties**: Welcome, trial expiring, payment failed
 
 ## Database Schema
 - super_admins: Super administrator accounts
