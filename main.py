@@ -114,14 +114,19 @@ def index():
 def signup_tenant():
     if request.method == 'POST':
         company_name = request.form.get('company_name')
-        subdomain = request.form.get('subdomain', '').lower().strip()
         contact_email = request.form.get('contact_email')
         contact_name = request.form.get('contact_name')
         password = request.form.get('password')
         
-        if Tenant.query.filter_by(subdomain=subdomain).first():
-            flash('Deze subdomain is al in gebruik.', 'danger')
-            return render_template('signup_tenant.html')
+        import re
+        base_subdomain = re.sub(r'[^a-z0-9]', '', company_name.lower().replace(' ', ''))[:20]
+        subdomain = base_subdomain if base_subdomain else 'tenant'
+        
+        counter = 1
+        original_subdomain = subdomain
+        while Tenant.query.filter_by(subdomain=subdomain).first():
+            subdomain = f"{original_subdomain}{counter}"
+            counter += 1
         
         tenant = Tenant(
             company_name=company_name,
