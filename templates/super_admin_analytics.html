@@ -52,19 +52,25 @@
         <div class="grid md:grid-cols-2 gap-6 mb-8">
             <div class="bg-gray-800 rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold mb-4">MRR Trend (12 maanden)</h3>
-                <canvas id="mrrChart" height="250"></canvas>
+                <div style="position: relative; height: 250px;">
+                    <canvas id="mrrChart"></canvas>
+                </div>
             </div>
             
             <div class="bg-gray-800 rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold mb-4">Vragen per Maand</h3>
-                <canvas id="questionsChart" height="250"></canvas>
+                <div style="position: relative; height: 250px;">
+                    <canvas id="questionsChart"></canvas>
+                </div>
             </div>
         </div>
         
         <div class="grid md:grid-cols-3 gap-6 mb-8">
             <div class="bg-gray-800 rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold mb-4">Tier Distributie</h3>
-                <canvas id="tierChart" height="200"></canvas>
+                <div style="position: relative; height: 200px;">
+                    <canvas id="tierChart"></canvas>
+                </div>
             </div>
             
             <div class="bg-gray-800 rounded-lg shadow p-6 md:col-span-2">
@@ -193,116 +199,114 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const mrrData = {{ mrr_history|tojson }};
-const questionsData = {{ questions_history|tojson }};
-const tierData = {{ tier_distribution|tojson }};
+document.addEventListener('DOMContentLoaded', function() {
+    const mrrData = {{ mrr_history|tojson }};
+    const questionsData = {{ questions_history|tojson }};
+    const tierData = {{ tier_distribution|tojson }};
 
-let mrrChart, questionsChart, tierChart;
-
-function createCharts() {
-    if (mrrChart) mrrChart.destroy();
-    if (questionsChart) questionsChart.destroy();
-    if (tierChart) tierChart.destroy();
+    const mrrCtx = document.getElementById('mrrChart');
+    const questionsCtx = document.getElementById('questionsChart');
+    const tierCtx = document.getElementById('tierChart');
     
-    mrrChart = new Chart(document.getElementById('mrrChart'), {
-        type: 'line',
-        data: {
-            labels: mrrData.map(d => d.month),
-            datasets: [{
-                label: 'MRR (€)',
-                data: mrrData.map(d => d.mrr),
-                borderColor: 'rgb(34, 197, 94)',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { 
-                    labels: { color: '#9CA3AF' } 
-                }
+    if (mrrCtx && questionsCtx && tierCtx) {
+        const mrrChart = new Chart(mrrCtx, {
+            type: 'line',
+            data: {
+                labels: mrrData.map(d => d.month),
+                datasets: [{
+                    label: 'MRR (€)',
+                    data: mrrData.map(d => d.mrr),
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
             },
-            scales: {
-                y: { 
-                    ticks: { color: '#9CA3AF' },
-                    grid: { color: '#374151' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        labels: { color: '#9CA3AF' } 
+                    }
                 },
-                x: { 
-                    ticks: { color: '#9CA3AF' },
-                    grid: { color: '#374151' }
+                scales: {
+                    y: { 
+                        ticks: { color: '#9CA3AF' },
+                        grid: { color: '#374151' }
+                    },
+                    x: { 
+                        ticks: { color: '#9CA3AF' },
+                        grid: { color: '#374151' }
+                    }
                 }
             }
-        }
-    });
+        });
 
-    questionsChart = new Chart(document.getElementById('questionsChart'), {
-        type: 'bar',
-        data: {
-            labels: questionsData.map(d => d.month),
-            datasets: [{
-                label: 'Vragen',
-                data: questionsData.map(d => d.count),
-                backgroundColor: 'rgba(99, 102, 241, 0.8)',
-                borderColor: 'rgb(99, 102, 241)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { 
-                    labels: { color: '#9CA3AF' } 
-                }
+        const questionsChart = new Chart(questionsCtx, {
+            type: 'bar',
+            data: {
+                labels: questionsData.map(d => d.month),
+                datasets: [{
+                    label: 'Vragen',
+                    data: questionsData.map(d => d.count),
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                    borderColor: 'rgb(99, 102, 241)',
+                    borderWidth: 1
+                }]
             },
-            scales: {
-                y: { 
-                    ticks: { color: '#9CA3AF' },
-                    grid: { color: '#374151' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        labels: { color: '#9CA3AF' } 
+                    }
                 },
-                x: { 
-                    ticks: { color: '#9CA3AF' },
-                    grid: { color: '#374151' }
+                scales: {
+                    y: { 
+                        ticks: { color: '#9CA3AF' },
+                        grid: { color: '#374151' }
+                    },
+                    x: { 
+                        ticks: { color: '#9CA3AF' },
+                        grid: { color: '#374151' }
+                    }
                 }
             }
-        }
-    });
+        });
 
-    tierChart = new Chart(document.getElementById('tierChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Professional', 'Enterprise', 'Trial'],
-            datasets: [{
-                data: [tierData.professional, tierData.enterprise, tierData.trial],
-                backgroundColor: [
-                    'rgba(168, 85, 247, 0.8)',
-                    'rgba(236, 72, 153, 0.8)',
-                    'rgba(59, 130, 246, 0.8)'
-                ],
-                borderColor: [
-                    'rgb(168, 85, 247)',
-                    'rgb(236, 72, 153)',
-                    'rgb(59, 130, 246)'
-                ],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { color: '#9CA3AF' }
+        const tierChart = new Chart(tierCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Professional', 'Enterprise', 'Trial'],
+                datasets: [{
+                    data: [tierData.professional, tierData.enterprise, tierData.trial],
+                    backgroundColor: [
+                        'rgba(168, 85, 247, 0.8)',
+                        'rgba(236, 72, 153, 0.8)',
+                        'rgba(59, 130, 246, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(168, 85, 247)',
+                        'rgb(236, 72, 153)',
+                        'rgb(59, 130, 246)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#9CA3AF' }
+                    }
                 }
             }
-        }
-    });
-}
-
-createCharts();
+        });
+    }
+});
 </script>
 {% endblock %}
