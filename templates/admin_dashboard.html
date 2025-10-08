@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-100">
+<div class="min-h-screen bg-gray-100 dark:bg-zinc-900">
     {% if session.get('impersonating_from') == 'super_admin' %}
     <div class="bg-orange-600 text-white py-3">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,19 +33,19 @@
         <div class="grid md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-3xl font-bold text-indigo-600">{{ users|length }}</div>
-                <div class="text-gray-600">Totaal Gebruikers</div>
+                <div class="text-gray-600 dark:text-gray-300">Totaal Gebruikers</div>
                 <div class="text-sm text-gray-500 mt-1">Max: {{ tenant.max_users }}</div>
             </div>
             
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-3xl font-bold text-green-600">{{ active_users_count }}</div>
-                <div class="text-gray-600">Actieve Gebruikers</div>
+                <div class="text-gray-600 dark:text-gray-300">Actieve Gebruikers</div>
                 <div class="text-sm text-gray-500 mt-1">Laatste 30 dagen</div>
             </div>
             
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-3xl font-bold text-purple-600">{{ total_messages }}</div>
-                <div class="text-gray-600">Totaal Vragen</div>
+                <div class="text-gray-600 dark:text-gray-300">Totaal Vragen</div>
                 <div class="text-sm text-green-600 mt-1">+{{ messages_this_month }} deze maand</div>
             </div>
             
@@ -59,7 +59,7 @@
                     <span class="text-red-600">{{ tenant.status }}</span>
                     {% endif %}
                 </div>
-                <div class="text-gray-600">Status</div>
+                <div class="text-gray-600 dark:text-gray-300">Status</div>
                 {% if tenant.status == 'trial' %}
                 <div class="text-sm text-gray-500 mt-1">Tot {{ tenant.trial_ends_at.strftime('%d-%m-%Y') }}</div>
                 {% endif %}
@@ -74,11 +74,11 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <div class="font-medium">{{ user.full_name }}</div>
-                        <div class="text-sm text-gray-500">{{ user.email }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ user.email }}</div>
                     </div>
                     <div class="text-right">
                         <div class="text-2xl font-bold text-indigo-600">{{ chat_count }}</div>
-                        <div class="text-xs text-gray-500">chats</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">chats</div>
                     </div>
                 </div>
                 {% endfor %}
@@ -90,19 +90,19 @@
             <a href="/admin/users" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition block">
                 <div class="text-4xl mb-2">👥</div>
                 <h3 class="text-lg font-semibold mb-1">Gebruikers</h3>
-                <p class="text-sm text-gray-600">Beheer teamleden</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Beheer teamleden</p>
             </a>
             
             <a href="/admin/templates" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition block">
                 <div class="text-4xl mb-2">📄</div>
                 <h3 class="text-lg font-semibold mb-1">Templates</h3>
-                <p class="text-sm text-gray-600">Documenten database</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Documenten database</p>
             </a>
             
             <a href="/admin/billing" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition block">
                 <div class="text-4xl mb-2">💳</div>
                 <h3 class="text-lg font-semibold mb-1">Billing</h3>
-                <p class="text-sm text-gray-600">Abonnement beheer</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Abonnement beheer</p>
             </a>
         </div>
     </div>

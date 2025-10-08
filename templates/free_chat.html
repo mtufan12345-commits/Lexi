@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex h-screen bg-gray-50">
+<div class="flex h-screen bg-gray-50 dark:bg-black">
     <div class="flex-1 flex flex-col max-w-5xl mx-auto w-full">
         <!-- Header -->
         <div class="bg-white border-b border-gray-200 px-8 py-4">
@@ -9,10 +9,10 @@
                 <div class="flex items-center space-x-4">
                     <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition">
                         <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded"></div>
-                        <span class="text-lg font-semibold text-gray-900">LEX CAO Expert</span>
+                        <span class="text-lg font-semibold text-gray-900 dark:text-white">LEX CAO Expert</span>
                     </a>
                     <span class="text-sm text-gray-400">|</span>
-                    <span class="text-sm font-medium text-gray-600">Gratis Trial</span>
+                    <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Gratis Trial</span>
                 </div>
                 <div class="flex items-center gap-6">
                     <div id="questions-counter" class="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg">
@@ -78,7 +78,7 @@
                 </svg>
             </div>
             <h2 class="text-3xl font-bold text-gray-900 mb-3">U heeft LEX ervaren</h2>
-            <p class="text-lg text-gray-600">
+            <p class="text-lg text-gray-600 dark:text-gray-300">
                 Kies nu een plan voor onbeperkte toegang tot CAO kennis voor uw team.
             </p>
         </div>
@@ -87,7 +87,7 @@
             <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-500 transition">
                 <div class="text-sm font-semibold text-blue-600 mb-2">PROFESSIONAL</div>
                 <div class="flex items-baseline mb-4">
-                    <span class="text-4xl font-bold text-gray-900">€499</span>
+                    <span class="text-4xl font-bold text-gray-900 dark:text-white">€499</span>
                     <span class="text-gray-500 ml-2">/maand</span>
                 </div>
                 <ul class="space-y-3 mb-6">
@@ -95,25 +95,25 @@
                         <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span class="text-gray-700">5 gebruikers</span>
+                        <span class="text-gray-700 dark:text-gray-200">5 gebruikers</span>
                     </li>
                     <li class="flex items-center gap-3">
                         <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span class="text-gray-700">Onbeperkte vragen</span>
+                        <span class="text-gray-700 dark:text-gray-200">Onbeperkte vragen</span>
                     </li>
                     <li class="flex items-center gap-3">
                         <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span class="text-gray-700">Chat geschiedenis</span>
+                        <span class="text-gray-700 dark:text-gray-200">Chat geschiedenis</span>
                     </li>
                     <li class="flex items-center gap-3">
                         <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span class="text-gray-700">Priority support</span>
+                        <span class="text-gray-700 dark:text-gray-200">Priority support</span>
                     </li>
                 </ul>
                 <a href="/signup/tenant" class="block text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
@@ -127,7 +127,7 @@
                 </div>
                 <div class="text-sm font-semibold text-blue-600 mb-2">ENTERPRISE</div>
                 <div class="flex items-baseline mb-4">
-                    <span class="text-4xl font-bold text-gray-900">€1.199</span>
+                    <span class="text-4xl font-bold text-gray-900 dark:text-white">€1.199</span>
                     <span class="text-gray-500 ml-2">/maand</span>
                 </div>
                 <ul class="space-y-3 mb-6">

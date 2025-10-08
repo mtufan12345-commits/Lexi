@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex flex-col h-screen bg-gray-100">
+<div class="flex flex-col h-screen bg-gray-100 dark:bg-zinc-900">
     {% if session.get('impersonating_from') == 'super_admin' %}
     <div class="bg-orange-600 text-white py-3 flex-shrink-0">
         <div class="max-w-7xl mx-auto px-4">
@@ -25,12 +25,12 @@
     
 <div class="flex flex-1 overflow-hidden">
     <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div class="p-4 border-b border-gray-200">
+        <div class="p-4 border-b border-gray-200 dark:border-zinc-800">
             <a href="/" class="flex items-center space-x-2 hover:opacity-80 transition mb-2">
                 <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded flex-shrink-0"></div>
-                <span class="text-lg font-semibold text-gray-900">LEX</span>
+                <span class="text-lg font-semibold text-gray-900 dark:text-white">LEX</span>
             </a>
-            <p class="text-sm text-gray-600">{{ tenant.company_name }}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">{{ tenant.company_name }}</p>
         </div>
         
         <div class="flex-1 overflow-y-auto p-4">
@@ -47,7 +47,7 @@
                      data-chat-id="{{ chat.id }}">
                     <div onclick="loadChat({{ chat.id }})" class="cursor-pointer">
                         <div class="font-medium text-sm truncate pr-14">{{ chat.title }}</div>
-                        <div class="text-xs text-gray-500">{{ chat.updated_at.strftime('%d-%m %H:%M') }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ chat.updated_at.strftime('%d-%m %H:%M') }}</div>
                     </div>
                     <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                         <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" 
@@ -98,7 +98,7 @@
     
     <div class="flex-1 flex flex-col">
         <div class="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
-            <h3 id="chat-title" class="text-lg font-semibold text-gray-900">Selecteer of start een chat</h3>
+            <h3 id="chat-title" class="text-lg font-semibold text-gray-900 dark:text-white">Selecteer of start een chat</h3>
             <div id="chat-actions" class="hidden flex items-center gap-3">
                 <button onclick="exportChat()" class="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,7 +121,7 @@
             </div>
         </div>
         
-        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-black">
             <div class="text-center py-20">
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl mb-6">
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,22 +137,22 @@
                         <button onclick="askExampleQuestion('Wat zijn de minimumloonschalen voor uitzendbureaus in 2025?')" 
                                 class="p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition text-left group">
                             <div class="text-sm font-semibold text-blue-600 mb-1 group-hover:text-blue-700">Minimumloonschalen</div>
-                            <div class="text-xs text-gray-600">Wat zijn de minimumloonschalen voor uitzendbureaus in 2025?</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-300">Wat zijn de minimumloonschalen voor uitzendbureaus in 2025?</div>
                         </button>
                         <button onclick="askExampleQuestion('Hoeveel vakantiedagen heeft een uitzendkracht recht op?')" 
                                 class="p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition text-left group">
                             <div class="text-sm font-semibold text-blue-600 mb-1 group-hover:text-blue-700">Vakantiedagen</div>
-                            <div class="text-xs text-gray-600">Hoeveel vakantiedagen heeft een uitzendkracht recht op?</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-300">Hoeveel vakantiedagen heeft een uitzendkracht recht op?</div>
                         </button>
                         <button onclick="askExampleQuestion('Wat is de opzegtermijn voor een tijdelijk contract?')" 
                                 class="p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition text-left group">
                             <div class="text-sm font-semibold text-blue-600 mb-1 group-hover:text-blue-700">Opzegtermijn</div>
-                            <div class="text-xs text-gray-600">Wat is de opzegtermijn voor een tijdelijk contract?</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-300">Wat is de opzegtermijn voor een tijdelijk contract?</div>
                         </button>
                         <button onclick="askExampleQuestion('Welke toeslagen gelden voor nacht- en weekendwerk?')" 
                                 class="p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition text-left group">
                             <div class="text-sm font-semibold text-blue-600 mb-1 group-hover:text-blue-700">Toeslagen</div>
-                            <div class="text-xs text-gray-600">Welke toeslagen gelden voor nacht- en weekendwerk?</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-300">Welke toeslagen gelden voor nacht- en weekendwerk?</div>
                         </button>
                     </div>
                 </div>
@@ -666,7 +666,7 @@ async function newChat() {
     
     newChatItem.innerHTML = `
         <div class="font-medium text-sm truncate">${data.title}</div>
-        <div class="text-xs text-gray-500">${timeStr}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">${timeStr}</div>
     `;
     
     document.querySelectorAll('.chat-item').forEach(item => {
@@ -726,7 +726,7 @@ function addMessageToUI(role, content, artifacts = [], messageId = null, feedbac
         const disabled = feedbackRating ? 'opacity-50 pointer-events-none' : '';
         feedbackHtml = `
             <div class="mt-2 pt-2 border-t flex gap-2 items-center">
-                <span class="text-xs text-gray-500">Hoe nuttig was dit antwoord?</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Hoe nuttig was dit antwoord?</span>
                 <button onclick="submitFeedback(${messageId}, 1)" class="feedback-btn ${disabled} text-gray-400 hover:text-green-600 transition">
                     👍
                 </button>
@@ -801,7 +801,7 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
             
             newChatItem.innerHTML = `
                 <div class="font-medium text-sm truncate">${newTitle}</div>
-                <div class="text-xs text-gray-500">${timeStr}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">${timeStr}</div>
             `;
             
             document.querySelectorAll('.chat-item').forEach(item => {
