@@ -186,9 +186,12 @@ def login():
                 flash('Je account is verlopen. Neem contact op met de administrator.', 'warning')
                 return render_template('login.html', tenant=g.tenant)
             
-            if user.session_token:
-                flash('Er is al een actieve sessie op een ander apparaat. Log daar eerst uit.', 'warning')
-                return render_template('login.html', tenant=g.tenant)
+            force_login = request.form.get('force_login') == 'true'
+            
+            if user.session_token and not force_login:
+                return render_template('login.html', tenant=g.tenant, 
+                                     show_force_login=True, 
+                                     email=email)
             
             user.session_token = secrets.token_hex(32)
             db.session.commit()
@@ -196,6 +199,9 @@ def login():
             login_user(user)
             session['session_token'] = user.session_token
             session['is_super_admin'] = False
+            
+            if force_login:
+                flash('Oude sessie uitgelogd. Je bent nu ingelogd.', 'success')
             
             return redirect(url_for('chat_page'))
         
