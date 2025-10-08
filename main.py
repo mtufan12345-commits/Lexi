@@ -257,6 +257,25 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+@tenant_required
+def user_profile():
+    if request.method == 'POST':
+        current_user.first_name = request.form.get('first_name')
+        current_user.last_name = request.form.get('last_name')
+        current_user.email = request.form.get('email')
+        
+        new_password = request.form.get('new_password')
+        if new_password:
+            current_user.set_password(new_password)
+        
+        db.session.commit()
+        flash('Profiel bijgewerkt!', 'success')
+        return redirect(url_for('user_profile'))
+    
+    return render_template('user_profile.html', tenant=g.tenant, user=current_user)
+
 @app.route('/chat')
 @login_required
 @tenant_required
