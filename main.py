@@ -320,33 +320,38 @@ def signup_tenant():
     return render_template('signup_tenant.html')
 
 @app.route('/login', methods=['GET', 'POST'])
-@tenant_required
 def login():
     if current_user.is_authenticated and not g.is_super_admin:
         return redirect(url_for('chat_page'))
     
     if request.method == 'POST':
-        email = request.form.get('email')
+        email = request.form.get('email', '').lower().strip()
         password = request.form.get('password')
         
-        print(f"Login attempt - Tenant ID: {g.tenant.id}, Email: {email}")
-        user = User.query.filter_by(tenant_id=g.tenant.id, email=email).first()
+        print(f"Login attempt - Email: {email}")
+        
+        # Zoek user op basis van email (uniek over alle tenants)
+        user = User.query.filter_by(email=email).first()
         print(f"User found: {user is not None}")
         
         if user and user.check_password(password):
             print("Password check passed")
+            
+            # Haal de tenant op van deze user
+            tenant = Tenant.query.get(user.tenant_id)
+            
             if not user.is_active:
                 flash('Je account is gedeactiveerd.', 'danger')
-                return render_template('login.html', tenant=g.tenant)
+                return render_template('login.html')
             
-            if g.tenant.status not in ['trial', 'active']:
+            if tenant.status not in ['trial', 'active']:
                 flash('Je account is verlopen. Neem contact op met de administrator.', 'warning')
-                return render_template('login.html', tenant=g.tenant)
+                return render_template('login.html')
             
             force_login = request.form.get('force_login') == 'true'
             
             if user.session_token and not force_login:
-                return render_template('login.html', tenant=g.tenant, 
+                return render_template('login.html', 
                                      show_force_login=True, 
                                      email=email)
             
@@ -354,18 +359,20 @@ def login():
             db.session.commit()
             
             login_user(user)
+            session['tenant_id'] = tenant.id  # Zet tenant_id automatisch in session
             session['session_token'] = user.session_token
             session['is_super_admin'] = False
             
             if force_login:
                 flash('Oude sessie uitgelogd. Je bent nu ingelogd.', 'success')
             
+            print(f"Login successful - Tenant: {tenant.company_name}")
             return redirect(url_for('chat_page'))
         
         print("Login failed - invalid credentials")
         flash('Ongeldige email of wachtwoord.', 'danger')
     
-    return render_template('login.html', tenant=g.tenant)
+    return render_template('login.html')
 
 @app.route('/super-admin/login', methods=['GET', 'POST'])
 def super_admin_login():
@@ -385,8 +392,9 @@ def super_admin_login():
     return render_template('super_admin_login.html')
 
 @app.route('/select-tenant', methods=['GET', 'POST'])
+@super_admin_required
 def select_tenant():
-    """Development mode: manually select a tenant"""
+    """Development/admin mode: manually select a tenant (alleen voor super admins)"""
     if request.method == 'POST':
         subdomain = request.form.get('subdomain')
         print(f"[DEBUG] select_tenant - subdomain: {subdomain}")
