@@ -32,9 +32,18 @@
             document.documentElement.classList.add('dark');
         }
     </script>
+    <style>
+        .page-transition {
+            animation: fadeIn 0.2s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50 dark:bg-black transition-colors duration-200 h-full">
+<body class="bg-gray-50 dark:bg-black transition-colors duration-200 h-full page-transition">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="fixed top-4 right-4 z-50 space-y-2">
