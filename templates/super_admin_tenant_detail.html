@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-900 text-white">
+    <nav class="bg-gray-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <a href="{{ url_for('super_admin_dashboard') }}" class="text-gray-400 hover:text-white mb-2 inline-block">← Terug naar overzicht</a>
+                    <h1 class="text-2xl font-bold">{{ tenant.company_name }}</h1>
+                </div>
+                <a href="/logout" class="text-gray-400 hover:text-white">Uitloggen</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-gray-800 rounded-lg shadow p-6 mb-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-xl font-semibold mb-2">{{ tenant.company_name }}</h2>
+                    <div class="text-gray-400 space-y-1">
+                        <p>Subdomain: <a href="https://{{ tenant.subdomain }}.lex-cao.replit.app" target="_blank" class="text-indigo-400">{{ tenant.subdomain }}.lex-cao.replit.app</a></p>
+                        <p>Contact: {{ tenant.contact_name }} ({{ tenant.contact_email }})</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    {% if tenant.subscription_status == 'trial' %}
+                    <span class="px-3 py-1 text-sm bg-blue-900 text-blue-300 rounded">Trial</span>
+                    {% elif tenant.subscription_status == 'active' %}
+                    <span class="px-3 py-1 text-sm bg-green-900 text-green-300 rounded">Actief</span>
+                    {% else %}
+                    <span class="px-3 py-1 text-sm bg-red-900 text-red-300 rounded">{{ tenant.subscription_status }}</span>
+                    {% endif %}
+                    
+                    {% if tenant.subscription_tier == 'professional' %}
+                    <span class="px-3 py-1 text-sm bg-purple-900 text-purple-300 rounded">Professional</span>
+                    {% elif tenant.subscription_tier == 'enterprise' %}
+                    <span class="px-3 py-1 text-sm bg-pink-900 text-pink-300 rounded">Enterprise</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-gray-400 text-sm mb-1">Subscription</div>
+                <div class="text-2xl font-bold text-purple-400">
+                    {% if tenant.subscription_tier == 'professional' %}
+                    €499/m
+                    {% elif tenant.subscription_tier == 'enterprise' %}
+                    €1.199/m
+                    {% else %}
+                    Trial
+                    {% endif %}
+                </div>
+                <div class="text-gray-400 text-xs mt-1">
+                    {{ tenant.subscription_tier|capitalize }}
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-gray-400 text-sm mb-1">Gebruikers</div>
+                <div class="text-2xl font-bold text-green-400">{{ users|length }} / {{ tenant.max_users }}</div>
+                <div class="text-gray-400 text-xs mt-1">
+                    {{ active_users_count }} actief (7d)
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <div class="text-gray-400 text-sm mb-1">Activiteit</div>
+                <div class="text-2xl font-bold text-blue-400">{{ questions_this_month }}</div>
+                <div class="text-gray-400 text-xs mt-1">vragen deze maand</div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                {% if trial_days_left is not none %}
+                <div class="text-gray-400 text-sm mb-1">Trial</div>
+                <div class="text-2xl font-bold text-orange-400">{{ trial_days_left }} dagen</div>
+                <div class="text-gray-400 text-xs mt-1">resterend</div>
+                {% else %}
+                <div class="text-gray-400 text-sm mb-1">Status</div>
+                <div class="text-2xl font-bold text-green-400">Actief</div>
+                <div class="text-gray-400 text-xs mt-1">betaald account</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Gebruik Statistieken</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Totaal vragen (all-time)</span>
+                        <span class="font-bold">{{ total_questions }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Vragen deze maand</span>
+                        <span class="font-bold">{{ questions_this_month }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Vragen vandaag</span>
+                        <span class="font-bold">{{ questions_today }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Actieve gebruikers (7d)</span>
+                        <span class="font-bold">{{ active_users_count }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Gem. vragen per gebruiker</span>
+                        <span class="font-bold">{{ "%.1f"|format(avg_questions) }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Top 5 Meest Gestelde Vragen</h3>
+                {% if top_questions %}
+                <div class="space-y-3">
+                    {% for question, count in top_questions %}
+                    <div>
+                        <div class="text-sm text-gray-300 mb-1">{{ question[:80] }}{% if question|length > 80 %}...{% endif %}</div>
+                        <div class="text-xs text-gray-500">{{ count }}x gevraagd</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm">Nog geen vragen gesteld</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg shadow p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Gebruikers ({{ users|length }})</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="border-b border-gray-700">
+                        <tr>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Naam</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Email</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Role</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Laatste activiteit</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Aantal vragen</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        {% for user in users %}
+                        <tr>
+                            <td class="py-3 px-4">{{ user.full_name }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-400">{{ user.email }}</td>
+                            <td class="py-3 px-4">
+                                {% if user.role == 'admin' %}
+                                <span class="px-2 py-1 text-xs bg-indigo-900 text-indigo-300 rounded">Admin</span>
+                                {% else %}
+                                <span class="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">User</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-400">
+                                {% if user.last_activity %}
+                                {{ user.last_activity.strftime('%d-%m-%Y %H:%M') }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4">{{ user.question_count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="flex gap-4">
+            <button onclick="alert('Impersonate functie wordt geïmplementeerd in Optie C')" 
+                    class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                🔐 Inloggen als deze tenant
+            </button>
+            <button onclick="alert('Subscription wijzigen functionaliteit volgt')" 
+                    class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                💳 Wijzig subscription
+            </button>
+            <button onclick="alert('Email functionaliteit volgt')" 
+                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                📧 Stuur email naar admin
+            </button>
+            <button onclick="if(confirm('Weet je zeker dat je dit account wilt pauzeren?')) alert('Pauzeer functionaliteit volgt')" 
+                    class="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                ⏸️ Pauzeer account
+            </button>
+            <button onclick="if(confirm('Weet je zeker dat je deze tenant wilt verwijderen? Dit kan niet ongedaan worden gemaakt!')) alert('Verwijder functionaliteit volgt')" 
+                    class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                🗑️ Verwijder tenant
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

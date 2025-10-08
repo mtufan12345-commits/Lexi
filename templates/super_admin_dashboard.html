@@ -110,7 +110,11 @@
                 <tbody class="divide-y divide-gray-700">
                     {% for tenant in tenants %}
                     <tr class="tenant-row" data-tier="{{ tenant.subscription_tier }}">
-                        <td class="px-6 py-4 whitespace-nowrap">{{ tenant.company_name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{{ url_for('super_admin_tenant_detail', tenant_id=tenant.id) }}" class="text-indigo-400 hover:text-indigo-300 font-medium">
+                                {{ tenant.company_name }}
+                            </a>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <a href="https://{{ tenant.subdomain }}.lex-cao.replit.app" target="_blank" class="text-indigo-400 hover:text-indigo-300">
                                 {{ tenant.subdomain }}
