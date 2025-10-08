@@ -76,4 +76,35 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('free-trial-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('free-email').value.trim();
+    if (!email) return;
+    
+    try {
+        const response = await fetch('/api/free-trial', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            window.location.href = data.redirect;
+        } else if (data.error === 'limit_reached') {
+            alert('Je hebt al je 3 gratis vragen gebruikt met dit email adres. Kies een plan voor onbeperkte vragen.');
+            window.location.href = '/prijzen';
+        } else {
+            alert(data.error || 'Er ging iets mis');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Er ging iets mis bij het starten van je gratis trial');
+    }
+});
+</script>
 {% endblock %}

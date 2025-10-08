@@ -114,6 +114,155 @@ def index():
 def pricing():
     return render_template('pricing.html')
 
+@app.route('/api/free-trial', methods=['POST'])
+def start_free_trial():
+    data = request.json
+    email = data.get('email', '').lower().strip()
+    
+    if not email:
+        return jsonify({'error': 'Email is verplicht'}), 400
+    
+    guest_tenant = Tenant.query.filter_by(subdomain='guest').first()
+    if not guest_tenant:
+        guest_tenant = Tenant(
+            company_name='Guest Users',
+            subdomain='guest',
+            contact_email='guest@lex-cao.nl',
+            contact_name='Guest',
+            status='active',
+            max_users=100000
+        )
+        db.session.add(guest_tenant)
+        db.session.flush()
+    
+    guest_user = User.query.filter_by(tenant_id=guest_tenant.id, email=email).first()
+    if not guest_user:
+        guest_user = User(
+            tenant_id=guest_tenant.id,
+            email=email,
+            first_name='Guest',
+            last_name='User',
+            role='user'
+        )
+        guest_user.set_password(secrets.token_hex(16))
+        db.session.add(guest_user)
+        db.session.commit()
+    
+    question_count = db.session.query(Message).join(Chat).filter(
+        Chat.user_id == guest_user.id,
+        Message.role == 'user'
+    ).count()
+    
+    if question_count >= 3:
+        return jsonify({'error': 'limit_reached', 'message': 'Je hebt je 3 gratis vragen gebruikt'}), 403
+    
+    session['guest_user_id'] = guest_user.id
+    session['guest_email'] = email
+    session['tenant_id'] = guest_tenant.id
+    
+    return jsonify({
+        'success': True,
+        'redirect': '/free-chat',
+        'questions_remaining': 3 - question_count
+    })
+
+@app.route('/free-chat')
+def free_chat():
+    if 'guest_user_id' not in session:
+        return redirect(url_for('index'))
+    
+    guest_user_id = session.get('guest_user_id')
+    guest_user = User.query.get(guest_user_id)
+    
+    if not guest_user:
+        return redirect(url_for('index'))
+    
+    question_count = db.session.query(Message).join(Chat).filter(
+        Chat.user_id == guest_user.id,
+        Message.role == 'user'
+    ).count()
+    
+    return render_template('free_chat.html', 
+                         guest_email=session.get('guest_email'),
+                         questions_used=question_count,
+                         questions_remaining=3 - question_count)
+
+@app.route('/api/free-chat/new', methods=['POST'])
+def new_free_chat():
+    if 'guest_user_id' not in session:
+        return jsonify({'error': 'Not authorized'}), 401
+    
+    guest_user_id = session.get('guest_user_id')
+    guest_tenant_id = session.get('tenant_id')
+    
+    chat = Chat(
+        tenant_id=guest_tenant_id,
+        user_id=guest_user_id,
+        title='Gratis Trial Chat'
+    )
+    db.session.add(chat)
+    db.session.commit()
+    
+    return jsonify({'chat_id': chat.id})
+
+@app.route('/api/free-chat/<int:chat_id>/message', methods=['POST'])
+def send_free_chat_message(chat_id):
+    if 'guest_user_id' not in session:
+        return jsonify({'error': 'Not authorized'}), 401
+    
+    guest_user_id = session.get('guest_user_id')
+    guest_user = User.query.get(guest_user_id)
+    
+    question_count = db.session.query(Message).join(Chat).filter(
+        Chat.user_id == guest_user.id,
+        Message.role == 'user'
+    ).count()
+    
+    if question_count >= 3:
+        return jsonify({'error': 'limit_reached', 'message': 'Je hebt je 3 gratis vragen gebruikt'}), 403
+    
+    data = request.json
+    user_message = data.get('message', '').strip()
+    
+    if not user_message:
+        return jsonify({'error': 'Message is required'}), 400
+    
+    chat = Chat.query.filter_by(id=chat_id, user_id=guest_user_id).first()
+    if not chat:
+        return jsonify({'error': 'Chat not found'}), 404
+    
+    user_msg = Message(
+        tenant_id=session.get('tenant_id'),
+        chat_id=chat.id,
+        role='user',
+        content=user_message
+    )
+    db.session.add(user_msg)
+    db.session.flush()
+    
+    try:
+        lex_response = vertex_ai_service.generate_response(user_message, [])
+        
+        assistant_msg = Message(
+            tenant_id=session.get('tenant_id'),
+            chat_id=chat.id,
+            role='assistant',
+            content=lex_response
+        )
+        db.session.add(assistant_msg)
+        db.session.commit()
+        
+        new_question_count = question_count + 1
+        
+        return jsonify({
+            'response': lex_response,
+            'questions_remaining': 3 - new_question_count
+        })
+    except Exception as e:
+        print(f"Error generating response: {e}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to generate response'}), 500
+
 @app.route('/signup/tenant', methods=['GET', 'POST'])
 def signup_tenant():
     if request.method == 'POST':
