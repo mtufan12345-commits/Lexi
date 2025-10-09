@@ -1744,7 +1744,7 @@ def super_admin_dashboard():
     tenants = Tenant.query.order_by(Tenant.created_at.desc()).all()
     total_users = User.query.count()
     
-    mrr_prices = {'starter': 399, 'professional': 499, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199, 'trial': 0}
     
     current_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in tenants if t.subscription_status == 'active')
     arr = current_mrr * 12
@@ -1763,8 +1763,8 @@ def super_admin_dashboard():
     starter_count = sum(1 for t in tenants if t.subscription_tier == 'starter' and t.subscription_status == 'active')
     professional_count = sum(1 for t in tenants if t.subscription_tier == 'professional' and t.subscription_status == 'active')
     enterprise_count = sum(1 for t in tenants if t.subscription_tier == 'enterprise' and t.subscription_status == 'active')
-    starter_mrr = starter_count * 399
-    professional_mrr = professional_count * 499
+    starter_mrr = starter_count * 499
+    professional_mrr = professional_count * 599
     enterprise_mrr = enterprise_count * 1199
     
     mrr_history = []
@@ -1987,7 +1987,7 @@ def super_admin_analytics_export():
     
     writer.writerow(['Tenant ID', 'Company Name', 'Subdomain', 'Status', 'Tier', 'MRR', 'Users', 'Questions', 'Created At'])
     
-    mrr_prices = {'starter': 399, 'professional': 499, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199, 'trial': 0}
     
     for tenant in tenants:
         users_count = User.query.filter_by(tenant_id=tenant.id).count()
@@ -2027,7 +2027,7 @@ def super_admin_analytics():
     tenants = Tenant.query.all()
     all_users = User.query.all()
     
-    mrr_prices = {'starter': 399, 'professional': 499, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199, 'trial': 0}
     
     current_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in tenants if t.subscription_status == 'active')
     total_revenue = current_mrr * 12
