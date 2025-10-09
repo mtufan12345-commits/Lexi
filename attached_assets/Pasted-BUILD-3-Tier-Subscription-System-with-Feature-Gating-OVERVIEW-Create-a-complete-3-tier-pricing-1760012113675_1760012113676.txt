@@ -1,0 +1,342 @@
+BUILD: 3-Tier Subscription System with Feature Gating
+
+OVERVIEW:
+Create a complete 3-tier pricing system for Lexi (CAO expert for temp agencies in greenhouse horticulture). Each tier has different user limits and features.
+
+IMPORTANT: All tiers get the SAME quality AI answers with source attribution. 
+The AI does NOT change based on subscription tier.
+
+═══════════════════════════════════════════════════════════════
+
+PRICING TIERS:
+
+TIER 1 - STARTER: €399/maand
+├─ Max 5 gebruikers per tenant
+├─ Alle 3 CAO's (ABU, NBBU, Glastuinbouw)
+├─ Onbeperkt vragen stellen
+├─ Volledige antwoorden met bronvermelding (SAME AS ALL TIERS)
+├─ Email support (48 uur responstijd)
+├─ Chat history (30 dagen)
+└─ Export chat als PDF
+
+TIER 2 - PROFESSIONAL: €499/maand (MOST POPULAR)
+├─ Max 10 gebruikers per tenant
+├─ Alle 3 CAO's (ABU, NBBU, Glastuinbouw)
+├─ Onbeperkt vragen stellen
+├─ Volledige antwoorden met bronvermelding (SAME AS ALL TIERS)
+├─ Priority email support (24 uur responstijd)
+├─ Chat history (onbeperkt)
+├─ Export chat als PDF + Word
+├─ Team dashboard met statistieken
+├─ Zoeken in chat history
+└─ Bulk export van chats
+
+TIER 3 - ENTERPRISE: €1.199/maand
+├─ ONBEPERKT gebruikers
+├─ Alle 3 CAO's (ABU, NBBU, Glastuinbouw)
+├─ Onbeperkt vragen stellen
+├─ Volledige antwoorden met bronvermelding (SAME AS ALL TIERS)
+├─ Custom AI instructies per tenant (uses existing system_instruction feature!)
+├─ API access (show in UI, build later)
+├─ Priority support (4 uur responstijd)
+├─ Dedicated account manager (contact info shown)
+├─ Chat history (onbeperkt)
+├─ Alle export opties (PDF, Word, Excel)
+├─ Advanced team analytics dashboard
+├─ Custom branding (tenant logo in interface)
+├─ Maandelijkse training sessie (scheduling link)
+└─ SLA garantie (shown in terms)
+
+═══════════════════════════════════════════════════════════════
+
+STEP 1: UPDATE DATABASE
+
+Add subscription tier to tenants table:
+
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(20) DEFAULT 'starter';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS max_users INTEGER DEFAULT 5;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS custom_branding_enabled BOOLEAN DEFAULT false;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS api_access_enabled BOOLEAN DEFAULT false;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS dedicated_manager_email VARCHAR(255) DEFAULT NULL;
+
+-- Set max_users based on tier
+UPDATE tenants SET max_users = 5 WHERE subscription_tier = 'starter';
+UPDATE tenants SET max_users = 10 WHERE subscription_tier = 'professional';
+UPDATE tenants SET max_users = 999999 WHERE subscription_tier = 'enterprise';
+
+═══════════════════════════════════════════════════════════════
+
+STEP 2: FEATURE GATING LOGIC
+
+IMPORTANT: The AI chat functionality itself does NOT check subscription tier.
+All users get the same AI responses regardless of tier.
+
+Feature gating only applies to:
+- User limits
+- Export formats
+- Dashboard access
+- Chat history retention
+- Custom AI instructions
+- Branding
+
+Create helper functions:
+
+FUNCTION: can_add_user(tenant_id)
+- Get tenant's subscription_tier and current user count
+- If current users >= max_users: return false
+- Return true
+
+FUNCTION: can_export_format(tenant_id, format)
+- starter: only PDF
+- professional: PDF + Word
+- enterprise: PDF + Word + Excel
+- Return boolean
+
+FUNCTION: get_chat_history_days(tenant_id)
+- starter: 30 days
+- professional: unlimited (null)
+- enterprise: unlimited (null)
+- Return integer or null
+
+FUNCTION: has_team_dashboard(tenant_id)
+- starter: false
+- professional: true
+- enterprise: true
+- Return boolean
+
+FUNCTION: has_custom_ai(tenant_id)
+- starter: false
+- professional: false
+- enterprise: true (use existing system_instruction feature!)
+- Return boolean
+
+FUNCTION: has_custom_branding(tenant_id)
+- starter: false
+- professional: false
+- enterprise: true
+- Return boolean
+
+FUNCTION: get_support_response_time(tenant_id)
+- starter: "48 uur"
+- professional: "24 uur"
+- enterprise: "4 uur"
+- Return string (for display only)
+
+═══════════════════════════════════════════════════════════════
+
+STEP 3: PRICING PAGE (/pricing)
+
+Create new page with 3-column pricing table:
+
+LAYOUT:
+┌────────────────────────────────────────────────────────┐
+│              TRANSPARANTE PRICING                      │
+│        Perfect voor uitzendbureaus in glastuinbouw     │
+├──────────────┬──────────────┬─────────────────────────┤
+│   STARTER    │ PROFESSIONAL │      ENTERPRISE         │
+│   €399/mnd   │  €499/mnd    │      €1.199/mnd        │
+│              │ Meest gekozen│                         │
+├──────────────┼──────────────┼─────────────────────────┤
+│              │              │                         │
+│ ✓ 5 users    │ ✓ 10 users   │ ✓ Onbeperkt users       │
+│ ✓ 3 CAO's    │ ✓ 3 CAO's    │ ✓ 3 CAO's               │
+│ ✓ Onbeperkt  │ ✓ Onbeperkt  │ ✓ Onbeperkt vragen      │
+│   vragen     │   vragen     │                         │
+│ ✓ Bron-      │ ✓ Bron-      │ ✓ Bronvermelding        │
+│   vermelding │   vermelding │                         │
+│ ✓ Support    │ ✓ Support    │ ✓ Custom AI instructies │
+│   48u        │   24u        │ ✓ Support binnen 4u     │
+│ ✓ Chat       │ ✓ Team       │ ✓ API access            │
+│   history    │   dashboard  │ ✓ Account manager       │
+│   30 dagen   │ ✓ Onbeperkt  │ ✓ Custom branding       │
+│ ✓ Export PDF │   history    │ ✓ SLA garantie          │
+│              │ ✓ Search     │ ✓ Maandelijkse training │
+│              │   chats      │ ✓ Alle export opties    │
+│              │ ✓ Export     │ ✓ Advanced analytics    │
+│              │   PDF+Word   │                         │
+│              │              │                         │
+│ [Start]      │ [Start]      │ [Contact Sales]         │
+│ 14d gratis   │ 14d gratis   │                         │
+└──────────────┴──────────────┴─────────────────────────┘
+
+DESIGN NOTES:
+- Use navy (#1A2332) for headers
+- Gold (#D4AF37) for "Meest gekozen" badge on Professional tier
+- White cards with subtle shadow
+- Checkmarks in gold color
+- Make "Professional" card slightly elevated/highlighted (scale 1.05)
+- Responsive: stack vertically on mobile
+
+═══════════════════════════════════════════════════════════════
+
+STEP 4: USER LIMIT ENFORCEMENT
+
+When adding new user to tenant:
+
+1. Check current user count:
+   SELECT COUNT(*) FROM users WHERE tenant_id = ?
+
+2. Check max_users for this tenant:
+   SELECT max_users, subscription_tier FROM tenants WHERE id = ?
+
+3. If current >= max_users:
+   Show modal with upgrade prompt:
+   
+   "Je hebt het maximum aantal gebruikers bereikt voor je [tier] plan.
+    
+    Upgrade naar [next_tier] voor:
+    • [benefit 1]
+    • [benefit 2]
+    • [benefit 3]
+    
+    [Neem contact op voor upgrade]"
+
+4. Block user creation until they upgrade
+
+═══════════════════════════════════════════════════════════════
+
+STEP 5: FEATURE RESTRICTIONS IN UI
+
+CHAT FUNCTIONALITY:
+- NO restrictions based on tier
+- All users get same quality responses
+- All users get source attribution
+- AI does not check subscription_tier
+
+CHAT HISTORY:
+- Starter: Only show chats from last 30 days
+  Add banner: "Oudere chats zijn alleen beschikbaar in Professional en Enterprise"
+  [Upgrade]
+
+EXPORT:
+- Starter: Only show PDF export button
+- Professional: Show PDF + Word export buttons  
+- Enterprise: Show PDF + Word + Excel export buttons
+- If user tries to use locked format: show upgrade modal
+
+TEAM DASHBOARD:
+- Show in sidebar for Professional and Enterprise only
+- For Starter: Show in sidebar with lock icon 🔒
+- On click: show "Team Dashboard is beschikbaar vanaf Professional plan" + upgrade CTA
+
+SEARCH IN CHATS:
+- Professional and Enterprise: Show search bar in chat history
+- Starter: Hide search bar, show upgrade prompt when trying to search
+
+CUSTOM AI INSTRUCTIES:
+- Only accessible in /admin/tenants/[id]/settings for Enterprise
+- For other tiers in admin: Show "Deze feature is alleen beschikbaar in Enterprise plan"
+- Uses existing system_instruction per tenant feature
+
+CUSTOM BRANDING:
+- Enterprise only: Allow uploading tenant logo in settings
+- Display tenant logo in header/sidebar if set
+- Other tiers: Show "Custom branding beschikbaar in Enterprise plan"
+
+═══════════════════════════════════════════════════════════════
+
+STEP 6: UPGRADE PROMPTS
+
+Create reusable upgrade modal component:
+
+<UpgradeModal>
+  Props:
+  - currentTier (starter/professional/enterprise)
+  - feature (what they're trying to access)
+  - nextTier (suggested upgrade)
+  
+  Display:
+  - Feature name they tried to access
+  - What tier they need
+  - Benefits of upgrading
+  - Contact button (for now, no automated billing)
+
+For MVP: All upgrades go through email/contact
+Later: Integrate Mollie for self-service upgrades
+
+═══════════════════════════════════════════════════════════════
+
+STEP 7: ADMIN - TENANT TIER MANAGEMENT
+
+In admin panel (/admin/tenants):
+
+Add column: subscription_tier
+Add filter: Show only [starter/professional/enterprise]
+
+On tenant detail page:
+- Show current tier prominently
+- Dropdown to change tier
+- When changed:
+  * Update subscription_tier
+  * Update max_users automatically
+  * Log change with timestamp
+  * Show confirmation
+
+═══════════════════════════════════════════════════════════════
+
+STEP 8: LANDING PAGE UPDATE
+
+Update hero section:
+"Vanaf €399/maand voor 5 gebruikers"
+
+Add pricing preview section before footer:
+- Show 3 tiers in horizontal cards
+- Key differentiators
+- CTA buttons
+- Link to full pricing page
+
+═══════════════════════════════════════════════════════════════
+
+STEP 9: NAVIGATION
+
+Add "Prijzen" to main navigation
+Position: Between existing links
+
+Mobile: Include in hamburger menu
+
+═══════════════════════════════════════════════════════════════
+
+CRITICAL NOTES:
+
+1. AI CHAT DOES NOT CHECK TIER
+   - All subscription tiers get identical AI responses
+   - No "if tier == starter then give worse answer" logic
+   - Feature gating is only for UI features, not AI quality
+
+2. Custom AI instructions (Enterprise only)
+   - Uses existing per-tenant system_instruction feature
+   - Only Enterprise tenants can edit their system_instruction
+   - Starter/Professional use default system_instruction
+
+3. Keep it simple for MVP
+   - No actual payment processing yet
+   - Upgrades handled manually via email
+   - Prepare structure for future Mollie integration
+
+4. Clear upgrade paths
+   - Always show what they get with upgrade
+   - Make it easy to contact sales
+   - No dark patterns or confusing restrictions
+
+═══════════════════════════════════════════════════════════════
+
+TESTING CHECKLIST:
+
+After implementation, verify:
+☐ All tiers get identical AI responses
+☐ Starter cannot add 6th user
+☐ Professional cannot add 11th user
+☐ Enterprise can add unlimited users
+☐ Chat history retention works per tier
+☐ Export buttons show correct options per tier
+☐ Team dashboard only accessible for Pro/Enterprise
+☐ Search only works for Pro/Enterprise
+☐ Custom AI settings only for Enterprise
+☐ Upgrade modals show correctly
+☐ Admin can change tenant tiers
+☐ Pricing page displays correctly
+
+═══════════════════════════════════════════════════════════════
+
+START WITH: STEP 1 (Database schema updates)
+Then proceed systematically through all 9 steps.
