@@ -97,6 +97,7 @@
             <div class="p-4 border-b border-gray-700">
                 <div class="flex gap-2">
                     <button onclick="filterTenants('all')" class="filter-btn px-4 py-2 rounded bg-navy-600 text-white text-sm" data-filter="all">Alle</button>
+                    <button onclick="filterTenants('starter')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="starter">Starter</button>
                     <button onclick="filterTenants('professional')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="professional">Professional</button>
                     <button onclick="filterTenants('enterprise')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="enterprise">Enterprise</button>
                     <button onclick="filterTenants('trial')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="trial">Trial</button>
@@ -130,13 +131,16 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">{{ tenant.contact_email }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            {% if tenant.subscription_tier == 'professional' %}
-                            <span class="px-2 py-1 text-xs bg-purple-900 text-purple-300 rounded">Professional</span>
-                            {% elif tenant.subscription_tier == 'enterprise' %}
-                            <span class="px-2 py-1 text-xs bg-pink-900 text-pink-300 rounded">Enterprise</span>
-                            {% else %}
-                            <span class="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">Trial</span>
-                            {% endif %}
+                            <form method="POST" action="/super-admin/tenants/{{ tenant.id }}/tier" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <select name="tier" onchange="this.form.submit()" 
+                                        class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1">
+                                    <option value="trial" {% if tenant.subscription_tier == 'trial' %}selected{% endif %}>Trial</option>
+                                    <option value="starter" {% if tenant.subscription_tier == 'starter' %}selected{% endif %}>Starter</option>
+                                    <option value="professional" {% if tenant.subscription_tier == 'professional' %}selected{% endif %}>Professional</option>
+                                    <option value="enterprise" {% if tenant.subscription_tier == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                                </select>
+                            </form>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if tenant.subscription_status == 'trial' %}
@@ -148,7 +152,9 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap font-bold text-green-400">
-                            {% if tenant.subscription_tier == 'professional' and tenant.subscription_status == 'active' %}
+                            {% if tenant.subscription_tier == 'starter' and tenant.subscription_status == 'active' %}
+                            €399
+                            {% elif tenant.subscription_tier == 'professional' and tenant.subscription_status == 'active' %}
                             €499
                             {% elif tenant.subscription_tier == 'enterprise' and tenant.subscription_status == 'active' %}
                             €1.199
