@@ -1031,7 +1031,7 @@ window.confirmDelete = async function() {
     
     try {
         const response = await fetch(`/api/chat/${chatToDelete}/delete`, {
-            method: 'DELETE',
+            method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken(),
                 'Content-Type': 'application/json'
