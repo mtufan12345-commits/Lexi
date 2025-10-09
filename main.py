@@ -49,6 +49,16 @@ def load_user(user_id):
         return SuperAdmin.query.get(int(user_id))
     return User.query.get(int(user_id))
 
+def get_max_users_for_tier(tier):
+    """Get max users allowed for a subscription tier"""
+    tier_limits = {
+        'starter': 5,
+        'professional': 10,
+        'enterprise': 999999,
+        'trial': 5
+    }
+    return tier_limits.get(tier, 5)
+
 @app.before_request
 def load_tenant():
     g.tenant = None
@@ -1528,7 +1538,7 @@ def admin_billing():
 @tenant_required
 @admin_required
 def billing_checkout(plan):
-    if plan not in ['professional', 'enterprise']:
+    if plan not in ['starter', 'professional', 'enterprise']:
         return "Invalid plan", 400
     
     success_url = url_for('billing_success', _external=True)
@@ -1569,16 +1579,20 @@ def stripe_webhook():
     if event['type'] == 'checkout.session.completed':
         session_obj = event['data']['object']
         tenant_id = session_obj['metadata'].get('tenant_id')
+        plan = session_obj['metadata'].get('plan', 'professional')
         
         if tenant_id:
             subscription = Subscription.query.filter_by(tenant_id=tenant_id).first()
             if subscription:
                 subscription.status = 'active'
+                subscription.plan = plan
                 subscription.stripe_customer_id = session_obj.get('customer')
                 subscription.stripe_subscription_id = session_obj.get('subscription')
                 
                 tenant = Tenant.query.get(tenant_id)
                 tenant.status = 'active'
+                tenant.subscription_tier = plan
+                tenant.max_users = get_max_users_for_tier(plan)
                 
                 db.session.commit()
     
@@ -1599,7 +1613,7 @@ def super_admin_dashboard():
     tenants = Tenant.query.order_by(Tenant.created_at.desc()).all()
     total_users = User.query.count()
     
-    mrr_prices = {'professional': 499, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 399, 'professional': 499, 'enterprise': 1199, 'trial': 0}
     
     current_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in tenants if t.subscription_status == 'active')
     arr = current_mrr * 12
@@ -1615,8 +1629,10 @@ def super_admin_dashboard():
     elif current_mrr > 0 and last_month_mrr == 0:
         growth_percentage = 100
     
+    starter_count = sum(1 for t in tenants if t.subscription_tier == 'starter' and t.subscription_status == 'active')
     professional_count = sum(1 for t in tenants if t.subscription_tier == 'professional' and t.subscription_status == 'active')
     enterprise_count = sum(1 for t in tenants if t.subscription_tier == 'enterprise' and t.subscription_status == 'active')
+    starter_mrr = starter_count * 399
     professional_mrr = professional_count * 499
     enterprise_mrr = enterprise_count * 1199
     
@@ -1636,8 +1652,10 @@ def super_admin_dashboard():
                          current_mrr=current_mrr,
                          arr=arr,
                          growth_percentage=growth_percentage,
+                         starter_count=starter_count,
                          professional_count=professional_count,
                          enterprise_count=enterprise_count,
+                         starter_mrr=starter_mrr,
                          professional_mrr=professional_mrr,
                          enterprise_mrr=enterprise_mrr,
                          mrr_history=mrr_history)
@@ -1818,7 +1836,7 @@ def super_admin_analytics_export():
     
     writer.writerow(['Tenant ID', 'Company Name', 'Subdomain', 'Status', 'Tier', 'MRR', 'Users', 'Questions', 'Created At'])
     
-    mrr_prices = {'professional': 499, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 399, 'professional': 499, 'enterprise': 1199, 'trial': 0}
     
     for tenant in tenants:
         users_count = User.query.filter_by(tenant_id=tenant.id).count()
@@ -1858,7 +1876,7 @@ def super_admin_analytics():
     tenants = Tenant.query.all()
     all_users = User.query.all()
     
-    mrr_prices = {'professional': 499, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 399, 'professional': 499, 'enterprise': 1199, 'trial': 0}
     
     current_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in tenants if t.subscription_status == 'active')
     total_revenue = current_mrr * 12
@@ -1903,6 +1921,7 @@ def super_admin_analytics():
         })
     
     tier_distribution = {
+        'starter': sum(1 for t in tenants if t.subscription_tier == 'starter' and t.subscription_status == 'active'),
         'professional': sum(1 for t in tenants if t.subscription_tier == 'professional' and t.subscription_status == 'active'),
         'enterprise': sum(1 for t in tenants if t.subscription_tier == 'enterprise' and t.subscription_status == 'active'),
         'trial': sum(1 for t in tenants if t.subscription_tier == 'trial')

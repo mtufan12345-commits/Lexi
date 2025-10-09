@@ -121,11 +121,12 @@
             </div>
             
             {% if tenant.status == 'trial' or not subscription or subscription.status != 'active' %}
-            <!-- Pricing Plans -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <!-- Pricing Plans - 3 Tiers -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <!-- Starter -->
                 <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Professional</h3>
-                    <div class="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">€499<span class="text-lg text-gray-500 dark:text-gray-400">/maand</span></div>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Starter</h3>
+                    <div class="text-4xl font-bold text-navy-600 dark:text-navy-400 mb-4">€399<span class="text-lg text-gray-500 dark:text-gray-400">/maand</span></div>
                     <ul class="space-y-2 mb-6">
                         <li class="flex items-start">
                             <span class="text-green-500 mr-2">✓</span>
@@ -137,21 +138,42 @@
                         </li>
                         <li class="flex items-start">
                             <span class="text-green-500 mr-2">✓</span>
-                            <span class="text-gray-700 dark:text-gray-300">Chat history</span>
+                            <span class="text-gray-700 dark:text-gray-300">Basis support</span>
+                        </li>
+                    </ul>
+                    <a href="/admin/billing/checkout/starter" class="block text-center bg-navy-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-navy-700 transition">
+                        Kies Starter
+                    </a>
+                </div>
+                
+                <!-- Professional -->
+                <div class="bg-white dark:bg-zinc-950 border-2 border-gold-600 dark:border-gold-500 rounded-xl p-6 relative">
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gold-600 text-white px-3 py-1 rounded-full text-xs font-bold">MEEST GEKOZEN</div>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Professional</h3>
+                    <div class="text-4xl font-bold text-gold-600 dark:text-gold-400 mb-4">€499<span class="text-lg text-gray-500 dark:text-gray-400">/maand</span></div>
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">✓</span>
+                            <span class="text-gray-700 dark:text-gray-300">10 gebruikers</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">✓</span>
+                            <span class="text-gray-700 dark:text-gray-300">Unlimited vragen</span>
                         </li>
                         <li class="flex items-start">
                             <span class="text-green-500 mr-2">✓</span>
                             <span class="text-gray-700 dark:text-gray-300">Priority support</span>
                         </li>
                     </ul>
-                    <a href="/admin/billing/checkout/professional" class="block text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
-                        Upgrade naar Professional
+                    <a href="/admin/billing/checkout/professional" class="block text-center bg-gold-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gold-700 transition">
+                        Kies Professional
                     </a>
                 </div>
                 
-                <div class="bg-white dark:bg-zinc-950 border-2 border-blue-600 dark:border-blue-500 rounded-xl p-6">
+                <!-- Enterprise -->
+                <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
                     <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Enterprise</h3>
-                    <div class="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">€1.199<span class="text-lg text-gray-500 dark:text-gray-400">/maand</span></div>
+                    <div class="text-4xl font-bold text-navy-600 dark:text-navy-400 mb-4">€1.199<span class="text-lg text-gray-500 dark:text-gray-400">/maand</span></div>
                     <ul class="space-y-2 mb-6">
                         <li class="flex items-start">
                             <span class="text-green-500 mr-2">✓</span>
@@ -163,15 +185,15 @@
                         </li>
                         <li class="flex items-start">
                             <span class="text-green-500 mr-2">✓</span>
-                            <span class="text-gray-700 dark:text-gray-300">White-label branding</span>
+                            <span class="text-gray-700 dark:text-gray-300">Custom branding</span>
                         </li>
                         <li class="flex items-start">
                             <span class="text-green-500 mr-2">✓</span>
-                            <span class="text-gray-700 dark:text-gray-300">Dedicated support</span>
+                            <span class="text-gray-700 dark:text-gray-300">Dedicated manager</span>
                         </li>
                     </ul>
-                    <a href="/admin/billing/checkout/enterprise" class="block text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
-                        Upgrade naar Enterprise
+                    <a href="/admin/billing/checkout/enterprise" class="block text-center bg-navy-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-navy-700 transition">
+                        Kies Enterprise
                     </a>
                 </div>
             </div>
