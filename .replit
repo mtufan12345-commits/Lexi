@@ -34,10 +34,6 @@ externalPort = 80
 localPort = 34191
 externalPort = 3001
 
-[[ports]]
-localPort = 37769
-externalPort = 3000
-
 [nix]
 channel = "stable-25_05"
 packages = ["cargo", "libiconv", "rustc"]
