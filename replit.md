@@ -49,7 +49,7 @@ SUPER ADMIN
 - subscriptions: Stripe subscription data per tenant
 - templates: Document templates per tenant
 - uploaded_files: User-uploaded files in S3
-- artifacts: LEX-generated documents in S3
+- artifacts: Lexi-generated documents in S3
 - support_tickets: Support tickets met ticket_number, status, category per tenant/user
 - support_replies: Conversatie berichten binnen tickets (customer + admin)
 
