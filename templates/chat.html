@@ -72,7 +72,7 @@
             <div class="flex-1 overflow-y-auto py-2">
                 <div id="chat-list" class="px-2 space-y-1">
                     {% for chat in chats %}
-                    <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="{{ chat.id }}" onclick="loadChat({{ chat.id }})">
+                    <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 hover:z-20 transition cursor-pointer" data-chat-id="{{ chat.id }}" onclick="loadChat({{ chat.id }})">
                         <div class="p-3 pr-24">
                             <div class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ chat.title }}</div>
                             <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ chat.updated_at.strftime('%d/%m %H:%M') }}</div>
@@ -904,7 +904,7 @@ async function updateChatList() {
     const tier = '{{ tenant.subscription_tier if tenant else "starter" }}';
     
     listDiv.innerHTML = chats.map(chat => `
-        <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
+        <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 hover:z-20 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
             <div class="p-3 pr-24">
                 <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${escapeHtml(chat.title)}</div>
                 <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">${chat.updated_at}</div>
@@ -993,7 +993,7 @@ function displaySearchResults(results) {
             : '';
         
         return `
-            <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
+            <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 hover:z-20 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
                 <div class="p-3 pr-24">
                     <div class="flex items-center gap-2 mb-1">
                         <div class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">${escapeHtml(chat.title)}</div>
