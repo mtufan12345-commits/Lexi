@@ -323,7 +323,9 @@ let currentView = 'chats';
 let fileToDelete = null;
 const userName = "{{ user.full_name if user and user.full_name else 'User' }}";
 const userAvatarUrl = "{{ user.avatar_url if user and user.avatar_url else '' }}";
-let sidebarOpen = false;
+
+// Initialize sidebar state based on screen size
+let sidebarOpen = window.innerWidth >= 768;
 
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('chat-sidebar');
@@ -333,7 +335,11 @@ window.toggleSidebar = function() {
     
     if (sidebarOpen) {
         sidebar.classList.remove('-translate-x-full');
-        backdrop.classList.remove('hidden');
+        if (window.innerWidth >= 768) {
+            backdrop.classList.add('hidden');
+        } else {
+            backdrop.classList.remove('hidden');
+        }
     } else {
         sidebar.classList.add('-translate-x-full');
         backdrop.classList.add('hidden');
