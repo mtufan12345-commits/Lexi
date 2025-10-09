@@ -144,6 +144,20 @@ SUPER ADMIN
    - Nieuwe iconen: document, checkmark, money, globe, analytics, support
    - Consistent icon system gebruikt Heroicons library (stroke-based)
    - Volledig emoji-vrij platform voor zakelijke professionaliteit
+13. **MarkItDown PDF Text Extraction** (October 9, 2025):
+   - Microsoft MarkItDown library geïntegreerd voor PDF tekstextractie
+   - Automatische extractie bij upload, tekst opgeslagen in database (extracted_text kolom)
+   - Snellere chat responses: geen herhaalde PDF parsing, direct uit database
+   - Fallback: voor DOCX/text bestanden blijft S3 download functionaliteit
+   - Database schema uitgebreid: uploaded_files.extracted_text (TEXT nullable)
+14. **Mobile Dark Mode Toggle & Chat UI Fixes** (October 9, 2025):
+   - Dark mode toggle toegevoegd aan mobile menu (landing + pricing pages)
+   - Hamburger menu met toggle button en label ("Dark mode" / "Light mode")
+   - Chat export dropdown teruggezet in dynamisch gegenereerde items
+   - Export functionaliteit volledig hersteld in updateChatList() en displaySearchResults()
+   - Chat welkomstbericht vertaald: "Welkom bij Lexi" + Nederlandse beschrijving
+   - Dark mode achtergronden verbeterd: bg-black → bg-zinc-950 voor consistentie
+   - Chat hover menu icons nu met duidelijke achtergrond voor betere zichtbaarheid
 
 ## Setup Notes
 1. Super admin account wordt automatisch aangemaakt bij eerste start:
