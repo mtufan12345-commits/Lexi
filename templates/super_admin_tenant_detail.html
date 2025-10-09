@@ -46,8 +46,10 @@
             <div class="bg-gray-800 rounded-lg shadow p-6">
                 <div class="text-gray-400 text-sm mb-1">Subscription</div>
                 <div class="text-2xl font-bold text-purple-400">
-                    {% if tenant.subscription_tier == 'professional' %}
+                    {% if tenant.subscription_tier == 'starter' %}
                     €499/m
+                    {% elif tenant.subscription_tier == 'professional' %}
+                    €599/m
                     {% elif tenant.subscription_tier == 'enterprise' %}
                     €1.199/m
                     {% else %}

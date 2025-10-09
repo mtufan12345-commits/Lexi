@@ -153,9 +153,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap font-bold text-green-400">
                             {% if tenant.subscription_tier == 'starter' and tenant.subscription_status == 'active' %}
-                            €399
-                            {% elif tenant.subscription_tier == 'professional' and tenant.subscription_status == 'active' %}
                             €499
+                            {% elif tenant.subscription_tier == 'professional' and tenant.subscription_status == 'active' %}
+                            €599
                             {% elif tenant.subscription_tier == 'enterprise' and tenant.subscription_status == 'active' %}
                             €1.199
                             {% else %}
