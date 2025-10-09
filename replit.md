@@ -105,13 +105,21 @@ SUPER ADMIN
    - Kleurrijke gradient icon backgrounds voor admin stats
    - Gradient headers en improved card styling
    - Dark mode onveranderd, alleen light mode verbeterd
-8. **Support Ticket Systeem** (October 9, 2025):
+8. **Support Ticket Systém** (October 9, 2025):
    - Customer side: ticket aanmaken, bekijken, antwoorden, sluiten
    - Admin side: dashboard met filters (status/category), stats, ticket beheer
    - Status flow: open → in_progress/answered → closed
    - Categories: Technical, Lex Question, Billing, CAO-related, Other
    - Chat-like interface voor conversatie tussen customer en admin
    - Auto ticket numbering (#1000, #1001, etc.)
+9. **Navy Blue & Gold Color Scheme** (October 9, 2025):
+   - Complete rebrand: blue/purple/indigo → navy blue (#1a2332) & gold (#d4af37)
+   - Landing page: Gold CTA button, navy outlined secondary with gold hover
+   - Chat interface: Navy gradients, focus rings, drag-drop zones
+   - Admin dashboards: Navy/gold throughout (sidebar, stats, buttons)
+   - Pricing page: Navy-gold gradient logo, gold buttons, navy accents
+   - Smooth transitions (0.3s) on interactive elements
+   - Dark mode: Solid colors only, no gradients
 
 ## Setup Notes
 1. Super admin account wordt automatisch aangemaakt bij eerste start:
@@ -135,6 +143,6 @@ SUPER ADMIN
 - Nederlandse taal voor alle interfaces
 - Focus op uitzendbureau gebruikers
 - Modern, professional enterprise design
-- Dark mode support met toggle
+- Dark mode support met toggle (solid colors, NO gradients in dark mode)
 - SVG icons in plaats van emoji's voor corporate uitstraling
-- Strakke, zakelijke interface met gradient accents
+- Strakke, zakelijke interface met navy blue (#1a2332) en gold (#d4af37) kleurenschema
