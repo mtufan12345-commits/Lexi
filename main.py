@@ -1131,6 +1131,129 @@ def upload_file():
     
     return jsonify({'success': True, 'file_id': uploaded_file.id})
 
+# Support Ticket Routes (Customer)
+@app.route('/support')
+@login_required
+@tenant_required
+def support_tickets():
+    from models import SupportTicket
+    tickets = SupportTicket.query.filter_by(
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).order_by(SupportTicket.updated_at.desc()).all()
+    
+    return render_template('support/tickets.html', tickets=tickets, tenant=g.tenant, user=current_user)
+
+@app.route('/support/new')
+@login_required
+@tenant_required
+def new_support_ticket():
+    return render_template('support/new_ticket.html', tenant=g.tenant, user=current_user)
+
+@app.route('/api/support/create', methods=['POST'])
+@login_required
+@tenant_required
+def create_support_ticket():
+    from models import SupportTicket, SupportReply
+    data = request.json
+    
+    subject = data.get('subject', '').strip()
+    category = data.get('category', '').strip()
+    message = data.get('message', '').strip()
+    
+    if not subject or not category or not message:
+        return jsonify({'error': 'Alle velden zijn verplicht'}), 400
+    
+    # Get next ticket number
+    last_ticket = SupportTicket.query.order_by(SupportTicket.ticket_number.desc()).first()
+    ticket_number = (last_ticket.ticket_number + 1) if last_ticket else 1000
+    
+    # Create ticket
+    ticket = SupportTicket(
+        ticket_number=ticket_number,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id,
+        user_email=current_user.email,
+        user_name=current_user.full_name,
+        subject=subject,
+        category=category,
+        status='open'
+    )
+    db.session.add(ticket)
+    db.session.flush()
+    
+    # Add first message
+    reply = SupportReply(
+        ticket_id=ticket.id,
+        message=message,
+        is_admin=False,
+        sender_name=current_user.full_name
+    )
+    db.session.add(reply)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'ticket_id': ticket.id})
+
+@app.route('/support/<int:ticket_id>')
+@login_required
+@tenant_required
+def view_support_ticket(ticket_id):
+    from models import SupportTicket
+    ticket = SupportTicket.query.filter_by(
+        id=ticket_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    return render_template('support/ticket_detail.html', ticket=ticket, tenant=g.tenant, user=current_user)
+
+@app.route('/api/support/<int:ticket_id>/reply', methods=['POST'])
+@login_required
+@tenant_required
+def reply_support_ticket(ticket_id):
+    from models import SupportTicket, SupportReply
+    ticket = SupportTicket.query.filter_by(
+        id=ticket_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    data = request.json
+    message = data.get('message', '').strip()
+    
+    if not message:
+        return jsonify({'error': 'Bericht mag niet leeg zijn'}), 400
+    
+    reply = SupportReply(
+        ticket_id=ticket.id,
+        message=message,
+        is_admin=False,
+        sender_name=current_user.full_name
+    )
+    db.session.add(reply)
+    
+    ticket.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/api/support/<int:ticket_id>/close', methods=['POST'])
+@login_required
+@tenant_required
+def close_support_ticket(ticket_id):
+    from models import SupportTicket
+    ticket = SupportTicket.query.filter_by(
+        id=ticket_id,
+        tenant_id=g.tenant.id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    ticket.status = 'closed'
+    ticket.closed_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
 @app.route('/admin/dashboard')
 @login_required
 @tenant_required
@@ -1248,6 +1371,118 @@ def admin_users():
     
     users = User.query.filter_by(tenant_id=g.tenant.id).all()
     return render_template('admin_users.html', tenant=g.tenant, users=users)
+
+# Admin Support Routes
+@app.route('/admin/support')
+@login_required
+@tenant_required
+@admin_required
+def admin_support():
+    from models import SupportTicket
+    status_filter = request.args.get('status', 'all')
+    category_filter = request.args.get('category', 'all')
+    
+    query = SupportTicket.query.filter_by(tenant_id=g.tenant.id)
+    
+    if status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+    
+    if category_filter != 'all':
+        query = query.filter_by(category=category_filter)
+    
+    tickets = query.order_by(SupportTicket.updated_at.desc()).all()
+    
+    # Stats
+    total_tickets = SupportTicket.query.filter_by(tenant_id=g.tenant.id).count()
+    open_tickets = SupportTicket.query.filter_by(tenant_id=g.tenant.id, status='open').count()
+    in_progress_tickets = SupportTicket.query.filter_by(tenant_id=g.tenant.id, status='in_progress').count()
+    answered_tickets = SupportTicket.query.filter_by(tenant_id=g.tenant.id, status='answered').count()
+    closed_tickets = SupportTicket.query.filter_by(tenant_id=g.tenant.id, status='closed').count()
+    
+    return render_template('admin_support.html', 
+                         tickets=tickets, 
+                         tenant=g.tenant,
+                         total_tickets=total_tickets,
+                         open_tickets=open_tickets,
+                         in_progress_tickets=in_progress_tickets,
+                         answered_tickets=answered_tickets,
+                         closed_tickets=closed_tickets,
+                         status_filter=status_filter,
+                         category_filter=category_filter)
+
+@app.route('/admin/support/<int:ticket_id>')
+@login_required
+@tenant_required
+@admin_required
+def admin_view_ticket(ticket_id):
+    from models import SupportTicket
+    ticket = SupportTicket.query.filter_by(
+        id=ticket_id,
+        tenant_id=g.tenant.id
+    ).first_or_404()
+    
+    return render_template('admin_support_detail.html', ticket=ticket, tenant=g.tenant)
+
+@app.route('/api/admin/support/<int:ticket_id>/reply', methods=['POST'])
+@login_required
+@tenant_required
+@admin_required
+def admin_reply_ticket(ticket_id):
+    from models import SupportTicket, SupportReply
+    ticket = SupportTicket.query.filter_by(
+        id=ticket_id,
+        tenant_id=g.tenant.id
+    ).first_or_404()
+    
+    data = request.json
+    message = data.get('message', '').strip()
+    
+    if not message:
+        return jsonify({'error': 'Bericht mag niet leeg zijn'}), 400
+    
+    reply = SupportReply(
+        ticket_id=ticket.id,
+        message=message,
+        is_admin=True,
+        sender_name=current_user.full_name
+    )
+    db.session.add(reply)
+    
+    # Update status to answered when admin replies
+    if ticket.status == 'open':
+        ticket.status = 'answered'
+    
+    ticket.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/api/admin/support/<int:ticket_id>/status', methods=['POST'])
+@login_required
+@tenant_required
+@admin_required
+def admin_update_ticket_status(ticket_id):
+    from models import SupportTicket
+    ticket = SupportTicket.query.filter_by(
+        id=ticket_id,
+        tenant_id=g.tenant.id
+    ).first_or_404()
+    
+    data = request.json
+    new_status = data.get('status')
+    
+    if new_status not in ['open', 'in_progress', 'answered', 'closed']:
+        return jsonify({'error': 'Ongeldige status'}), 400
+    
+    ticket.status = new_status
+    if new_status == 'closed':
+        ticket.closed_at = datetime.utcnow()
+    else:
+        ticket.closed_at = None
+    
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 @app.route('/admin/templates', methods=['GET', 'POST'])
 @login_required
