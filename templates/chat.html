@@ -78,6 +78,11 @@
                             <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ chat.updated_at.strftime('%d/%m %H:%M') }}</div>
                         </div>
                         <div class="absolute right-2 top-3 hidden group-hover:flex gap-1">
+                            <button onclick="event.stopPropagation(); exportChat({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
+                                <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                            </button>
                             <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
                                 <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
@@ -1037,6 +1042,11 @@ window.confirmDelete = async function() {
         alert('Er is een fout opgetreden.');
         closeDeleteModal();
     }
+}
+
+// Export chat function
+window.exportChat = function(chatId) {
+    window.location.href = `/api/chat/${chatId}/export`;
 }
 
 // Keyboard support for modals
