@@ -1,7 +1,7 @@
 # Lexi CAO Meester - Multi-Tenant SaaS Platform
 
 ## Project Overview
-Lexi CAO Meester is een multi-tenant SaaS platform voor uitzendbureaus in Nederland. Het biedt een AI-agent (Lexi) die CAO-vragen beantwoordt op basis van 70+ CAO documenten via Google Vertex AI.
+**Lexi CAO Meester** is een premium multi-tenant SaaS platform gepositioneerd als "Complete juridische AI-adviseur voor uitzendbureaus, gespecialiseerd in de glastuinbouw-sector". De AI-agent (Lexi) beantwoordt juridische vragen op basis van 1.000+ juridische documenten (CAO's, arbeidsrecht, detacheringsregels) via Google Vertex AI RAG met gemini-2.5-pro. Gemiddelde kostenbesparing: **€18.000/jaar** t.o.v. traditionele juridische adviseurs.
 
 ## Tech Stack
 - **Backend**: Flask (Python)
@@ -12,10 +12,12 @@ Lexi CAO Meester is een multi-tenant SaaS platform voor uitzendbureaus in Nederl
 - **Email**: SendGrid
 - **Storage**: S3-compatible object storage
 
-## Business Model
-- Professional: €499/maand (5 users, unlimited questions)
-- Enterprise: €1.199/maand (unlimited users, unlimited questions)
+## Business Model (3-Tier Premium Pricing)
+- **Starter**: €399/maand (5 users, unlimited questions)
+- **Professional**: €499/maand (10 users, unlimited questions) - MEEST POPULAIR
+- **Enterprise**: €1.199/maand (unlimited users, unlimited questions)
 - 3 free questions (no credit card required) - replaced 14-day trial
+- **Value Proposition**: Gemiddeld €18.000/jaar besparing op juridische advieskosten
 
 ## Architecture
 Multi-Tenant Hierarchy:
