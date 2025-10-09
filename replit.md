@@ -13,8 +13,8 @@
 - **Storage**: S3-compatible object storage
 
 ## Business Model (3-Tier Premium Pricing)
-- **Starter**: €399/maand (5 users, unlimited questions)
-- **Professional**: €499/maand (10 users, unlimited questions) - MEEST POPULAIR
+- **Starter**: €499/maand (5 users, unlimited questions)
+- **Professional**: €599/maand (10 users, unlimited questions) - MEEST POPULAIR
 - **Enterprise**: €1.199/maand (unlimited users, unlimited questions)
 - 3 free questions (no credit card required) - replaced 14-day trial
 - **Value Proposition**: Gemiddeld €18.000/jaar besparing op juridische advieskosten
