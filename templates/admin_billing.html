@@ -96,9 +96,7 @@
                     <div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Status</div>
                         <div class="text-xl font-semibold mt-1">
-                            {% if tenant.status == 'trial' %}
-                            <span class="text-blue-600 dark:text-blue-400">Trial Periode</span>
-                            {% elif tenant.status == 'active' %}
+                            {% if tenant.status == 'active' %}
                             <span class="text-green-600 dark:text-green-400">Actief</span>
                             {% else %}
                             <span class="text-red-600 dark:text-red-400">{{ tenant.status }}</span>
@@ -108,19 +106,13 @@
                     <div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Plan</div>
                         <div class="text-xl font-semibold capitalize mt-1 text-gray-900 dark:text-white">
-                            {% if subscription %}{{ subscription.plan }}{% else %}Trial{% endif %}
+                            {% if subscription %}{{ subscription.plan }}{% else %}Geen actief plan{% endif %}
                         </div>
                     </div>
                 </div>
-                
-                {% if tenant.status == 'trial' %}
-                <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p class="text-sm text-blue-800 dark:text-blue-200">Je trial loopt tot {{ tenant.trial_ends_at.strftime('%d-%m-%Y') }}</p>
-                </div>
-                {% endif %}
             </div>
             
-            {% if tenant.status == 'trial' or not subscription or subscription.status != 'active' %}
+            {% if not subscription or subscription.status != 'active' %}
             <!-- Pricing Plans - 3 Tiers -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <!-- Starter -->
