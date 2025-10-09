@@ -54,8 +54,7 @@ def get_max_users_for_tier(tier):
     tier_limits = {
         'starter': 5,
         'professional': 10,
-        'enterprise': 999999,
-        'trial': 5
+        'enterprise': 999999
     }
     return tier_limits.get(tier, 5)
 
@@ -179,7 +178,7 @@ def signup_tenant():
             subdomain=subdomain,
             contact_email=contact_email,
             contact_name=contact_name,
-            status='trial'
+            status='active'
         )
         db.session.add(tenant)
         db.session.flush()
@@ -197,7 +196,7 @@ def signup_tenant():
         subscription = Subscription(
             tenant_id=tenant.id,
             plan='professional',
-            status='trialing'
+            status='active'
         )
         db.session.add(subscription)
         
@@ -869,7 +868,7 @@ def export_chat_pdf(chat_id):
     
     elif export_format == 'docx':
         # Word Export - Only for Professional and Enterprise
-        tier = g.tenant.subscription_tier or 'trial'
+        tier = g.tenant.subscription_tier or 'starter'
         if tier not in ['professional', 'enterprise']:
             return jsonify({'error': 'Word export is only available for Professional and Enterprise tiers'}), 403
         
@@ -1569,7 +1568,7 @@ def super_admin_dashboard():
     tenants = Tenant.query.order_by(Tenant.created_at.desc()).all()
     total_users = User.query.count()
     
-    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199}
     
     current_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in tenants if t.subscription_status == 'active')
     arr = current_mrr * 12
@@ -1631,7 +1630,7 @@ def super_admin_create_tenant():
         contact_email=contact_email,
         contact_name=contact_name,
         max_users=max_users,
-        status='trial'
+        status='active'
     )
     db.session.add(tenant)
     db.session.commit()
@@ -1645,7 +1644,7 @@ def super_admin_update_tenant_status(tenant_id):
     tenant = Tenant.query.get_or_404(tenant_id)
     new_status = request.form.get('status')
     
-    if new_status in ['trial', 'active', 'suspended']:
+    if new_status in ['active', 'suspended']:
         tenant.status = new_status
         db.session.commit()
         flash('Tenant status bijgewerkt!', 'success')
@@ -1658,7 +1657,7 @@ def super_admin_update_tenant_tier(tenant_id):
     tenant = Tenant.query.get_or_404(tenant_id)
     new_tier = request.form.get('tier')
     
-    if new_tier in ['trial', 'starter', 'professional', 'enterprise']:
+    if new_tier in ['starter', 'professional', 'enterprise']:
         tenant.subscription_tier = new_tier
         tenant.max_users = get_max_users_for_tier(new_tier)
         
@@ -1812,7 +1811,7 @@ def super_admin_analytics_export():
     
     writer.writerow(['Tenant ID', 'Company Name', 'Subdomain', 'Status', 'Tier', 'MRR', 'Users', 'Questions', 'Created At'])
     
-    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199}
     
     for tenant in tenants:
         users_count = User.query.filter_by(tenant_id=tenant.id).count()
@@ -1852,7 +1851,7 @@ def super_admin_analytics():
     tenants = Tenant.query.all()
     all_users = User.query.all()
     
-    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199, 'trial': 0}
+    mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199}
     
     current_mrr = sum(mrr_prices.get(t.subscription_tier, 0) for t in tenants if t.subscription_status == 'active')
     total_revenue = current_mrr * 12
