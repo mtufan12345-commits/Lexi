@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, g
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
-from models import db, SuperAdmin, Tenant, User, Chat, Message, Subscription, Template, UploadedFile, Artifact
+from models import db, SuperAdmin, Tenant, User, Chat, Message, Subscription, Template, UploadedFile, Artifact, SupportTicket, SupportReply
 from services import vertex_ai_service, s3_service, email_service, StripeService
 import stripe
 from datetime import datetime, timedelta
@@ -1950,6 +1950,97 @@ def super_admin_analytics():
                          top_questions=top_questions,
                          recent_activity=recent_activity,
                          conversion_funnel=conversion_funnel)
+
+@app.route('/super-admin/support')
+@super_admin_required
+def super_admin_support():
+    status_filter = request.args.get('status', 'all')
+    category_filter = request.args.get('category', 'all')
+    
+    query = SupportTicket.query
+    
+    if status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+    if category_filter != 'all':
+        query = query.filter_by(category=category_filter)
+    
+    tickets = query.order_by(SupportTicket.created_at.desc()).all()
+    
+    open_count = SupportTicket.query.filter_by(status='open').count()
+    in_progress_count = SupportTicket.query.filter_by(status='in_progress').count()
+    answered_count = SupportTicket.query.filter_by(status='answered').count()
+    closed_count = SupportTicket.query.filter_by(status='closed').count()
+    
+    return render_template('super_admin_support.html',
+                         tickets=tickets,
+                         status_filter=status_filter,
+                         category_filter=category_filter,
+                         open_count=open_count,
+                         in_progress_count=in_progress_count,
+                         answered_count=answered_count,
+                         closed_count=closed_count)
+
+@app.route('/super-admin/support/<int:ticket_id>')
+@super_admin_required
+def super_admin_support_detail(ticket_id):
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+    replies = SupportReply.query.filter_by(ticket_id=ticket_id).order_by(SupportReply.created_at).all()
+    
+    tenant = Tenant.query.get(ticket.tenant_id)
+    user = User.query.get(ticket.user_id)
+    
+    return render_template('super_admin_support_detail.html',
+                         ticket=ticket,
+                         replies=replies,
+                         tenant=tenant,
+                         user=user)
+
+@app.route('/api/super-admin/support/<int:ticket_id>/reply', methods=['POST'])
+@super_admin_required
+def super_admin_support_reply(ticket_id):
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+    message = request.json.get('message')
+    
+    if not message:
+        return jsonify({'error': 'Message is required'}), 400
+    
+    reply = SupportReply(
+        ticket_id=ticket_id,
+        message=message,
+        is_admin=True,
+        sender_name='Super Admin'
+    )
+    db.session.add(reply)
+    
+    ticket.status = 'answered'
+    ticket.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'reply': {
+            'message': reply.message,
+            'is_admin': reply.is_admin,
+            'sender_name': reply.sender_name,
+            'created_at': reply.created_at.strftime('%d-%m-%Y %H:%M')
+        }
+    })
+
+@app.route('/api/super-admin/support/<int:ticket_id>/status', methods=['POST'])
+@super_admin_required
+def super_admin_support_status(ticket_id):
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+    new_status = request.json.get('status')
+    
+    if new_status not in ['open', 'in_progress', 'answered', 'closed']:
+        return jsonify({'error': 'Invalid status'}), 400
+    
+    ticket.status = new_status
+    ticket.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 def init_db():
     try:
