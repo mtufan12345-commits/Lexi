@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 import secrets
 from functools import wraps
 from markitdown import MarkItDown
+import pytesseract
+from pdf2image import convert_from_path
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -1105,7 +1107,7 @@ def upload_file():
     file_size = file.tell()
     file.seek(0)
     
-    # Extract text from PDF using MarkItDown
+    # Extract text from PDF using MarkItDown + OCR fallback
     extracted_text = None
     if file.content_type == 'application/pdf':
         try:
@@ -1122,6 +1124,28 @@ def upload_file():
             md = MarkItDown()
             result = md.convert(tmp_path)
             extracted_text = result.text_content
+            
+            # If MarkItDown didn't extract text (scanned PDF), use OCR
+            if not extracted_text or len(extracted_text.strip()) == 0:
+                print(f"[DEBUG] MarkItDown extracted no text, trying OCR...")
+                try:
+                    # Convert PDF pages to images
+                    images = convert_from_path(tmp_path)
+                    ocr_texts = []
+                    
+                    for i, image in enumerate(images):
+                        # Extract text from each page using Tesseract OCR
+                        page_text = pytesseract.image_to_string(image, lang='nld+eng')
+                        if page_text.strip():
+                            ocr_texts.append(f"--- Pagina {i+1} ---\n{page_text}")
+                    
+                    if ocr_texts:
+                        extracted_text = '\n\n'.join(ocr_texts)
+                        print(f"[DEBUG] OCR successful, extracted {len(extracted_text)} characters from {len(images)} pages")
+                    else:
+                        print(f"[DEBUG] OCR found no text in PDF")
+                except Exception as ocr_error:
+                    print(f"[DEBUG] OCR failed: {ocr_error}")
             
             # Clean up temporary file
             os.unlink(tmp_path)

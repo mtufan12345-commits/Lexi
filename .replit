@@ -36,4 +36,4 @@ externalPort = 3000
 
 [nix]
 channel = "stable-25_05"
-packages = ["cargo", "libiconv", "rustc"]
+packages = ["cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "poppler_utils", "rustc", "tcl", "tesseract", "tk", "zlib"]
