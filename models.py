@@ -45,6 +45,7 @@ class Tenant(db.Model):
     chats = db.relationship('Chat', backref='tenant', lazy=True, cascade='all, delete-orphan')
     subscriptions = db.relationship('Subscription', backref='tenant', lazy=True, cascade='all, delete-orphan')
     templates = db.relationship('Template', backref='tenant', lazy=True, cascade='all, delete-orphan')
+    support_tickets = db.relationship('SupportTicket', backref='tenant', lazy=True, cascade='all, delete-orphan')
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -62,6 +63,7 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     chats = db.relationship('Chat', backref='user', lazy=True, cascade='all, delete-orphan')
+    support_tickets = db.relationship('SupportTicket', backref='user', lazy=True, cascade='all, delete-orphan')
     
     __table_args__ = (db.UniqueConstraint('tenant_id', 'email', name='unique_tenant_email'),)
     
@@ -151,4 +153,32 @@ class Artifact(db.Model):
     content = db.Column(db.Text, nullable=False)
     artifact_type = db.Column(db.String(50), default='document')
     s3_key = db.Column(db.String(500), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class SupportTicket(db.Model):
+    __tablename__ = 'support_tickets'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_number = db.Column(db.Integer, unique=True, nullable=False)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_email = db.Column(db.String(255), nullable=False)
+    user_name = db.Column(db.String(255), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), default='open')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    closed_at = db.Column(db.DateTime, nullable=True)
+    
+    replies = db.relationship('SupportReply', backref='ticket', lazy=True, cascade='all, delete-orphan', order_by='SupportReply.created_at')
+
+class SupportReply(db.Model):
+    __tablename__ = 'support_replies'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('support_tickets.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+    sender_name = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

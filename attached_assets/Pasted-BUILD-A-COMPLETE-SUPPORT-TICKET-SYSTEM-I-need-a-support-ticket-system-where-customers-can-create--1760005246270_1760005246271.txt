@@ -1,0 +1,133 @@
+BUILD A COMPLETE SUPPORT TICKET SYSTEM
+
+I need a support ticket system where customers can create tickets and the superadmin can respond to them.
+
+═══════════════════════════════════════════════════════════════
+
+WHAT TO BUILD:
+
+1. CUSTOMER SIDE - Support Tickets Page
+   - New page at /support
+   - Shows list of all tickets this user created
+   - Button to create new ticket
+   - Each ticket shows: ticket number, subject, status, last update
+   - Click ticket to see details
+
+2. CUSTOMER SIDE - Create New Ticket
+   - Form with fields:
+     * Subject (text input, required)
+     * Category (dropdown: Technical, Lex Question, Billing, CAO-related, Other)
+     * Message (textarea, required)
+   - After submit: create ticket and show success message
+   - Redirect to ticket detail page
+
+3. CUSTOMER SIDE - Ticket Detail Page
+   - Show ticket info: number, subject, category, status, created date
+   - Show conversation (all messages between customer and admin)
+   - Form to add reply
+   - Button to close ticket
+
+4. ADMIN SIDE - Support Dashboard
+   - New page at /admin/support
+   - Show all tickets from all customers
+   - Display stats: number of open, answered, closed tickets
+   - Filter by status (all/open/answered/closed)
+   - Filter by category
+   - Each ticket shows: ticket number, customer name, company, subject, status, time ago
+   - Click ticket to view details
+
+5. ADMIN SIDE - Admin Ticket Detail
+   - Show full ticket info including customer email and company
+   - Show full conversation
+   - Form for admin to reply
+   - Buttons to change status: "Mark In Progress", "Mark Resolved"
+
+═══════════════════════════════════════════════════════════════
+
+DATABASE STRUCTURE:
+
+Create 2 new tables:
+
+TABLE: support_tickets
+- id (UUID, primary key)
+- ticket_number (auto-increment number for display like #1234)
+- tenant_id (link to tenants table)
+- user_id (link to users table)
+- user_email (store customer email)
+- user_name (store customer name)
+- subject (text, max 200 chars)
+- category (text: Technical/Lex Question/Billing/CAO-related/Other)
+- status (text: open/in_progress/answered/closed, default: open)
+- created_at (timestamp)
+- updated_at (timestamp)
+- closed_at (timestamp, nullable)
+
+TABLE: support_replies
+- id (UUID, primary key)
+- ticket_id (link to support_tickets)
+- message (long text)
+- is_admin (boolean - true if admin wrote it, false if customer)
+- sender_name (text - name of who sent it)
+- created_at (timestamp)
+
+═══════════════════════════════════════════════════════════════
+
+STATUSES EXPLAINED:
+
+- "open" = new ticket, admin hasn't responded yet (show red dot 🔴)
+- "in_progress" = admin is working on it (show yellow dot 🟡)
+- "answered" = admin replied (show yellow dot 🟡)
+- "closed" = problem solved (show green dot 🟢)
+
+═══════════════════════════════════════════════════════════════
+
+NAVIGATION:
+
+CUSTOMER:
+- Add "Support" link in main navigation menu
+- Badge showing number of unread admin replies (optional for now)
+
+ADMIN:
+- Add "Support" link in admin navigation
+- Badge showing number of open tickets
+
+═══════════════════════════════════════════════════════════════
+
+DESIGN/STYLING:
+
+Use the same design system as the rest of Lex:
+- Match existing colors and fonts
+- Use same card/button styles
+- Make it look consistent with the chat interface
+- Responsive design (works on mobile)
+
+For ticket list: use cards with status indicators
+For conversation: use chat-like bubbles (customer messages left, admin messages right)
+
+═══════════════════════════════════════════════════════════════
+
+IMPORTANT RULES:
+
+1. Customers can ONLY see their own tickets
+2. Admin can see ALL tickets from ALL customers
+3. When customer creates ticket, automatically add their first message as a reply
+4. When anyone replies, update the ticket's "updated_at" timestamp
+5. When admin replies, change status from "open" to "answered"
+6. Customer can reply to answered tickets
+7. Either customer or admin can close a ticket
+
+═══════════════════════════════════════════════════════════════
+
+STEP BY STEP:
+
+STEP 1: Create the database tables
+STEP 2: Create customer support routes (/support, /support/new, /support/<id>)
+STEP 3: Create admin support routes (/admin/support, /admin/support/<id>)
+STEP 4: Create customer support templates (tickets list, new ticket form, ticket detail)
+STEP 5: Create admin support templates (dashboard, ticket detail with reply form)
+STEP 6: Add navigation links to both customer and admin menus
+STEP 7: Test: create ticket as customer, reply as admin, reply back as customer
+
+═══════════════════════════════════════════════════════════════
+
+PRIORITY: Build this complete feature now. Start with STEP 1.
