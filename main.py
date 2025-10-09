@@ -723,7 +723,7 @@ def send_message(chat_id):
     
     print("[DEBUG] Calling Vertex AI service...")
     lex_response = vertex_ai_service.chat(ai_message)
-    print(f"[DEBUG] LEX response: {lex_response[:100]}...")
+    print(f"[DEBUG] Lexi response: {lex_response[:100]}...")
     
     # Create assistant message dict for S3
     assistant_msg_dict = {
@@ -922,7 +922,7 @@ def export_chat_pdf(chat_id):
         user_id=current_user.id
     ).first_or_404()
     
-    text_content = f"LEX CAO Expert - Chat Export\n"
+    text_content = f"Lexi CAO Expert - Chat Export\n"
     text_content += f"Titel: {chat.title}\n"
     text_content += f"Datum: {datetime.now().strftime('%d-%m-%Y %H:%M')}\n"
     text_content += f"Gebruiker: {current_user.full_name}\n"
@@ -933,7 +933,7 @@ def export_chat_pdf(chat_id):
         messages_data = s3_service.get_messages(chat.s3_messages_key)
         if messages_data and 'messages' in messages_data:
             for msg in messages_data['messages']:
-                role = "Jij" if msg.get('role') == "user" else "LEX"
+                role = "Jij" if msg.get('role') == "user" else "Lexi"
                 timestamp = msg.get('timestamp', datetime.now().isoformat())
                 try:
                     dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
@@ -947,7 +947,7 @@ def export_chat_pdf(chat_id):
         # Fallback naar oude Message tabel
         messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.created_at).all()
         for msg in messages:
-            role = "Jij" if msg.role == "user" else "LEX"
+            role = "Jij" if msg.role == "user" else "Lexi"
             timestamp = msg.created_at.strftime('%d-%m-%Y %H:%M')
             text_content += f"{role} ({timestamp}):\n{msg.content}\n\n{'-'*80}\n\n"
     

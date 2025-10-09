@@ -41,7 +41,7 @@ class VertexAIService:
             self.model = "gemini-2.5-pro"
             self.rag_corpus = os.environ.get("VERTEX_AI_AGENT_ID")
             
-            self.system_instruction = """Je bent Lex - Expert Loonadministrateur voor UZB (NBBU CAO).
+            self.system_instruction = """Je bent Lexi - Expert Loonadministrateur voor UZB (NBBU CAO).
 
 KERN INSTRUCTIES:
 - Gebruik je volledige kennisbank om de beste antwoorden te geven
@@ -95,7 +95,7 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
 
     def chat(self, message, conversation_history=None):
         if not self.enabled:
-            return "LEX is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om LEX te activeren."
+            return "Lexi is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om Lexi te activeren."
         
         try:
             contents = []
@@ -436,17 +436,17 @@ class EmailService:
             return False
     
     def send_welcome_email(self, user, tenant, login_url):
-        subject = "Welkom bij LEX CAO Expert!"
+        subject = "Welkom bij Lexi CAO Expert!"
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2>Welkom bij LEX CAO Expert! 🤖</h2>
+            <h2>Welkom bij Lexi CAO Expert! 🤖</h2>
             <p>Hoi {user.first_name},</p>
             <p>Je account is aangemaakt voor <strong>{tenant.company_name}</strong>.</p>
             <p>Login hier: <a href="{login_url}">{login_url}</a></p>
-            <p>LEX staat klaar om al je CAO vragen te beantwoorden!</p>
+            <p>Lexi staat klaar om al je CAO vragen te beantwoorden!</p>
             <br>
-            <p>Veel succes,<br>Het LEX team</p>
+            <p>Veel succes,<br>Het Lexi team</p>
         </body>
         </html>
         """
@@ -459,14 +459,14 @@ class EmailService:
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <h2>⚠️ Betaling mislukt</h2>
             <p>Hoi {tenant.contact_name},</p>
-            <p>We konden je laatste betaling voor LEX CAO Expert niet verwerken.</p>
-            <p>Update je betaalmethode om actief te blijven en toegang te behouden tot LEX.</p>
+            <p>We konden je laatste betaling voor Lexi CAO Expert niet verwerken.</p>
+            <p>Update je betaalmethode om actief te blijven en toegang te behouden tot Lexi.</p>
             <p><a href="https://{tenant.subdomain}.lex-cao.replit.app/admin/billing" 
                style="background: #DC2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                Betaalmethode Updaten →
             </a></p>
             <br>
-            <p>Groeten,<br>Het LEX team</p>
+            <p>Groeten,<br>Het Lexi team</p>
         </body>
         </html>
         """
@@ -479,8 +479,8 @@ class EmailService:
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <h2>⏰ Je trial verloopt binnenkort</h2>
             <p>Hoi {tenant.contact_name},</p>
-            <p>Je 14-daagse trial van LEX CAO Expert verloopt over {days_left} dagen.</p>
-            <p>Upgrade nu naar een betaald plan om toegang te behouden tot LEX en al je chat geschiedenis.</p>
+            <p>Je 14-daagse trial van Lexi CAO Expert verloopt over {days_left} dagen.</p>
+            <p>Upgrade nu naar een betaald plan om toegang te behouden tot Lexi en al je chat geschiedenis.</p>
             <p><strong>Beschikbare plannen:</strong></p>
             <ul>
                 <li>Professional: €499/maand (5 users, unlimited questions)</li>
@@ -491,7 +491,7 @@ class EmailService:
                Upgrade Nu →
             </a></p>
             <br>
-            <p>Groeten,<br>Het LEX team</p>
+            <p>Groeten,<br>Het Lexi team</p>
         </body>
         </html>
         """

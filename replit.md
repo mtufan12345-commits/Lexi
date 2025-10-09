@@ -1,7 +1,7 @@
-# LEX CAO Expert - Multi-Tenant SaaS Platform
+# Lexi CAO Expert - Multi-Tenant SaaS Platform
 
 ## Project Overview
-LEX CAO Expert is een multi-tenant SaaS platform voor uitzendbureaus in Nederland. Het biedt een AI-agent (LEX) die CAO-vragen beantwoordt op basis van 70+ CAO documenten via Google Vertex AI.
+Lexi CAO Expert is een multi-tenant SaaS platform voor uitzendbureaus in Nederland. Het biedt een AI-agent (Lexi) die CAO-vragen beantwoordt op basis van 70+ CAO documenten via Google Vertex AI.
 
 ## Tech Stack
 - **Backend**: Flask (Python)
@@ -28,10 +28,10 @@ SUPER ADMIN
 
 ## Key Features
 1. **Multi-tenant isolatie**: Subdomain routing (production) + session-based (development)
-2. **Chat interface**: Met LEX animatie (8 visual-only scenarios) tijdens AI response
+2. **Chat interface**: Met Lexi animatie (8 visual-only scenarios) tijdens AI response
 3. **Chat history sidebar**: Snelle toegang tot eerdere chats met datum/tijd
-4. **File uploads**: PDF, DOCX, en text bestanden die LEX kan analyseren
-5. **Artifact generatie**: LEX kan documenten genereren (contracten, brieven) met download buttons
+4. **File uploads**: PDF, DOCX, en text bestanden die Lexi kan analyseren
+5. **Artifact generatie**: Lexi kan documenten genereren (contracten, brieven) met download buttons
 6. **User management**: Add/delete/deactivate users, role changes (admin/user), user limits
 7. **Dashboard analytics**: Totaal vragen, actieve users, usage per maand, top users
 8. **Template database**: Tenant admins kunnen templates beheren
