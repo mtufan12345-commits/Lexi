@@ -436,11 +436,11 @@ class EmailService:
             return False
     
     def send_welcome_email(self, user, tenant, login_url):
-        subject = "Welkom bij Lexi CAO Expert!"
+        subject = "Welkom bij Lexi CAO Meester!"
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2>Welkom bij Lexi CAO Expert! 🤖</h2>
+            <h2>Welkom bij Lexi CAO Meester! 🤖</h2>
             <p>Hoi {user.first_name},</p>
             <p>Je account is aangemaakt voor <strong>{tenant.company_name}</strong>.</p>
             <p>Login hier: <a href="{login_url}">{login_url}</a></p>
@@ -459,7 +459,7 @@ class EmailService:
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <h2>⚠️ Betaling mislukt</h2>
             <p>Hoi {tenant.contact_name},</p>
-            <p>We konden je laatste betaling voor Lexi CAO Expert niet verwerken.</p>
+            <p>We konden je laatste betaling voor Lexi CAO Meester niet verwerken.</p>
             <p>Update je betaalmethode om actief te blijven en toegang te behouden tot Lexi.</p>
             <p><a href="https://{tenant.subdomain}.lex-cao.replit.app/admin/billing" 
                style="background: #DC2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
@@ -479,7 +479,7 @@ class EmailService:
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <h2>⏰ Je trial verloopt binnenkort</h2>
             <p>Hoi {tenant.contact_name},</p>
-            <p>Je 14-daagse trial van Lexi CAO Expert verloopt over {days_left} dagen.</p>
+            <p>Je 14-daagse trial van Lexi CAO Meester verloopt over {days_left} dagen.</p>
             <p>Upgrade nu naar een betaald plan om toegang te behouden tot Lexi en al je chat geschiedenis.</p>
             <p><strong>Beschikbare plannen:</strong></p>
             <ul>

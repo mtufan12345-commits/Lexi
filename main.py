@@ -922,7 +922,7 @@ def export_chat_pdf(chat_id):
         user_id=current_user.id
     ).first_or_404()
     
-    text_content = f"Lexi CAO Expert - Chat Export\n"
+    text_content = f"Lexi CAO Meester - Chat Export\n"
     text_content += f"Titel: {chat.title}\n"
     text_content += f"Datum: {datetime.now().strftime('%d-%m-%Y %H:%M')}\n"
     text_content += f"Gebruiker: {current_user.full_name}\n"
