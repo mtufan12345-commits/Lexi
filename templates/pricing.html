@@ -9,7 +9,8 @@
                     <div class="w-8 h-8 bg-gradient-to-br from-navy-500 to-gold-600 rounded"></div>
                     <span class="text-xl font-semibold text-gray-900 dark:text-white">Lexi CAO Meester</span>
                 </a>
-                <div class="flex items-center space-x-8">
+                
+                <div class="hidden md:flex items-center space-x-8">
                     <a href="/" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition">Home</a>
                     <a href="/login" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition">Inloggen</a>
                     <button onclick="toggleDarkMode()" class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition">
@@ -21,6 +22,32 @@
                         </svg>
                     </button>
                     <a href="/signup/tenant" class="bg-gold-500 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-gold-600 transition">
+                        Aan de slag
+                    </a>
+                </div>
+
+                <button onclick="toggleMobileMenu()" class="md:hidden text-gray-900 dark:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="mobile-menu" class="hidden md:hidden mt-4 pt-4 border-t border-gray-200 dark:border-zinc-800">
+                <div class="flex flex-col gap-4">
+                    <a href="/" class="text-sm text-gray-600 dark:text-gray-400">Home</a>
+                    <a href="/login" class="text-sm text-gray-600 dark:text-gray-400">Inloggen</a>
+                    <button onclick="toggleDarkMode()" class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                        <span class="dark:hidden">Dark mode</span>
+                        <span class="hidden dark:block">Light mode</span>
+                    </button>
+                    <a href="/signup/tenant" class="bg-gold-500 text-white text-sm font-semibold px-5 py-3 rounded-lg text-center">
                         Aan de slag
                     </a>
                 </div>
@@ -383,6 +410,11 @@ function toggleDarkMode() {
         html.classList.add('dark');
         localStorage.setItem('darkMode', 'true');
     }
+}
+
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    menu.classList.toggle('hidden');
 }
 </script>
 {% endblock %}
