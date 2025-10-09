@@ -132,6 +132,15 @@ SUPER ADMIN
 11. **Professional UI Enhancement - Emoji Removal** (October 9, 2025):
    - Alle emoji's vervangen door SVG iconen voor corporate uitstraling
    - Affected pages: landing, pricing, chat, login, admin, super_admin
+12. **Free Trial Removal - Direct Paid Subscription Model** (October 9, 2025):
+   - Verwijderd: 14-dagen gratis trial periode
+   - Nieuwe flow: gebruikers kiezen direct een betaald plan (€499/€599/€1.199)
+   - Landing page: CTAs aangepast naar "Bekijk Prijzen" i.p.v. "Probeer gratis"
+   - Backend: nieuwe tenants krijgen status='active' + plan='professional' bij signup
+   - Admin templates: trial status displays verwijderd
+   - Super admin: trial opties verwijderd uit tier/status dropdowns
+   - Analytics: trial funnel verwijderd, alleen signups → active conversie
+   - Routes verwijderd: /api/free-trial, /free-chat, /api/free-chat/*
    - Nieuwe iconen: document, checkmark, money, globe, analytics, support
    - Consistent icon system gebruikt Heroicons library (stroke-based)
    - Volledig emoji-vrij platform voor zakelijke professionaliteit
