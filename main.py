@@ -925,6 +925,14 @@ def search_chats():
 def export_chat_pdf(chat_id):
     from io import BytesIO
     from datetime import datetime
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_LEFT
+    
+    export_format = request.args.get('format', 'pdf')
     
     chat = Chat.query.filter_by(
         id=chat_id,
@@ -932,13 +940,8 @@ def export_chat_pdf(chat_id):
         user_id=current_user.id
     ).first_or_404()
     
-    text_content = f"Lexi CAO Meester - Chat Export\n"
-    text_content += f"Titel: {chat.title}\n"
-    text_content += f"Datum: {datetime.now().strftime('%d-%m-%Y %H:%M')}\n"
-    text_content += f"Gebruiker: {current_user.full_name}\n"
-    text_content += f"\n{'='*80}\n\n"
-    
-    # Try S3 first (nieuwe chats)
+    # Collect messages
+    messages = []
     if chat.s3_messages_key:
         messages_data = s3_service.get_messages(chat.s3_messages_key)
         if messages_data and 'messages' in messages_data:
@@ -950,22 +953,150 @@ def export_chat_pdf(chat_id):
                     timestamp_str = dt.strftime('%d-%m-%Y %H:%M')
                 except:
                     timestamp_str = timestamp
-                
-                content = msg.get('content', '')
-                text_content += f"{role} ({timestamp_str}):\n{content}\n\n{'-'*80}\n\n"
+                messages.append({
+                    'role': role,
+                    'timestamp': timestamp_str,
+                    'content': msg.get('content', '')
+                })
     else:
         # Fallback naar oude Message tabel
-        messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.created_at).all()
-        for msg in messages:
+        db_messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.created_at).all()
+        for msg in db_messages:
             role = "Jij" if msg.role == "user" else "Lexi"
-            timestamp = msg.created_at.strftime('%d-%m-%Y %H:%M')
-            text_content += f"{role} ({timestamp}):\n{msg.content}\n\n{'-'*80}\n\n"
+            messages.append({
+                'role': role,
+                'timestamp': msg.created_at.strftime('%d-%m-%Y %H:%M'),
+                'content': msg.content
+            })
     
-    return Response(
-        text_content,
-        mimetype='text/plain',
-        headers={'Content-Disposition': f'attachment; filename=chat_{chat_id}_{datetime.now().strftime("%Y%m%d")}.txt'}
-    )
+    if export_format == 'pdf':
+        # PDF Export - Available for ALL tiers
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=2*cm, bottomMargin=2*cm)
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#1a2332'),
+            spaceAfter=20
+        )
+        header_style = ParagraphStyle(
+            'Header',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.grey,
+            spaceAfter=10
+        )
+        user_style = ParagraphStyle(
+            'UserMessage',
+            parent=styles['Normal'],
+            fontSize=11,
+            leftIndent=10,
+            rightIndent=10,
+            spaceAfter=10,
+            textColor=colors.HexColor('#1a2332')
+        )
+        lexi_style = ParagraphStyle(
+            'LexiMessage',
+            parent=styles['Normal'],
+            fontSize=11,
+            leftIndent=10,
+            rightIndent=10,
+            spaceAfter=10,
+            textColor=colors.HexColor('#333333')
+        )
+        
+        story = []
+        
+        # Header
+        story.append(Paragraph("Lexi CAO Meester - Chat Export", title_style))
+        story.append(Paragraph(f"<b>Titel:</b> {chat.title}", header_style))
+        story.append(Paragraph(f"<b>Datum:</b> {datetime.now().strftime('%d-%m-%Y %H:%M')}", header_style))
+        story.append(Paragraph(f"<b>Gebruiker:</b> {current_user.full_name}", header_style))
+        story.append(Spacer(1, 0.5*cm))
+        
+        # Messages
+        for msg in messages:
+            role_label = f"<b>{msg['role']}</b> ({msg['timestamp']})"
+            story.append(Paragraph(role_label, header_style))
+            
+            # Clean content for PDF
+            content = msg['content'].replace('<', '&lt;').replace('>', '&gt;')
+            content = content.replace('\n', '<br/>')
+            
+            if msg['role'] == "Jij":
+                story.append(Paragraph(content, user_style))
+            else:
+                story.append(Paragraph(content, lexi_style))
+            
+            story.append(Spacer(1, 0.3*cm))
+        
+        doc.build(story)
+        buffer.seek(0)
+        
+        return Response(
+            buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={'Content-Disposition': f'attachment; filename=chat_{chat_id}_{datetime.now().strftime("%Y%m%d")}.pdf'}
+        )
+    
+    elif export_format == 'docx':
+        # Word Export - Only for Professional and Enterprise
+        tier = g.tenant.subscription_tier or 'trial'
+        if tier not in ['professional', 'enterprise']:
+            return jsonify({'error': 'Word export is only available for Professional and Enterprise tiers'}), 403
+        
+        from docx import Document
+        from docx.shared import Pt, RGBColor, Inches
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        
+        doc = Document()
+        
+        # Title
+        title = doc.add_heading('Lexi CAO Meester - Chat Export', 0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        # Metadata
+        doc.add_paragraph(f"Titel: {chat.title}")
+        doc.add_paragraph(f"Datum: {datetime.now().strftime('%d-%m-%Y %H:%M')}")
+        doc.add_paragraph(f"Gebruiker: {current_user.full_name}")
+        doc.add_paragraph('_' * 80)
+        doc.add_paragraph()
+        
+        # Messages
+        for msg in messages:
+            # Role and timestamp
+            p = doc.add_paragraph()
+            run = p.add_run(f"{msg['role']} ({msg['timestamp']}):")
+            run.bold = True
+            run.font.size = Pt(11)
+            if msg['role'] == "Jij":
+                run.font.color.rgb = RGBColor(26, 35, 50)  # Navy
+            else:
+                run.font.color.rgb = RGBColor(212, 175, 55)  # Gold
+            
+            # Content
+            content_p = doc.add_paragraph(msg['content'])
+            content_p.paragraph_format.left_indent = Inches(0.5)
+            
+            # Separator
+            doc.add_paragraph('_' * 80)
+            doc.add_paragraph()
+        
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        
+        return Response(
+            buffer.getvalue(),
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            headers={'Content-Disposition': f'attachment; filename=chat_{chat_id}_{datetime.now().strftime("%Y%m%d")}.docx'}
+        )
+    
+    else:
+        return jsonify({'error': 'Invalid export format'}), 400
 
 @app.route('/api/feedback', methods=['POST'])
 @login_required

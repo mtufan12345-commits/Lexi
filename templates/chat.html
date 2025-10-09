@@ -78,11 +78,23 @@
                             <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ chat.updated_at.strftime('%d/%m %H:%M') }}</div>
                         </div>
                         <div class="absolute right-2 top-3 hidden group-hover:flex gap-1">
-                            <button onclick="event.stopPropagation(); exportChat({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
-                                <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                </svg>
-                            </button>
+                            <div class="relative export-dropdown">
+                                <button onclick="event.stopPropagation(); toggleExportMenu({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
+                                    <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                </button>
+                                <div id="export-menu-{{ chat.id }}" class="hidden absolute right-0 mt-1 w-32 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg z-50">
+                                    <button onclick="event.stopPropagation(); exportChat({{ chat.id }}, 'pdf')" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-t-lg">
+                                        📄 PDF
+                                    </button>
+                                    {% if tenant.subscription_tier in ['professional', 'enterprise'] %}
+                                    <button onclick="event.stopPropagation(); exportChat({{ chat.id }}, 'docx')" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-b-lg">
+                                        📝 Word
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
                             <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
                                 <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
@@ -1069,9 +1081,29 @@ window.confirmDelete = async function() {
 }
 
 // Export chat function
-window.exportChat = function(chatId) {
-    window.location.href = `/api/chat/${chatId}/export`;
+window.exportChat = function(chatId, format = 'pdf') {
+    window.location.href = `/api/chat/${chatId}/export?format=${format}`;
+    // Close the menu after export
+    const menu = document.getElementById(`export-menu-${chatId}`);
+    if (menu) menu.classList.add('hidden');
 }
+
+// Toggle export menu
+window.toggleExportMenu = function(chatId) {
+    const menu = document.getElementById(`export-menu-${chatId}`);
+    // Close all other menus first
+    document.querySelectorAll('[id^="export-menu-"]').forEach(m => {
+        if (m.id !== `export-menu-${chatId}`) m.classList.add('hidden');
+    });
+    menu.classList.toggle('hidden');
+}
+
+// Close export menus when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.export-dropdown')) {
+        document.querySelectorAll('[id^="export-menu-"]').forEach(m => m.classList.add('hidden'));
+    }
+});
 
 // Keyboard support for modals
 document.addEventListener('keydown', function(e) {
