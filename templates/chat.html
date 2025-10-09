@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex h-screen bg-gradient-to-b from-blue-50/30 to-white dark:bg-black {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
+<div class="flex h-screen bg-gradient-to-b from-navy-50/30 to-white dark:bg-black {% if session.get('impersonating_from') == 'super_admin' %}pt-14{% endif %}">
     {% if session.get('impersonating_from') == 'super_admin' %}
     <div class="absolute top-0 left-0 right-0 bg-orange-600 text-white py-2 px-4 z-50 flex justify-between items-center">
         <span class="text-sm">Super Admin Mode - Viewing as {{ tenant.company_name }}</span>
@@ -15,7 +15,7 @@
     <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden" onclick="closeSidebar()"></div>
 
     <!-- Left Sidebar - Dual View (Chats / Bijlagen) -->
-    <div id="chat-sidebar" class="fixed md:relative w-64 bg-gradient-to-b from-blue-50/20 to-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 flex flex-col z-40 md:z-auto transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 h-full {% if session.get('impersonating_from') == 'super_admin' %}top-14{% else %}top-0{% endif %}">
+    <div id="chat-sidebar" class="fixed md:relative w-64 bg-gradient-to-b from-navy-50/20 to-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 flex flex-col z-40 md:z-auto transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 h-full {% if session.get('impersonating_from') == 'super_admin' %}top-14{% else %}top-0{% endif %}">
         <!-- Header -->
         <div class="p-4 border-b border-gray-200 dark:border-zinc-800">
             <div class="flex items-center justify-between mb-4">
@@ -60,7 +60,7 @@
             <div class="px-4 pb-3">
                 <div class="relative">
                     <input id="chat-search" type="text" placeholder="Zoek in chats..." 
-                           class="w-full px-3 py-2 pl-9 bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           class="w-full px-3 py-2 pl-9 bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
                            oninput="searchChats(this.value)">
                     <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -191,7 +191,7 @@
         <!-- Input Area -->
         <div class="border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-lg dark:shadow-none">
             <div id="drop-zone" class="max-w-3xl mx-auto">
-                <div id="file-preview" class="hidden mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                <div id="file-preview" class="hidden mb-3 p-3 bg-navy-50 dark:bg-navy-900/20 border border-navy-200 dark:border-navy-800 rounded-lg flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5 text-gold-500 dark:text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -215,7 +215,7 @@
                         </button>
                         <input type="text" id="message-input" placeholder="Ask about CAO regulations..." 
                                autocomplete="off"
-                               class="flex-1 px-4 py-3 bg-gray-100 dark:bg-zinc-900 border-0 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                               class="flex-1 px-4 py-3 bg-gray-100 dark:bg-zinc-900 border-0 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-navy-500">
                         <button type="submit" 
                                 class="px-6 py-3 bg-navy-500 hover:bg-navy-600 text-white rounded-lg transition font-medium">
                             Send
@@ -250,7 +250,7 @@
         <div class="p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Chat hernoemen</h3>
             <input type="text" id="rename-input" 
-                   class="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   class="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-navy-500"
                    placeholder="Nieuwe naam...">
             <div class="flex gap-3 mt-6">
                 <button onclick="closeRenameModal()" 
@@ -1154,19 +1154,19 @@ const dropZone = document.getElementById('drop-zone');
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    dropZone.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50', 'bg-blue-50', 'dark:bg-blue-900/10');
+    dropZone.classList.add('ring-2', 'ring-navy-500', 'ring-opacity-50', 'bg-navy-50', 'dark:bg-navy-900/10');
 });
 
 dropZone.addEventListener('dragleave', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    dropZone.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50', 'bg-blue-50', 'dark:bg-blue-900/10');
+    dropZone.classList.remove('ring-2', 'ring-navy-500', 'ring-opacity-50', 'bg-navy-50', 'dark:bg-navy-900/10');
 });
 
 dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    dropZone.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50', 'bg-blue-50', 'dark:bg-blue-900/10');
+    dropZone.classList.remove('ring-2', 'ring-navy-500', 'ring-opacity-50', 'bg-navy-50', 'dark:bg-navy-900/10');
     
     const files = e.dataTransfer.files;
     if (files.length > 0) {
@@ -1198,7 +1198,7 @@ window.viewDocument = async function(fileId, filename, mimeType) {
     title.textContent = filename;
     modal.classList.remove('hidden');
     
-    content.innerHTML = '<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>';
+    content.innerHTML = '<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-navy-600"></div></div>';
     
     try {
         const response = await fetch(`/api/file/${fileId}/view`);
