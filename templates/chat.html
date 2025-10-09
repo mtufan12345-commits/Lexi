@@ -72,12 +72,13 @@
             <div class="flex-1 overflow-y-auto py-2">
                 <div id="chat-list" class="px-2 space-y-1">
                     {% for chat in chats %}
-                    <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 hover:z-20 transition cursor-pointer" data-chat-id="{{ chat.id }}" onclick="loadChat({{ chat.id }})">
-                        <div class="p-3 pr-24">
-                            <div class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ chat.title }}</div>
-                            <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ chat.updated_at.strftime('%d/%m %H:%M') }}</div>
-                        </div>
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1 z-10">
+                    <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="{{ chat.id }}" onclick="loadChat({{ chat.id }})">
+                        <div class="flex items-center justify-between gap-2 p-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ chat.title }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ chat.updated_at.strftime('%d/%m %H:%M') }}</div>
+                            </div>
+                            <div class="flex-shrink-0 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                             <div class="relative export-dropdown">
                                 <button onclick="event.stopPropagation(); toggleExportMenu({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
                                     <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -904,12 +905,13 @@ async function updateChatList() {
     const tier = '{{ tenant.subscription_tier if tenant else "starter" }}';
     
     listDiv.innerHTML = chats.map(chat => `
-        <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 hover:z-20 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
-            <div class="p-3 pr-24">
-                <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${escapeHtml(chat.title)}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">${chat.updated_at}</div>
-            </div>
-            <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1 z-10">
+        <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
+            <div class="flex items-center justify-between gap-2 p-3">
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${escapeHtml(chat.title)}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">${chat.updated_at}</div>
+                </div>
+                <div class="flex-shrink-0 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                 <div class="relative export-dropdown">
                     <button onclick="event.stopPropagation(); toggleExportMenu(${chat.id})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
                         <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -993,16 +995,15 @@ function displaySearchResults(results) {
             : '';
         
         return `
-            <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 hover:z-20 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
-                <div class="p-3 pr-24">
-                    <div class="flex items-center gap-2 mb-1">
-                        <div class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">${escapeHtml(chat.title)}</div>
+            <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
+                <div class="flex items-start justify-between gap-2 p-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${escapeHtml(chat.title)}</div>
+                        ${matchTypeIndicator}
+                        <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">${chat.updated_at}</div>
+                        ${snippet}
                     </div>
-                    ${matchTypeIndicator}
-                    <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">${chat.updated_at}</div>
-                    ${snippet}
-                </div>
-                <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1 z-10">
+                    <div class="flex-shrink-0 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                     <div class="relative export-dropdown">
                         <button onclick="event.stopPropagation(); toggleExportMenu(${chat.id})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
                             <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
