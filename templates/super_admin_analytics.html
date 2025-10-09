@@ -164,8 +164,11 @@
         <div class="bg-gray-800 rounded-lg shadow p-6 mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-semibold">Recente Activiteit</h3>
-                <a href="{{ url_for('super_admin_analytics_export') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                    📊 Export CSV
+                <a href="{{ url_for('super_admin_analytics_export') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Export CSV
                 </a>
             </div>
             <div class="overflow-x-auto">
