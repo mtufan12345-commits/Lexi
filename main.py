@@ -820,7 +820,7 @@ def rename_chat(chat_id):
     
     return jsonify({'success': False}), 400
 
-@app.route('/api/chat/<int:chat_id>/delete', methods=['DELETE'])
+@app.route('/api/chat/<int:chat_id>/delete', methods=['POST', 'DELETE'])
 @login_required
 @tenant_required
 def delete_chat(chat_id):
