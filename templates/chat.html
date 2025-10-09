@@ -15,7 +15,7 @@
     <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden" onclick="closeSidebar()"></div>
 
     <!-- Left Sidebar - Dual View (Chats / Bijlagen) -->
-    <div id="chat-sidebar" class="fixed md:relative w-64 bg-gradient-to-b from-navy-50/20 to-white dark:bg-zinc-950 border-r border-gray-200 dark:border-zinc-800 flex flex-col z-40 md:z-auto transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 h-full {% if session.get('impersonating_from') == 'super_admin' %}top-14{% else %}top-0{% endif %}">
+    <div id="chat-sidebar" class="fixed md:relative w-64 bg-gradient-to-b from-navy-50/20 to-white dark:from-zinc-950 dark:to-zinc-950 border-r border-gray-200 dark:border-zinc-800 flex flex-col z-40 md:z-auto transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 h-full {% if session.get('impersonating_from') == 'super_admin' %}top-14{% else %}top-0{% endif %}">
         <!-- Header -->
         <div class="p-4 border-b border-gray-200 dark:border-zinc-800">
             <div class="flex items-center justify-between mb-4">
