@@ -380,7 +380,12 @@ class StripeService:
         try:
             price_id = os.getenv(f'STRIPE_PRICE_{plan.upper()}')
             if not price_id:
-                price_id = 'price_professional' if plan == 'professional' else 'price_enterprise'
+                if plan == 'starter':
+                    price_id = 'price_starter'
+                elif plan == 'professional':
+                    price_id = 'price_professional'
+                else:
+                    price_id = 'price_enterprise'
             
             session = stripe.checkout.Session.create(
                 payment_method_types=['card', 'ideal'],
