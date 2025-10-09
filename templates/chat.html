@@ -73,11 +73,11 @@
                 <div id="chat-list" class="px-2 space-y-1">
                     {% for chat in chats %}
                     <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="{{ chat.id }}" onclick="loadChat({{ chat.id }})">
-                        <div class="p-3">
+                        <div class="p-3 pr-24">
                             <div class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ chat.title }}</div>
                             <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ chat.updated_at.strftime('%d/%m %H:%M') }}</div>
                         </div>
-                        <div class="absolute right-2 top-3 hidden group-hover:flex gap-1">
+                        <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                             <div class="relative export-dropdown">
                                 <button onclick="event.stopPropagation(); toggleExportMenu({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
                                     <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -903,11 +903,11 @@ async function updateChatList() {
     const listDiv = document.getElementById('chat-list');
     listDiv.innerHTML = chats.map(chat => `
         <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
-            <div class="p-3">
+            <div class="p-3 pr-20">
                 <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${escapeHtml(chat.title)}</div>
                 <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">${chat.updated_at}</div>
             </div>
-            <div class="absolute right-2 top-3 hidden group-hover:flex gap-1">
+            <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                 <button onclick="event.stopPropagation(); renameChatFromSidebar(${chat.id}, '${escapeHtml(chat.title)}')" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
                     <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
@@ -967,7 +967,7 @@ function displaySearchResults(results) {
         
         return `
             <div class="group relative rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" data-chat-id="${chat.id}" onclick="loadChat(${chat.id})">
-                <div class="p-3">
+                <div class="p-3 pr-20">
                     <div class="flex items-center gap-2 mb-1">
                         <div class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">${escapeHtml(chat.title)}</div>
                     </div>
@@ -975,7 +975,7 @@ function displaySearchResults(results) {
                     <div class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">${chat.updated_at}</div>
                     ${snippet}
                 </div>
-                <div class="absolute right-2 top-3 hidden group-hover:flex gap-1">
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                     <button onclick="event.stopPropagation(); renameChatFromSidebar(${chat.id}, '${escapeHtml(chat.title)}')" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
                         <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
