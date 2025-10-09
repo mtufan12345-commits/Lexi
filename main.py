@@ -1696,6 +1696,26 @@ def super_admin_update_tenant_status(tenant_id):
     
     return redirect(url_for('super_admin_dashboard'))
 
+@app.route('/super-admin/tenants/<int:tenant_id>/tier', methods=['POST'])
+@super_admin_required
+def super_admin_update_tenant_tier(tenant_id):
+    tenant = Tenant.query.get_or_404(tenant_id)
+    new_tier = request.form.get('tier')
+    
+    if new_tier in ['trial', 'starter', 'professional', 'enterprise']:
+        tenant.subscription_tier = new_tier
+        tenant.max_users = get_max_users_for_tier(new_tier)
+        
+        # Update subscription plan if exists
+        subscription = Subscription.query.filter_by(tenant_id=tenant_id).first()
+        if subscription:
+            subscription.plan = new_tier
+        
+        db.session.commit()
+        flash(f'Tenant tier bijgewerkt naar {new_tier} (max {tenant.max_users} users)!', 'success')
+    
+    return redirect(url_for('super_admin_dashboard'))
+
 @app.route('/super-admin/impersonate/<int:tenant_id>', methods=['POST'])
 @super_admin_required
 def super_admin_impersonate(tenant_id):
