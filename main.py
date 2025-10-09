@@ -922,18 +922,34 @@ def export_chat_pdf(chat_id):
         user_id=current_user.id
     ).first_or_404()
     
-    messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.created_at).all()
-    
     text_content = f"LEX CAO Expert - Chat Export\n"
     text_content += f"Titel: {chat.title}\n"
     text_content += f"Datum: {datetime.now().strftime('%d-%m-%Y %H:%M')}\n"
     text_content += f"Gebruiker: {current_user.full_name}\n"
     text_content += f"\n{'='*80}\n\n"
     
-    for msg in messages:
-        role = "Jij" if msg.role == "user" else "LEX"
-        timestamp = msg.created_at.strftime('%d-%m-%Y %H:%M')
-        text_content += f"{role} ({timestamp}):\n{msg.content}\n\n{'-'*80}\n\n"
+    # Try S3 first (nieuwe chats)
+    if chat.s3_messages_key:
+        messages_data = s3_service.get_messages(chat.s3_messages_key)
+        if messages_data and 'messages' in messages_data:
+            for msg in messages_data['messages']:
+                role = "Jij" if msg.get('role') == "user" else "LEX"
+                timestamp = msg.get('timestamp', datetime.now().isoformat())
+                try:
+                    dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                    timestamp_str = dt.strftime('%d-%m-%Y %H:%M')
+                except:
+                    timestamp_str = timestamp
+                
+                content = msg.get('content', '')
+                text_content += f"{role} ({timestamp_str}):\n{content}\n\n{'-'*80}\n\n"
+    else:
+        # Fallback naar oude Message tabel
+        messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.created_at).all()
+        for msg in messages:
+            role = "Jij" if msg.role == "user" else "LEX"
+            timestamp = msg.created_at.strftime('%d-%m-%Y %H:%M')
+            text_content += f"{role} ({timestamp}):\n{msg.content}\n\n{'-'*80}\n\n"
     
     return Response(
         text_content,
