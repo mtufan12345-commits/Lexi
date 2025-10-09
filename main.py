@@ -543,19 +543,30 @@ def send_message(chat_id):
     if uploaded_files:
         file_contents = []
         for uploaded_file in uploaded_files:
+            print(f"[DEBUG] Processing file: {uploaded_file.original_filename}, type: {uploaded_file.mime_type}")
             # For PDF files, try extracted_text from database first
             if uploaded_file.mime_type == 'application/pdf':
                 if uploaded_file.extracted_text and uploaded_file.extracted_text.strip():
                     # Use pre-extracted text if available and not empty
+                    print(f"[DEBUG] Using extracted_text from database (length: {len(uploaded_file.extracted_text)})")
                     content = uploaded_file.extracted_text
                     file_contents.append(f"\n\n--- Bestand: {uploaded_file.original_filename} ---\n{content}\n--- Einde bestand ---\n")
                 else:
                     # Fallback: try downloading from S3 for legacy PDFs or failed extractions
-                    content, error = s3_service.download_file_content(uploaded_file.s3_key, uploaded_file.mime_type)
-                    if error:
-                        file_errors.append(f"{uploaded_file.original_filename}: {error}")
-                    elif content:
-                        file_contents.append(f"\n\n--- Bestand: {uploaded_file.original_filename} ---\n{content}\n--- Einde bestand ---\n")
+                    print(f"[DEBUG] No extracted_text, trying S3 fallback for {uploaded_file.original_filename}")
+                    try:
+                        content, error = s3_service.download_file_content(uploaded_file.s3_key, uploaded_file.mime_type)
+                        if error:
+                            print(f"[DEBUG] S3 error: {error}")
+                            file_errors.append(f"{uploaded_file.original_filename}: {error}")
+                        elif content:
+                            print(f"[DEBUG] S3 fallback successful, content length: {len(content)}")
+                            file_contents.append(f"\n\n--- Bestand: {uploaded_file.original_filename} ---\n{content}\n--- Einde bestand ---\n")
+                        else:
+                            print(f"[DEBUG] S3 returned empty content")
+                    except Exception as e:
+                        print(f"[DEBUG] Exception in S3 fallback: {str(e)}")
+                        file_errors.append(f"{uploaded_file.original_filename}: Kon bestand niet lezen")
             else:
                 # For non-PDF files, download from S3
                 content, error = s3_service.download_file_content(uploaded_file.s3_key, uploaded_file.mime_type)
