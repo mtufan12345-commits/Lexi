@@ -543,12 +543,21 @@ def send_message(chat_id):
     if uploaded_files:
         file_contents = []
         for uploaded_file in uploaded_files:
-            # For PDF files, use extracted_text from database
-            if uploaded_file.mime_type == 'application/pdf' and uploaded_file.extracted_text:
-                content = uploaded_file.extracted_text
-                file_contents.append(f"\n\n--- Bestand: {uploaded_file.original_filename} ---\n{content}\n--- Einde bestand ---\n")
+            # For PDF files, try extracted_text from database first
+            if uploaded_file.mime_type == 'application/pdf':
+                if uploaded_file.extracted_text and uploaded_file.extracted_text.strip():
+                    # Use pre-extracted text if available and not empty
+                    content = uploaded_file.extracted_text
+                    file_contents.append(f"\n\n--- Bestand: {uploaded_file.original_filename} ---\n{content}\n--- Einde bestand ---\n")
+                else:
+                    # Fallback: try downloading from S3 for legacy PDFs or failed extractions
+                    content, error = s3_service.download_file_content(uploaded_file.s3_key, uploaded_file.mime_type)
+                    if error:
+                        file_errors.append(f"{uploaded_file.original_filename}: {error}")
+                    elif content:
+                        file_contents.append(f"\n\n--- Bestand: {uploaded_file.original_filename} ---\n{content}\n--- Einde bestand ---\n")
             else:
-                # For other files, download from S3
+                # For non-PDF files, download from S3
                 content, error = s3_service.download_file_content(uploaded_file.s3_key, uploaded_file.mime_type)
                 if error:
                     file_errors.append(f"{uploaded_file.original_filename}: {error}")
