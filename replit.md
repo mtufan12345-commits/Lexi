@@ -1,7 +1,7 @@
-# Lexi CAO Expert - Multi-Tenant SaaS Platform
+# Lexi CAO Meester - Multi-Tenant SaaS Platform
 
 ## Project Overview
-Lexi CAO Expert is een multi-tenant SaaS platform voor uitzendbureaus in Nederland. Het biedt een AI-agent (Lexi) die CAO-vragen beantwoordt op basis van 70+ CAO documenten via Google Vertex AI.
+Lexi CAO Meester is een multi-tenant SaaS platform voor uitzendbureaus in Nederland. Het biedt een AI-agent (Lexi) die CAO-vragen beantwoordt op basis van 70+ CAO documenten via Google Vertex AI.
 
 ## Tech Stack
 - **Backend**: Flask (Python)
