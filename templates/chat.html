@@ -474,13 +474,13 @@ async function loadSidebarFiles(chatId) {
                 const fileIcon = getFileIcon(file.mime_type);
                 
                 return `
-                    <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-900 rounded-lg group">
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-900 rounded-lg group hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer" onclick="openFile(${file.id}, event)">
                         <div class="text-2xl">${fileIcon}</div>
                         <div class="flex-1 min-w-0">
                             <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${file.filename}</div>
                             <div class="text-xs text-gray-500 dark:text-gray-400">${fileSize}</div>
                         </div>
-                        <button onclick="deleteFileFromSidebar(${file.id})" class="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition">
+                        <button onclick="deleteFileFromSidebar(${file.id}, event)" class="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
@@ -530,7 +530,35 @@ window.handleSidebarFileSelect = async function(event) {
     document.getElementById('sidebar-file-input').value = '';
 }
 
-window.deleteFileFromSidebar = function(fileId) {
+window.openFile = async function(fileId, event) {
+    event.stopPropagation(); // Prevent bubbling
+    
+    try {
+        const response = await fetch(`/api/file/${fileId}/view`);
+        const data = await response.json();
+        
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
+        if (data.type === 'pdf' && data.url) {
+            // Open PDF in new tab
+            window.open(data.url, '_blank');
+        } else if (data.type === 'text' && data.content) {
+            // For text files, could show in modal or new tab
+            const blob = new Blob([data.content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+    } catch (error) {
+        console.error('Error opening file:', error);
+        alert('Kon bestand niet openen');
+    }
+}
+
+window.deleteFileFromSidebar = function(fileId, event) {
+    event.stopPropagation(); // Prevent opening file when deleting
     fileToDelete = fileId;
     document.getElementById('delete-file-modal').classList.remove('hidden');
 }
