@@ -110,7 +110,6 @@
                     <button onclick="filterTenants('starter')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="starter">Starter</button>
                     <button onclick="filterTenants('professional')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="professional">Professional</button>
                     <button onclick="filterTenants('enterprise')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="enterprise">Enterprise</button>
-                    <button onclick="filterTenants('trial')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="trial">Trial</button>
                 </div>
             </div>
             <table class="min-w-full divide-y divide-gray-700">
@@ -145,7 +144,6 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <select name="tier" onchange="this.form.submit()" 
                                         class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1">
-                                    <option value="trial" {% if tenant.subscription_tier == 'trial' %}selected{% endif %}>Trial</option>
                                     <option value="starter" {% if tenant.subscription_tier == 'starter' %}selected{% endif %}>Starter</option>
                                     <option value="professional" {% if tenant.subscription_tier == 'professional' %}selected{% endif %}>Professional</option>
                                     <option value="enterprise" {% if tenant.subscription_tier == 'enterprise' %}selected{% endif %}>Enterprise</option>
@@ -153,9 +151,7 @@
                             </form>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            {% if tenant.subscription_status == 'trial' %}
-                            <span class="px-2 py-1 text-xs bg-blue-900 text-blue-300 rounded">Trial</span>
-                            {% elif tenant.subscription_status == 'active' %}
+                            {% if tenant.subscription_status == 'active' %}
                             <span class="px-2 py-1 text-xs bg-green-900 text-green-300 rounded">Actief</span>
                             {% else %}
                             <span class="px-2 py-1 text-xs bg-red-900 text-red-300 rounded">{{ tenant.subscription_status }}</span>
@@ -178,7 +174,6 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <select name="status" onchange="this.form.submit()" 
                                         class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1">
-                                    <option value="trial" {% if tenant.status == 'trial' %}selected{% endif %}>Trial</option>
                                     <option value="active" {% if tenant.status == 'active' %}selected{% endif %}>Actief</option>
                                     <option value="suspended" {% if tenant.status == 'suspended' %}selected{% endif %}>Suspended</option>
                                 </select>

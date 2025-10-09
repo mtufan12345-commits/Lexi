@@ -93,15 +93,6 @@
                     </div>
                     <div>
                         <div class="flex justify-between text-sm mb-2">
-                            <span>Trials</span>
-                            <span class="font-bold">{{ conversion_funnel.trials }}</span>
-                        </div>
-                        <div class="w-full bg-gray-700 rounded-full h-3">
-                            <div class="bg-yellow-500 h-3 rounded-full" style="width: {{ (conversion_funnel.trials / conversion_funnel.signups * 100) if conversion_funnel.signups > 0 else 0 }}%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-sm mb-2">
                             <span>Active (Betaald)</span>
                             <span class="font-bold">{{ conversion_funnel.active }}</span>
                         </div>
@@ -288,18 +279,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const tierChart = new Chart(tierCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Professional', 'Enterprise', 'Trial'],
+                labels: ['Starter', 'Professional', 'Enterprise'],
                 datasets: [{
-                    data: [tierData.professional, tierData.enterprise, tierData.trial],
+                    data: [tierData.starter, tierData.professional, tierData.enterprise],
                     backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
                         'rgba(168, 85, 247, 0.8)',
-                        'rgba(236, 72, 153, 0.8)',
-                        'rgba(59, 130, 246, 0.8)'
+                        'rgba(236, 72, 153, 0.8)'
                     ],
                     borderColor: [
+                        'rgb(59, 130, 246)',
                         'rgb(168, 85, 247)',
-                        'rgb(236, 72, 153)',
-                        'rgb(59, 130, 246)'
+                        'rgb(236, 72, 153)'
                     ],
                     borderWidth: 2
                 }]
