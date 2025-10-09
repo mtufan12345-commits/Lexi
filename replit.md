@@ -38,6 +38,7 @@ SUPER ADMIN
 9. **Session management**: Voorkomt multiple concurrent logins per user
 10. **Stripe integratie**: Checkout + webhooks voor subscription management
 11. **Email notificaties**: Welcome, trial expiring, payment failed
+12. **Support Ticket Systeem**: Klanten kunnen support tickets aanmaken, admins kunnen reageren en status beheren
 
 ## Database Schema
 - super_admins: Super administrator accounts
@@ -49,6 +50,8 @@ SUPER ADMIN
 - templates: Document templates per tenant
 - uploaded_files: User-uploaded files in S3
 - artifacts: LEX-generated documents in S3
+- support_tickets: Support tickets met ticket_number, status, category per tenant/user
+- support_replies: Conversatie berichten binnen tickets (customer + admin)
 
 ## Chat Storage Architecture
 **All chat messages are stored in S3 (Hetzner Object Storage) as JSON files:**
@@ -102,6 +105,13 @@ SUPER ADMIN
    - Kleurrijke gradient icon backgrounds voor admin stats
    - Gradient headers en improved card styling
    - Dark mode onveranderd, alleen light mode verbeterd
+8. **Support Ticket Systeem** (October 9, 2025):
+   - Customer side: ticket aanmaken, bekijken, antwoorden, sluiten
+   - Admin side: dashboard met filters (status/category), stats, ticket beheer
+   - Status flow: open → in_progress/answered → closed
+   - Categories: Technical, Lex Question, Billing, CAO-related, Other
+   - Chat-like interface voor conversatie tussen customer en admin
+   - Auto ticket numbering (#1000, #1001, etc.)
 
 ## Setup Notes
 1. Super admin account wordt automatisch aangemaakt bij eerste start:
