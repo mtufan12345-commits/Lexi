@@ -18,7 +18,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             <div class="bg-gray-800 rounded-lg shadow p-6">
-                <div class="text-3xl font-bold text-indigo-400">{{ tenants|length }}</div>
+                <div class="text-3xl font-bold text-gold-400">{{ tenants|length }}</div>
                 <div class="text-gray-400 text-sm">Totaal Tenants</div>
             </div>
             
@@ -28,19 +28,19 @@
             </div>
             
             <div class="bg-gray-800 rounded-lg shadow p-6">
-                <div class="text-3xl font-bold text-blue-400">
+                <div class="text-3xl font-bold text-gold-400">
                     {{ tenants|selectattr('status', 'equalto', 'active')|list|length }}
                 </div>
                 <div class="text-gray-400 text-sm">Actieve Tenants</div>
             </div>
             
             <div class="bg-gray-800 rounded-lg shadow p-6">
-                <div class="text-3xl font-bold text-purple-400">€{{ "{:,.0f}".format(current_mrr) }}</div>
+                <div class="text-3xl font-bold text-gold-400">€{{ "{:,.0f}".format(current_mrr) }}</div>
                 <div class="text-gray-400 text-sm">MRR</div>
             </div>
             
             <div class="bg-gray-800 rounded-lg shadow p-6">
-                <div class="text-3xl font-bold text-pink-400">€{{ "{:,.0f}".format(arr) }}</div>
+                <div class="text-3xl font-bold text-gold-400">€{{ "{:,.0f}".format(arr) }}</div>
                 <div class="text-gray-400 text-sm">ARR</div>
             </div>
             
@@ -58,11 +58,11 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-gray-300">Professional ({{ professional_count }} tenants)</span>
-                        <span class="font-bold text-purple-400">€{{ "{:,.0f}".format(professional_mrr) }}/maand</span>
+                        <span class="font-bold text-gold-400">€{{ "{:,.0f}".format(professional_mrr) }}/maand</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-gray-300">Enterprise ({{ enterprise_count }} tenants)</span>
-                        <span class="font-bold text-pink-400">€{{ "{:,.0f}".format(enterprise_mrr) }}/maand</span>
+                        <span class="font-bold text-gold-400">€{{ "{:,.0f}".format(enterprise_mrr) }}/maand</span>
                     </div>
                 </div>
                 <div>
@@ -83,7 +83,7 @@
                        class="px-3 py-2 border border-gray-700 bg-gray-900 rounded-md text-white">
                 <input type="text" name="contact_name" placeholder="Contactpersoon" required 
                        class="px-3 py-2 border border-gray-700 bg-gray-900 rounded-md text-white">
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                <button type="submit" class="bg-navy-600 text-white px-4 py-2 rounded-md hover:bg-navy-700">
                     Aanmaken
                 </button>
             </form>
@@ -92,7 +92,7 @@
         <div class="bg-gray-800 rounded-lg shadow overflow-hidden">
             <div class="p-4 border-b border-gray-700">
                 <div class="flex gap-2">
-                    <button onclick="filterTenants('all')" class="filter-btn px-4 py-2 rounded bg-indigo-600 text-white text-sm" data-filter="all">Alle</button>
+                    <button onclick="filterTenants('all')" class="filter-btn px-4 py-2 rounded bg-navy-600 text-white text-sm" data-filter="all">Alle</button>
                     <button onclick="filterTenants('professional')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="professional">Professional</button>
                     <button onclick="filterTenants('enterprise')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="enterprise">Enterprise</button>
                     <button onclick="filterTenants('trial')" class="filter-btn px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm" data-filter="trial">Trial</button>
@@ -115,12 +115,12 @@
                     {% for tenant in tenants %}
                     <tr class="tenant-row" data-tier="{{ tenant.subscription_tier }}">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="{{ url_for('super_admin_tenant_detail', tenant_id=tenant.id) }}" class="text-indigo-400 hover:text-indigo-300 font-medium">
+                            <a href="{{ url_for('super_admin_tenant_detail', tenant_id=tenant.id) }}" class="text-gold-400 hover:text-gold-300 font-medium">
                                 {{ tenant.company_name }}
                             </a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="https://{{ tenant.subdomain }}.lex-cao.replit.app" target="_blank" class="text-indigo-400 hover:text-indigo-300">
+                            <a href="https://{{ tenant.subdomain }}.lex-cao.replit.app" target="_blank" class="text-gold-400 hover:text-gold-300">
                                 {{ tenant.subdomain }}
                             </a>
                         </td>
@@ -230,9 +230,9 @@
         buttons.forEach(btn => {
             if (btn.dataset.filter === tier) {
                 btn.classList.remove('bg-gray-700', 'text-gray-300');
-                btn.classList.add('bg-indigo-600', 'text-white');
+                btn.classList.add('bg-navy-600', 'text-white');
             } else {
-                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.remove('bg-navy-600', 'text-white');
                 btn.classList.add('bg-gray-700', 'text-gray-300');
             }
         });
