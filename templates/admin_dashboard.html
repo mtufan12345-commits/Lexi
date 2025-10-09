@@ -133,18 +133,15 @@
                 <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
-                        <div class="w-10 h-10 rounded-lg {% if tenant.status == 'active' %}bg-gradient-to-br from-green-500 to-emerald-600{% elif tenant.status == 'trial' %}bg-gradient-to-br from-blue-500 to-indigo-600{% else %}bg-gradient-to-br from-red-500 to-rose-600{% endif %} dark:bg-transparent flex items-center justify-center">
-                            <svg class="w-5 h-5 {% if tenant.status == 'active' %}text-white dark:text-green-500{% elif tenant.status == 'trial' %}text-white dark:text-blue-500{% else %}text-white dark:text-red-500{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                        <div class="w-10 h-10 rounded-lg {% if tenant.status == 'active' %}bg-gradient-to-br from-green-500 to-emerald-600{% else %}bg-gradient-to-br from-red-500 to-rose-600{% endif %} dark:bg-transparent flex items-center justify-center">
+                            <svg class="w-5 h-5 {% if tenant.status == 'active' %}text-white dark:text-green-500{% else %}text-white dark:text-red-500{% endif %}" fill="currentColor" viewBox="0 0 20 20">
                                 <circle cx="10" cy="10" r="4"/>
                             </svg>
                         </div>
                     </div>
-                    <div class="text-xl font-bold {% if tenant.status == 'active' %}text-green-600{% elif tenant.status == 'trial' %}text-blue-600{% else %}text-red-600{% endif %}">
-                        {% if tenant.status == 'trial' %}Trial{% elif tenant.status == 'active' %}Actief{% else %}{{ tenant.status }}{% endif %}
+                    <div class="text-xl font-bold {% if tenant.status == 'active' %}text-green-600{% else %}text-red-600{% endif %}">
+                        {% if tenant.status == 'active' %}Actief{% else %}{{ tenant.status }}{% endif %}
                     </div>
-                    {% if tenant.status == 'trial' %}
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">tot {{ tenant.trial_ends_at.strftime('%d-%m-%Y') }}</div>
-                    {% endif %}
                 </div>
             </div>
 
