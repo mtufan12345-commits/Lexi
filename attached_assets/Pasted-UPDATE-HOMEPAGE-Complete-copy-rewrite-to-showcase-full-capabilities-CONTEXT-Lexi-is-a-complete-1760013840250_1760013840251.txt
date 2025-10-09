@@ -1,0 +1,300 @@
+UPDATE HOMEPAGE: Complete copy rewrite to showcase full capabilities
+
+CONTEXT:
+Lexi is a complete legal AI advisor for temp agencies in greenhouse horticulture, not just a CAO tool. It contains 1,000+ legal documents including ABU/NBBU CAO, CAO Glastuinbouw, Burgerlijk Wetboek (labor law), pension regulations, salary calculations, European secondment rules, and much more.
+
+Current homepage focuses too narrowly on "CAO vragen". We need to showcase the full value proposition while staying focused on the target audience.
+
+IMPORTANT: Average response time is 30 seconds (not 3 seconds).
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 1: HERO SECTION
+
+REPLACE:
+"Lexi beantwoordt uw CAO vragen in seconden. Geen handmatige zoektochten meer, geen verouderde PDFs. Gewoon directe, betrouwbare antwoorden voor uw salarisadministratie."
+
+WITH:
+"Lexi is uw complete juridische AI-adviseur voor uitzenden in de glastuinbouw. Van CAO-regels tot arbeidsrecht, van loonberekening tot detacheringsregels. Antwoord in 30 seconden, niet 3 uur."
+
+REPLACE subtext:
+"Geen creditcard nodig • Direct starten • Altijd actueel"
+
+WITH:
+"Geen creditcard nodig • Antwoord in 30 seconden • 1.000+ juridische documenten"
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 2: 4 USP BULLETS (Replace all 4)
+
+CURRENT:
+- Geen uren meer zoeken in de CAO
+- Stop met raden start met weten
+- Geen ingewikkelde handboeken doorspitten
+- Alsof je een HR-expert in je zak hebt
+
+NEW (with icons/emojis):
+
+1. ⚡ Van vraag naar antwoord in 30 seconden
+   Niet 3 uur zoeken door honderden pagina's documenten
+
+2. 📚 Meer dan alleen CAO's
+   ABU, NBBU, Glastuinbouw CAO + Burgerlijk Wetboek + volledige arbeidsregelgeving
+
+3. 💯 Altijd de laatste versie
+   Automatisch bijgewerkt - geen verouderde PDFs of handboeken meer
+
+4. 💰 Bespaar €15.000 per jaar
+   Geen externe adviseur nodig voor 90% van uw HR-vragen (€150/uur × 100 vragen)
+
+DESIGN NOTE: Make numbers bold and gold colored: "30 seconden", "€15.000", "1.000+"
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 3: PROBLEM SECTION
+
+REPLACE heading:
+"Verspil geen tijd meer aan CAO handboeken"
+
+WITH:
+"Herkent u dit?"
+
+REPLACE body text with:
+
+"Welke CAO geldt: ABU of Glastuinbouw?"
+"Hoe bereken ik overuren tijdens het oogstseizoen?"
+"Mag een uitzendkracht weekendwerk weigeren?"
+"Wat zijn mijn verplichtingen bij ziekte van een detacheerder?"
+
+Uw team besteedt uren per week aan het zoeken naar antwoorden in:
+- CAO-documenten die niemand kan vinden
+- Verouderde PDFs van vorig jaar
+- Onduidelijke wetsartikelen
+- Dure externe adviseurs (€150-200 per uur)
+
+[Add spacing/divider]
+
+Lexi geeft direct het antwoord
+
+Stel uw vraag in gewoon Nederlands. Lexi doorzoekt automatisch:
+✓ ABU & NBBU CAO voor Uitzendkrachten
+✓ CAO Glastuinbouw (alle jaren)
+✓ Burgerlijk Wetboek (arbeidsrecht)
+✓ Wet allocatie arbeidskrachten
+✓ Pensioenregelingen
+✓ Loonberekeningen en toeslagen
+✓ Europese detacheringsregels
+
+Direct het juiste artikel + praktisch advies + bronvermelding.
+Simpel. Snel. Betrouwbaar.
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 4: 3 FEATURES (Replace current 3-column section)
+
+CURRENT:
+- Directe antwoorden / Geen zoeken meer, gewoon vragen stellen
+- Altijd actueel / Automatisch bijgewerkt bij CAO wijzigingen
+- Voor het hele team / Deel kennis binnen uw organisatie
+
+NEW:
+
+FEATURE 1:
+Heading: ⚡ 300x sneller dan zelf zoeken
+Body: Gemiddeld 30 seconden per antwoord vs 2,5 uur handmatig zoeken door documenten. Uw team bespaart 15+ uur per week.
+
+FEATURE 2:
+Heading: 📚 Complete kennisdekking
+Body: Niet alleen CAO's - ook arbeidsrecht, loon, pensioen, detachering. 1.000+ juridische documenten in één tool.
+
+FEATURE 3:
+Heading: 🤝 Voor het hele team
+Body: Onbeperkt vragen voor maximaal 10 gebruikers (Professional plan). Deel kennis binnen HR, payroll, operations en planning.
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 5: HOW IT WORKS (Minor updates to existing section)
+
+Keep the 3-step structure but update text:
+
+STEP 1 - Stel uw vraag
+Type uw vraag in gewoon Nederlands. Bijvoorbeeld:
+"Hoeveel ADV dagen krijgt een werknemer met 2 jaar dienst?"
+"Mag ik overuren uitbetalen of moet het tijd-voor-tijd?"
+
+STEP 2 - Lexi analyseert
+Onze AI doorzoekt alle relevante CAO's, wetten en regelgeving en vindt het exacte artikel dat u nodig heeft
+
+STEP 3 - Krijg uw antwoord
+Ontvang een helder antwoord met:
+✓ Directe, praktische uitleg
+✓ Bronvermelding (exact artikel + paragraaf)
+✓ Link naar het originele document
+✓ Binnen 30 seconden
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 6: NEW - KNOWLEDGE BASE OVERVIEW
+
+ADD NEW SECTION after "How it works":
+
+HEADING: "Lexi's kennisbank"
+SUBHEADING: "Alles wat u nodig heeft voor uitzenden in de glastuinbouw"
+
+CONTENT (in 4 columns or cards):
+
+📋 CAO's & Arbeidsvoorwaarden
+- CAO voor Uitzendkrachten (ABU & NBBU)
+- CAO Glastuinbouw (alle edities)
+- Burgerlijk Wetboek (arbeidsrecht)
+
+💶 Loon & Vergoedingen
+- Loonberekeningen en loonstroken
+- Vakantiegeld en vakantiedagen
+- Overuren, toeslagen, onregelmatigheidstoeslag
+
+🌍 Detachering & Internationale werknemers
+- Wet allocatie arbeidskrachten
+- Europese detacheringsregels
+- A1-verklaringen
+- WW-premies en sociale zekerheid
+
+📊 Pensioen & Verlof
+- Pensioenregelingen
+- ADV (Arbeidsduurverkorting)
+- Ouderschapsverlof, zorgverlof
+- Ziekte en arbeidsongeschiktheid
+
+DESIGN NOTE: Use grid layout, each category in a card with icon
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 7: NEW - SOCIAL PROOF
+
+ADD NEW SECTION after knowledge base:
+
+HEADING: "Wat onze klanten zeggen"
+
+TESTIMONIAL 1:
+"Voorheen belden we voor elke complexe vraag onze externe adviseur. €200 per uur. Met Lexi lossen we 90% zelf op. Bespaart ons €1.500 per maand."
+
+— Lisa van Dijk, HR Manager
+[Naam uitzendbureau]
+
+TESTIMONIAL 2:
+"Ik werk in payroll en had constant vragen over overuren, toeslagen, ADV. Nu typ ik de vraag in Lexi en binnen 30 seconden heb ik het antwoord inclusief het exacte CAO-artikel. Onmisbaar!"
+
+— Mark Peters, Payroll Specialist
+[Naam personeelsdienst]
+
+TESTIMONIAL 3:
+"Wat ik het beste vind: Lexi kent niet alleen de CAO's, maar ook het Burgerlijk Wetboek en alle detacheringsregels. Echt een complete tool."
+
+— Sandra Bakker, Operations Manager
+[Naam arbeidspool]
+
+DESIGN NOTE: Use cards with quotes, photos optional (can use placeholder avatars), company names in smaller text
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 8: FINAL CTA
+
+REPLACE:
+"Klaar om tijd te besparen?
+Probeer Lexi gratis met 3 vragen. Geen creditcard, geen verplichtingen."
+
+WITH:
+
+HEADING: "Klaar om €15.000 per jaar te besparen?"
+
+SUBHEADING: "Stop met dure externe adviseurs voor standaardvragen. Probeer Lexi 14 dagen gratis. Geen creditcard. Geen verplichtingen."
+
+CTA BUTTONS:
+[Start 14 dagen gratis trial]  [Bekijk prijzen]
+
+BELOW BUTTONS:
+✓ 3 gratis vragen zonder account
+✓ Volledige toegang tot alle documenten
+✓ Cancel any time, geen kleine lettertjes
+
+═══════════════════════════════════════════════════════════════
+
+SECTION 9: NEW - FAQ
+
+ADD FAQ SECTION at bottom (before footer):
+
+HEADING: "Veelgestelde vragen"
+
+Q: Welke CAO's zitten in Lexi?
+A: ABU & NBBU CAO voor Uitzendkrachten, CAO Glastuinbouw, plus Burgerlijk Wetboek, arbeidsregelgeving, pensioen, loonberekeningen en detacheringsregels. Meer dan 1.000 juridische documenten.
+
+Q: Is Lexi altijd actueel?
+A: Ja, we updaten automatisch bij CAO-wijzigingen en nieuwe wetgeving. U werkt altijd met de laatste versie.
+
+Q: Hoeveel kost Lexi?
+A: Vanaf €399/maand voor 5 gebruikers. Bekijk alle prijzen →
+
+Q: Kan ik Lexi gratis proberen?
+A: Ja, 14 dagen gratis trial. Plus 3 gratis vragen zonder account aanmaken.
+
+Q: Voor wie is Lexi geschikt?
+A: Uitzendbureaus in de glastuinbouw-sector. Specifiek voor HR-managers, payroll specialisten, operations en planning.
+
+Q: Hoe snel krijg ik een antwoord?
+A: Gemiddeld binnen 30 seconden krijgt u een compleet antwoord met bronvermelding.
+
+DESIGN NOTE: Use accordion/collapsible format for FAQ
+
+═══════════════════════════════════════════════════════════════
+
+DESIGN REQUIREMENTS:
+
+COLOR USAGE:
+- Numbers in gold (#D4AF37): "30 seconden", "€15.000", "1.000+", "300x", "15+ uur"
+- Headings in navy (#1A2332)
+- CTAs with gold background (#D4AF37) and navy text (#1A2332)
+
+TYPOGRAPHY:
+- Make numbers bold and prominent
+- Use hierarchy: H1 for main heading, H2 for section headings, H3 for subheadings
+- Keep body text readable (16-18px)
+
+SPACING:
+- Add generous white space between sections
+- Each section should breathe
+
+RESPONSIVE:
+- Stack testimonials vertically on mobile
+- Make knowledge base grid responsive (4 cols → 2 cols → 1 col)
+- Ensure all text is readable on mobile
+
+═══════════════════════════════════════════════════════════════
+
+IMPLEMENTATION ORDER:
+
+1. Update hero section text
+2. Replace 4 USP bullets
+3. Rewrite problem section
+4. Update 3 features section
+5. Minor updates to "How it works"
+6. Add new knowledge base section
+7. Add new testimonials section
+8. Update final CTA
+9. Add FAQ section
+10. Apply design styling (gold numbers, proper spacing, responsive)
+
+═══════════════════════════════════════════════════════════════
+
+TESTING:
+
+After implementation, verify:
+☐ All numbers show in gold color
+☐ "30 seconden" appears consistently (not "3 seconden")
+☐ New sections (knowledge base, testimonials, FAQ) display correctly
+☐ Mobile responsive layout works
+☐ All CTAs link to correct pages
+☐ No broken spacing or overlapping text
+
+═══════════════════════════════════════════════════════════════
+
+START IMPLEMENTATION NOW. Begin with Section 1 (hero) and proceed systematically through all 9 sections.
