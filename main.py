@@ -1080,23 +1080,18 @@ def upload_file():
     
     chat_id = request.form.get('chat_id')
     
-    # Get file size
-    file.seek(0, 2)  # Seek to end of file
-    file_size = file.tell()
-    file.seek(0)  # Reset to beginning
+    # Read file data into memory first
+    file.seek(0)
+    file_data = file.read()
+    file_size = len(file_data)
     
-    s3_key = s3_service.upload_file(file, g.tenant.id)
-    if not s3_key:
-        return jsonify({'error': 'Upload mislukt'}), 500
-    
-    # Extract text from PDF using MarkItDown
+    # Extract text from PDF using MarkItDown BEFORE S3 upload
     extracted_text = None
     if file.content_type == 'application/pdf':
         try:
             # Save to temporary file for MarkItDown processing
             with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
-                file.seek(0)
-                tmp_file.write(file.read())
+                tmp_file.write(file_data)
                 tmp_path = tmp_file.name
             
             # Extract text using MarkItDown
@@ -1109,6 +1104,16 @@ def upload_file():
         except Exception as e:
             print(f"Error extracting PDF text: {e}")
             # Continue without extracted text if extraction fails
+    
+    # Now upload to S3 using the file data buffer
+    from io import BytesIO
+    file_buffer = BytesIO(file_data)
+    file_buffer.name = file.filename
+    file_buffer.content_type = file.content_type
+    
+    s3_key = s3_service.upload_file(file_buffer, g.tenant.id)
+    if not s3_key:
+        return jsonify({'error': 'Upload mislukt'}), 500
     
     uploaded_file = UploadedFile(
         tenant_id=g.tenant.id,
