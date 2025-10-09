@@ -1091,6 +1091,11 @@ def upload_file():
     
     chat_id = request.form.get('chat_id')
     
+    # Get file size
+    file.seek(0, 2)  # Seek to end of file
+    file_size = file.tell()
+    file.seek(0)  # Reset to beginning
+    
     s3_key = s3_service.upload_file(file, g.tenant.id)
     if not s3_key:
         return jsonify({'error': 'Upload mislukt'}), 500
@@ -1102,7 +1107,7 @@ def upload_file():
         filename=file.filename,
         original_filename=file.filename,
         s3_key=s3_key,
-        file_size=0,
+        file_size=file_size,
         mime_type=file.content_type
     )
     db.session.add(uploaded_file)
