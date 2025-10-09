@@ -122,6 +122,13 @@ SUPER ADMIN
    - Pricing page: Navy-gold gradient logo, gold buttons, navy accents
    - Smooth transitions (0.3s) on interactive elements
    - Dark mode: Solid colors only, no gradients
+10. **Tier-Based Chat Export Functionaliteit** (October 9, 2025):
+   - PDF export voor ALLE tiers (Starter, Professional, Enterprise)
+   - Word (DOCX) export alleen voor Professional en Enterprise tiers
+   - Tier restrictions via backend validation (403 error voor unauthorized tiers)
+   - Export dropdown menu in chat sidebar met conditional rendering
+   - Professional formatting met reportlab (PDF) en python-docx (Word)
+   - Navy/gold kleuren in exported documents voor brand consistency
 
 ## Setup Notes
 1. Super admin account wordt automatisch aangemaakt bij eerste start:
