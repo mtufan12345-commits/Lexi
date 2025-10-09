@@ -146,7 +146,7 @@
                             <select id="categoryFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
                                 <option value="all" {{ 'selected' if category_filter == 'all' }}>Alle categorieën</option>
                                 <option value="technical" {{ 'selected' if category_filter == 'technical' }}>Technisch</option>
-                                <option value="lex_question" {{ 'selected' if category_filter == 'lex_question' }}>LEX Vraag</option>
+                                <option value="lex_question" {{ 'selected' if category_filter == 'lex_question' }}>Lexi Vraag</option>
                                 <option value="billing" {{ 'selected' if category_filter == 'billing' }}>Facturering</option>
                                 <option value="cao_related" {{ 'selected' if category_filter == 'cao_related' }}>CAO-gerelateerd</option>
                                 <option value="other" {{ 'selected' if category_filter == 'other' }}>Overig</option>
@@ -185,7 +185,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                         {% if ticket.category == 'technical' %}Technisch
-                                        {% elif ticket.category == 'lex_question' %}LEX Vraag
+                                        {% elif ticket.category == 'lex_question' %}Lexi Vraag
                                         {% elif ticket.category == 'billing' %}Facturering
                                         {% elif ticket.category == 'cao_related' %}CAO-gerelateerd
                                         {% else %}Overig{% endif %}
