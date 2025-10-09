@@ -38,6 +38,9 @@ class Tenant(db.Model):
     subscription_tier = db.Column(db.String(50), default='trial')
     subscription_status = db.Column(db.String(50), default='trial')
     mrr = db.Column(db.Float, default=0.0)
+    custom_branding_enabled = db.Column(db.Boolean, default=False)
+    api_access_enabled = db.Column(db.Boolean, default=False)
+    dedicated_manager_email = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
