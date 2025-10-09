@@ -143,6 +143,7 @@ class UploadedFile(db.Model):
     s3_key = db.Column(db.String(500), nullable=False)
     file_size = db.Column(db.Integer, nullable=False)
     mime_type = db.Column(db.String(100), nullable=True)
+    extracted_text = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Artifact(db.Model):
