@@ -85,12 +85,18 @@
                                     </svg>
                                 </button>
                                 <div id="export-menu-{{ chat.id }}" class="hidden absolute right-0 mt-1 w-32 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg z-50">
-                                    <button onclick="event.stopPropagation(); exportChat({{ chat.id }}, 'pdf')" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-t-lg">
-                                        📄 PDF
+                                    <button onclick="event.stopPropagation(); exportChat({{ chat.id }}, 'pdf')" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-t-lg flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                        </svg>
+                                        PDF
                                     </button>
                                     {% if tenant.subscription_tier in ['professional', 'enterprise'] %}
-                                    <button onclick="event.stopPropagation(); exportChat({{ chat.id }}, 'docx')" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-b-lg">
-                                        📝 Word
+                                    <button onclick="event.stopPropagation(); exportChat({{ chat.id }}, 'docx')" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-b-lg flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        Word
                                     </button>
                                     {% endif %}
                                 </div>
@@ -537,10 +543,10 @@ function formatFileSize(bytes) {
 }
 
 function getFileIcon(mimeType) {
-    if (mimeType && mimeType.includes('pdf')) return '📄';
-    if (mimeType && mimeType.includes('word')) return '📝';
-    if (mimeType && mimeType.includes('text')) return '📋';
-    return '📎';
+    if (mimeType && mimeType.includes('pdf')) return '<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>';
+    if (mimeType && mimeType.includes('word')) return '<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+    if (mimeType && mimeType.includes('text')) return '<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+    return '<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>';
 }
 
 window.handleSidebarFileSelect = async function(event) {
@@ -952,8 +958,8 @@ function displaySearchResults(results) {
     
     listDiv.innerHTML = results.map(chat => {
         const matchTypeIndicator = chat.match_type === 'content' 
-            ? '<span class="text-xs text-gold-500 dark:text-gold-400">📝 In bericht</span>' 
-            : '<span class="text-xs text-green-600 dark:text-green-400">📌 In titel</span>';
+            ? '<span class="text-xs text-gold-500 dark:text-gold-400 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> In bericht</span>' 
+            : '<span class="text-xs text-green-600 dark:text-green-400 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg> In titel</span>';
         
         const snippet = chat.snippet 
             ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">${escapeHtml(chat.snippet)}</div>`
