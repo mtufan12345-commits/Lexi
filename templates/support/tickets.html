@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-blue-50/30 to-white dark:bg-black">
+    {% if session.get('impersonating_from') == 'super_admin' %}
+    <div class="bg-orange-600 text-white py-2 px-4 flex justify-between items-center">
+        <span class="text-sm">Super Admin Mode - Viewing as {{ tenant.company_name }}</span>
+        <form method="POST" action="{{ url_for('stop_impersonate') }}" class="inline">
+            <button type="submit" class="text-xs px-3 py-1 bg-white/20 hover:bg-white/30 rounded">Exit</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-8">
+                <a href="/" class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded"></div>
+                    <span class="font-semibold text-gray-900 dark:text-white">LEX CAO Expert</span>
+                </a>
+                <div class="flex gap-6">
+                    <a href="/chat" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">Chat</a>
+                    <a href="/support" class="text-blue-600 dark:text-blue-400 font-medium">Support</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/profile" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{ user.full_name }}</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Support Tickets</h1>
+                <p class="text-gray-600 dark:text-gray-400">Beheer je support verzoeken</p>
+            </div>
+            <a href="/support/new" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
+                Nieuw Ticket
+            </a>
+        </div>
+
+        <!-- Tickets List -->
+        {% if tickets %}
+        <div class="space-y-3">
+            {% for ticket in tickets %}
+            <a href="/support/{{ ticket.id }}" class="block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg p-5 hover:shadow-lg dark:hover:shadow-zinc-900/50 transition">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-sm font-mono text-gray-500 dark:text-gray-400">#{{ ticket.ticket_number }}</span>
+                            {% if ticket.status == 'open' %}
+                            <span class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded">🔴 Open</span>
+                            {% elif ticket.status == 'in_progress' %}
+                            <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs font-medium rounded">🟡 In behandeling</span>
+                            {% elif ticket.status == 'answered' %}
+                            <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium rounded">🟡 Beantwoord</span>
+                            {% else %}
+                            <span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">🟢 Gesloten</span>
+                            {% endif %}
+                            <span class="px-2 py-1 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 text-xs rounded">{{ ticket.category }}</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">{{ ticket.subject }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Laatste update: {{ ticket.updated_at.strftime('%d-%m-%Y %H:%M') }}
+                        </p>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg">
+            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Nog geen support tickets</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-4">Maak je eerste ticket aan om hulp te krijgen</p>
+            <a href="/support/new" class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
+                Nieuw Ticket
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

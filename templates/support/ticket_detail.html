@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-blue-50/30 to-white dark:bg-black">
+    {% if session.get('impersonating_from') == 'super_admin' %}
+    <div class="bg-orange-600 text-white py-2 px-4 flex justify-between items-center">
+        <span class="text-sm">Super Admin Mode - Viewing as {{ tenant.company_name }}</span>
+        <form method="POST" action="{{ url_for('stop_impersonate') }}" class="inline">
+            <button type="submit" class="text-xs px-3 py-1 bg-white/20 hover:bg-white/30 rounded">Exit</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-8">
+                <a href="/" class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded"></div>
+                    <span class="font-semibold text-gray-900 dark:text-white">LEX CAO Expert</span>
+                </a>
+                <div class="flex gap-6">
+                    <a href="/chat" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">Chat</a>
+                    <a href="/support" class="text-blue-600 dark:text-blue-400 font-medium">Support</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/profile" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{{ user.full_name }}</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <!-- Header -->
+        <div class="mb-6">
+            <a href="/support" class="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Terug naar tickets
+            </a>
+            <div class="flex items-start justify-between">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-sm font-mono text-gray-500 dark:text-gray-400">#{{ ticket.ticket_number }}</span>
+                        {% if ticket.status == 'open' %}
+                        <span class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded">🔴 Open</span>
+                        {% elif ticket.status == 'in_progress' %}
+                        <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs font-medium rounded">🟡 In behandeling</span>
+                        {% elif ticket.status == 'answered' %}
+                        <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium rounded">🟡 Beantwoord</span>
+                        {% else %}
+                        <span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">🟢 Gesloten</span>
+                        {% endif %}
+                        <span class="px-2 py-1 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 text-xs rounded">{{ ticket.category }}</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">{{ ticket.subject }}</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Aangemaakt op {{ ticket.created_at.strftime('%d-%m-%Y %H:%M') }}</p>
+                </div>
+                {% if ticket.status != 'closed' %}
+                <button onclick="closeTicket()" class="px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition">
+                    Ticket Sluiten
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Conversation -->
+        <div class="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg p-6 mb-6">
+            <div class="space-y-4" id="conversation">
+                {% for reply in ticket.replies %}
+                <div class="{% if reply.is_admin %}bg-blue-50 dark:bg-blue-900/20{% else %}bg-gray-50 dark:bg-zinc-800{% endif %} rounded-lg p-4">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            {% if reply.is_admin %}
+                            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                A
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900 dark:text-white">{{ reply.sender_name }} <span class="text-xs text-blue-600 dark:text-blue-400">(Support)</span></div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ reply.created_at.strftime('%d-%m-%Y %H:%M') }}</div>
+                            </div>
+                            {% else %}
+                            <div class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                {{ reply.sender_name[0].upper() }}
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900 dark:text-white">{{ reply.sender_name }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ reply.created_at.strftime('%d-%m-%Y %H:%M') }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap ml-10">{{ reply.message }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Reply Form (only if not closed) -->
+        {% if ticket.status != 'closed' %}
+        <div class="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Antwoord toevoegen</h3>
+            <form id="reply-form" class="space-y-4">
+                <textarea id="reply-message" rows="4" required
+                          class="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                          placeholder="Typ je antwoord hier..."></textarea>
+                
+                <div id="error-message" class="hidden p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                </div>
+                
+                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
+                    Verzenden
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+const ticketId = {{ ticket.id }};
+
+document.getElementById('reply-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const message = document.getElementById('reply-message').value.trim();
+    const errorDiv = document.getElementById('error-message');
+    
+    if (!message) {
+        errorDiv.textContent = 'Bericht mag niet leeg zijn';
+        errorDiv.classList.remove('hidden');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/support/${ticketId}/reply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            errorDiv.textContent = data.error || 'Er is iets misgegaan';
+            errorDiv.classList.remove('hidden');
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Er is een fout opgetreden';
+        errorDiv.classList.remove('hidden');
+    }
+});
+
+async function closeTicket() {
+    if (!confirm('Weet je zeker dat je dit ticket wilt sluiten?')) return;
+    
+    try {
+        const response = await fetch(`/api/support/${ticketId}/close`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('Er is iets misgegaan');
+        }
+    } catch (error) {
+        alert('Er is een fout opgetreden');
+    }
+}
+</script>
+{% endblock %}
