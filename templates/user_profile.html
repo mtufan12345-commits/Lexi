@@ -67,7 +67,7 @@
                     <div class="flex flex-col items-center">
                         <div id="avatar-preview" class="relative">
                             {% if user.avatar_url %}
-                            <img src="{{ user.avatar_url }}" alt="Avatar" class="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-gray-200 dark:border-zinc-700">
+                            <img src="{{ user.avatar_url }}" alt="Avatar" class="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-gray-200 dark:border-zinc-700" onerror="showAvatarFallback()">
                             {% else %}
                             <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border-4 border-gray-200 dark:border-zinc-700">
                                 <span id="avatar-initials" class="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400"></span>
@@ -161,6 +161,17 @@ function getUserInitials() {
 const initialsEl = document.getElementById('avatar-initials');
 if (initialsEl) {
     initialsEl.textContent = getUserInitials();
+}
+
+// Fallback function for broken avatar images
+function showAvatarFallback() {
+    const preview = document.getElementById('avatar-preview');
+    const initials = getUserInitials();
+    preview.innerHTML = `
+        <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border-4 border-gray-200 dark:border-zinc-700">
+            <span class="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">${initials}</span>
+        </div>
+    `;
 }
 
 function toggleDarkMode() {
