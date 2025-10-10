@@ -26,6 +26,7 @@ The platform features a multi-tenant hierarchy with SUPER ADMINs managing TENANT
 - **Artifact Generation:** Lexi can generate and allow downloads of documents like contracts and letters (PDF for all tiers, DOCX for Professional/Enterprise).
 - **User & Subscription Management:** Features include adding/deleting/deactivating users, role changes, user limits, and Stripe integration for subscription management (direct paid model, no free trial).
 - **Compliance & Disclaimer Strategy:** Multi-layered disclaimers (checkboxes, first-chat warning modal, sticky chat disclaimer, AI response footers) to clarify that Lexi provides general information, not legal advice.
+- **Legal Documentation:** Complete AVG-compliant Algemene Voorwaarden (470 lines, 16 articles) and Privacy & Cookiebeleid (431 lines, 14 sections) implemented at /algemene-voorwaarden and /privacy routes with professional HTML templates.
 - **Support System:** An integrated support ticket system for customers to create, view, and respond to tickets, with admin management capabilities.
 - **Dashboard Analytics:** Provides insights into total questions, active users, monthly usage, and top users.
 - **Chat Storage:** All chat messages are stored in S3 (Hetzner Object Storage) as JSON files, with PostgreSQL storing only metadata for efficiency.

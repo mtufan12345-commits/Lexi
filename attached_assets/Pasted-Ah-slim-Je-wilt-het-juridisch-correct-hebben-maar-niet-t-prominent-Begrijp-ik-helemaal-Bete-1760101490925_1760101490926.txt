@@ -1,0 +1,107 @@
+Ah, slim! Je wilt het juridisch correct hebben, maar niet té prominent. Begrijp ik helemaal.
+🎯 Betere aanpak: 1 pagina "Juridisch"
+Voordeel:
+
+✅ Alles op één plek
+✅ Minder opvallend
+✅ Toch compliant
+✅ Eenvoudiger te onderhouden
+
+
+📥 Download bestanden (zelfde)
+Download LEXI_Algemene_Voorwaarden.md
+Download LEXI_Privacy_Policy.md
+
+📤 NIEUWE Replit Prompt (1 pagina oplossing)
+Stap 1: Upload beide .md bestanden naar Replit
+Stap 2: Gebruik deze aangepaste prompt:
+
+REPLIT AGENT PROMPT:
+Ik heb 2 Markdown bestanden geüpload met juridische documentatie:
+1. LEXI_Algemene_Voorwaarden.md
+2. LEXI_Privacy_Policy.md
+
+Maak ÉÉN gecombineerde pagina met alles erop.
+
+## TAAK: Maak 1 pagina `/juridisch`
+
+Combineer beide documenten in één lange pagina met:
+
+**Structuur van boven naar beneden:**
+
+1. **Korte intro** (2-3 zinnen):
+   "Hier vind je alle juridische informatie over het gebruik van LEXI AI."
+
+2. **Tab navigatie** (of simpele anchor links):
+   [Algemene Voorwaarden] [Privacy & Cookies] [Disclaimer]
+   
+3. **Sectie 1: Algemene Voorwaarden**
+   - Content uit: LEXI_Algemene_Voorwaarden.md
+   - Inklapbaar of scrollbaar
+
+4. **Sectie 2: Privacy & Cookiebeleid**
+   - Content uit: LEXI_Privacy_Policy.md
+   - Inklapbaar of scrollbaar
+
+5. **Sectie 3: Disclaimer**
+   - Korte standalone disclaimer (zie tekst hieronder)
+
+## DISCLAIMER TEKST:
+Disclaimer
+LEXI AI is een AI-tool die algemene informatie verstrekt uit CAO-documenten.
+LEXI verstrekt GEEN juridisch, fiscaal of arbeidsrechtelijk advies.
+De informatie kan fouten bevatten. Gebruik op eigen risico.
+Raadpleeg bij belangrijke beslissingen altijd een gekwalificeerde adviseur.
+Voor volledige voorwaarden, zie Algemene Voorwaarden hierboven.
+Contact: info@lexiai.nl
+
+## FOOTER (op alle pagina's, subtiel):
+
+Voeg op elke pagina een kleine footer toe (niet te opvallend):
+LEXI AI - Adem Management Holding B.V. | KVK: 96417609 | Juridisch
+
+Link "Juridisch" naar `/juridisch`
+
+## DESIGN: Low-key maar compliant
+
+- **NIET te juridisch ogende** layout (geen law-firm vibes)
+- **WEL goed leesbaar** als iemand het wil lezen
+- **Tabs of accordion** voor makkelijk schakelen tussen secties
+- **Minimalistisch** - geen fancy inhoudsopgave of back-to-top
+- **Mobile friendly** maar niet perse geoptimaliseerd voor print
+- **Footer subtiel** - klein, onderaan, niet storend
+
+## Voorbeeld tab navigatie HTML:
+```html
+<div class="legal-tabs">
+  <button onclick="showSection('voorwaarden')">Voorwaarden</button>
+  <button onclick="showSection('privacy')">Privacy</button>
+  <button onclick="showSection('disclaimer')">Disclaimer</button>
+</div>
+
+<div id="voorwaarden" class="legal-section">
+  <!-- Algemene Voorwaarden content -->
+</div>
+
+<div id="privacy" class="legal-section hidden">
+  <!-- Privacy Policy content -->
+</div>
+
+<div id="disclaimer" class="legal-section hidden">
+  <!-- Disclaimer content -->
+</div>
+BELANGRIJKSTE PUNT:
+Maak het compliant maar niet intimiderend.
+Gebruikers moeten het kunnen vinden als ze willen, maar het hoeft niet te schreeuwen "LEES ONZE 20 PAGINA'S JURIDISCHE TEKST".
+Denk aan: Notion, Slack, of andere moderne SaaS tools - juridisch staat er, maar het is geen 1999 advocatenkantoor website.
+CHECKLIST:
+
+ /juridisch route werkt
+ Tab/accordion navigatie werkt smooth
+ Beide documenten zijn leesbaar geconverteerd
+ Footer link "Juridisch" werkt op alle pagina's
+ Mobile responsive (basis niveau)
+ Design past bij de rest van LEXI (modern, clean)
+ NIET te veel styling (keep it simple)
+
+Maak het functioneel en compliant, maar niet te legalese-heavy in presentatie.
