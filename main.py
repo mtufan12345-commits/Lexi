@@ -229,34 +229,45 @@ def signup_tenant():
         # Create Stripe Checkout Session FIRST to get session ID
         try:
             from models import PendingSignup
-            import stripe as stripe_lib
+            import requests
             
             # Get base URL (works in both dev and production)
             base_url = request.host_url.rstrip('/')
             
-            # Ensure Stripe is initialized
-            stripe_lib.api_key = os.getenv('STRIPE_SECRET_KEY')
+            # Use Stripe HTTP API directly to avoid SDK issues
+            stripe_api_key = os.getenv('STRIPE_SECRET_KEY')
+            stripe_headers = {
+                'Authorization': f'Bearer {stripe_api_key}',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
             
-            checkout_session = stripe_lib.checkout.Session.create(
-                payment_method_types=['card', 'ideal'],
-                line_items=[{
-                    'price': price_id,
-                    'quantity': 1,
-                }],
-                mode='subscription',
-                success_url=f"{base_url}/signup/success?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=f"{base_url}/signup/cancel?session_id={{CHECKOUT_SESSION_ID}}",
-                customer_email=contact_email,
-                metadata={
-                    'signup_email': contact_email,
-                    'tier': tier,
-                    'billing': billing
-                }
+            stripe_data = {
+                'payment_method_types[]': 'card',  # Only card for now, iDEAL requires SEPA activation
+                'line_items[0][price]': price_id,
+                'line_items[0][quantity]': 1,
+                'mode': 'subscription',
+                'success_url': f"{base_url}/signup/success?session_id={{CHECKOUT_SESSION_ID}}",
+                'cancel_url': f"{base_url}/signup/cancel?session_id={{CHECKOUT_SESSION_ID}}",
+                'customer_email': contact_email,
+                'metadata[signup_email]': contact_email,
+                'metadata[tier]': tier,
+                'metadata[billing]': billing
+            }
+            
+            response = requests.post(
+                'https://api.stripe.com/v1/checkout/sessions',
+                headers=stripe_headers,
+                data=stripe_data
             )
+            
+            if response.status_code != 200:
+                raise Exception(f"Stripe API error: {response.text}")
+            
+            checkout_session = response.json()
             
             # Store signup data in database (server-side) with checkout session ID
             pending_signup = PendingSignup(
-                checkout_session_id=checkout_session.id,
+                checkout_session_id=checkout_session['id'],
                 email=contact_email,
                 company_name=company_name,
                 contact_name=contact_name,
@@ -268,7 +279,7 @@ def signup_tenant():
             db.session.commit()
             
             # Redirect to Stripe Checkout
-            return redirect(checkout_session.url, code=303)
+            return redirect(checkout_session['url'], code=303)
             
         except Exception as e:
             app.logger.exception(f"Stripe checkout error for tier={tier}, billing={billing}, price_id={price_id}: {str(e)}")
