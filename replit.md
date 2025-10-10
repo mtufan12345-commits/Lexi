@@ -103,6 +103,12 @@ SUPER ADMIN
 - ✅ Subscription status validation before operations
 
 ## Recent Updates (October 2025)
+0. **Homepage Glastuinbouw-Specifieke Vragen** (October 10, 2025):
+   - "Herkent u dit?" sectie vernieuwd met 4 glastuinbouw-gerichte voorbeelden:
+     • Welke toeslagen gelden er voor nacht- en weekendwerk in de glastuinbouw?
+     • Mag ik loon inhouden bij ziekte tijdens de proeftijd?
+     • Wat zijn de transitievergoedingsregels bij seizoenscontracten?
+     • Hoe bereken ik de de fase telling bij wisselende diensten?
 1. **Document Viewer Fix**: PDF viewer nu met presigned S3 URLs voor CORS-free viewing
 2. **Tailwind CSS Migration**: Upgraded van CDN naar PostCSS build setup
    - Performance: 3+ MB CDN → ~36KB compiled CSS
