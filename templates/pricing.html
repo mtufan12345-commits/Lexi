@@ -65,10 +65,22 @@
             <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 Uw complete juridische afdeling
             </h1>
-            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
                 Van CAO-regels tot arbeidsrecht, van loonberekening tot internationale detacheringsregels. 
-                1.000+ juridische documenten, 24/7 beschikbaar, vaste maandprijs.
+                1.000+ juridische documenten, 24/7 beschikbaar.
             </p>
+
+            <!-- Billing Toggle -->
+            <div class="flex justify-center items-center gap-4 mb-8">
+                <span class="text-gray-600 dark:text-gray-400 font-medium" id="monthly-label">Maandelijks</span>
+                <button onclick="toggleBilling()" class="relative w-14 h-8 bg-gray-200 dark:bg-zinc-700 rounded-full transition-colors duration-300" id="billing-toggle">
+                    <div class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300" id="toggle-ball"></div>
+                </button>
+                <span class="text-gray-600 dark:text-gray-400 font-medium" id="yearly-label">Jaarlijks</span>
+                <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-sm font-semibold">
+                    10% korting
+                </span>
+            </div>
         </div>
 
         <div class="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16">
@@ -76,9 +88,12 @@
             <div class="bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-2xl p-8 hover:border-navy-500 dark:hover:border-navy-600 transition">
                 <div class="mb-6">
                     <h3 class="text-sm font-bold text-navy-600 dark:text-navy-400 mb-2">STARTER</h3>
-                    <div class="flex items-baseline">
-                        <span class="text-5xl font-bold text-gray-900 dark:text-white">€499</span>
-                        <span class="text-gray-500 dark:text-gray-400 ml-2">/maand</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-5xl font-bold text-gray-900 dark:text-white" id="price-starter">€499</span>
+                        <div class="flex flex-col">
+                            <span class="text-gray-500 dark:text-gray-400" id="period-starter">/maand</span>
+                            <span class="text-xs text-gray-400 dark:text-gray-500">ex BTW</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -142,7 +157,7 @@
                     </li>
                 </ul>
 
-                <a href="/signup/tenant" class="block text-center bg-navy-500 text-white px-6 py-4 rounded-xl font-semibold hover:bg-navy-600 transition">
+                <a href="#" onclick="startSignup('starter'); return false;" class="block text-center bg-navy-500 text-white px-6 py-4 rounded-xl font-semibold hover:bg-navy-600 transition">
                     Start met Starter
                 </a>
             </div>
@@ -155,9 +170,12 @@
                 
                 <div class="mb-6 mt-2">
                     <h3 class="text-sm font-bold text-gold-600 dark:text-gold-400 mb-2">PROFESSIONAL</h3>
-                    <div class="flex items-baseline">
-                        <span class="text-5xl font-bold text-gray-900 dark:text-white">€599</span>
-                        <span class="text-gray-500 dark:text-gray-400 ml-2">/maand</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-5xl font-bold text-gray-900 dark:text-white" id="price-professional">€599</span>
+                        <div class="flex flex-col">
+                            <span class="text-gray-500 dark:text-gray-400" id="period-professional">/maand</span>
+                            <span class="text-xs text-gray-400 dark:text-gray-500">ex BTW</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -238,7 +256,7 @@
                     </li>
                 </ul>
 
-                <a href="/signup/tenant" class="block text-center bg-gold-500 text-white px-6 py-4 rounded-xl font-semibold hover:bg-gold-600 transition shadow-xl">
+                <a href="#" onclick="startSignup('professional'); return false;" class="block text-center bg-gold-500 text-white px-6 py-4 rounded-xl font-semibold hover:bg-gold-600 transition shadow-xl">
                     Start met Professional
                 </a>
             </div>
@@ -251,9 +269,12 @@
                 <div class="relative">
                     <div class="mb-6">
                         <h3 class="text-sm font-bold text-gold-300 mb-2">ENTERPRISE</h3>
-                        <div class="flex items-baseline">
-                            <span class="text-5xl font-bold">€1.199</span>
-                            <span class="text-white/80 ml-2">/maand</span>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-5xl font-bold" id="price-enterprise">€1.199</span>
+                            <div class="flex flex-col">
+                                <span class="text-white/80" id="period-enterprise">/maand</span>
+                                <span class="text-xs text-white/60">ex BTW</span>
+                            </div>
                         </div>
                     </div>
                     
@@ -345,7 +366,7 @@
                         </li>
                     </ul>
 
-                    <a href="/signup/tenant" class="block text-center bg-white text-navy-600 px-6 py-4 rounded-xl font-semibold hover:bg-gold-50 transition shadow-xl">
+                    <a href="#" onclick="startSignup('enterprise'); return false;" class="block text-center bg-white text-navy-600 px-6 py-4 rounded-xl font-semibold hover:bg-gold-50 transition shadow-xl">
                         Contact voor Enterprise
                     </a>
                     <p class="text-center text-sm text-white/70 mt-3">Custom offerte op aanvraag</p>
@@ -397,6 +418,56 @@
 </div>
 
 <script>
+let isYearly = false;
+
+const pricing = {
+    monthly: {
+        starter: '€499',
+        professional: '€599',
+        enterprise: '€1.199'
+    },
+    yearly: {
+        starter: '€5.389',
+        professional: '€6.469',
+        enterprise: '€12.949'
+    }
+};
+
+function toggleBilling() {
+    isYearly = !isYearly;
+    const toggle = document.getElementById('billing-toggle');
+    const ball = document.getElementById('toggle-ball');
+    const monthlyLabel = document.getElementById('monthly-label');
+    const yearlyLabel = document.getElementById('yearly-label');
+    
+    // Update toggle appearance
+    if (isYearly) {
+        toggle.classList.add('bg-gold-500');
+        toggle.classList.remove('bg-gray-200', 'dark:bg-zinc-700');
+        ball.style.transform = 'translateX(24px)';
+        monthlyLabel.classList.remove('font-bold', 'text-gray-900', 'dark:text-white');
+        yearlyLabel.classList.add('font-bold', 'text-gray-900', 'dark:text-white');
+    } else {
+        toggle.classList.remove('bg-gold-500');
+        toggle.classList.add('bg-gray-200', 'dark:bg-zinc-700');
+        ball.style.transform = 'translateX(0)';
+        monthlyLabel.classList.add('font-bold', 'text-gray-900', 'dark:text-white');
+        yearlyLabel.classList.remove('font-bold', 'text-gray-900', 'dark:text-white');
+    }
+    
+    // Update prices
+    const period = isYearly ? pricing.yearly : pricing.monthly;
+    const periodText = isYearly ? '/jaar' : '/maand';
+    
+    document.getElementById('price-starter').textContent = period.starter;
+    document.getElementById('price-professional').textContent = period.professional;
+    document.getElementById('price-enterprise').textContent = period.enterprise;
+    
+    document.getElementById('period-starter').textContent = periodText;
+    document.getElementById('period-professional').textContent = periodText;
+    document.getElementById('period-enterprise').textContent = periodText;
+}
+
 function toggleDarkMode() {
     const html = document.documentElement;
     const isDark = html.classList.contains('dark');
@@ -414,5 +485,16 @@ function toggleMobileMenu() {
     const menu = document.getElementById('mobile-menu');
     menu.classList.toggle('hidden');
 }
+
+// Signup function with billing cycle
+function startSignup(tier) {
+    const billingCycle = isYearly ? 'yearly' : 'monthly';
+    window.location.href = `/signup/tenant?tier=${tier}&billing=${billingCycle}`;
+}
+
+// Initialize monthly as default (bold label)
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('monthly-label').classList.add('font-bold', 'text-gray-900', 'dark:text-white');
+});
 </script>
 {% endblock %}

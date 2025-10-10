@@ -15,11 +15,22 @@
 - **Storage**: S3-compatible object storage
 
 ## Business Model (3-Tier Premium Pricing)
+**Maandelijkse prijzen (ex BTW):**
 - **Starter**: €499/maand (5 users, unlimited questions)
 - **Professional**: €599/maand (10 users, unlimited questions) - MEEST POPULAIR
 - **Enterprise**: €1.199/maand (unlimited users, unlimited questions)
-- 3 free questions (no credit card required) - replaced 14-day trial
-- **Value Proposition**: Gemiddeld €18.000/jaar besparing op juridische advieskosten
+
+**Jaarlijkse prijzen met 10% korting (ex BTW):**
+- **Starter**: €5.389/jaar (€449/maand effectief)
+- **Professional**: €6.469/jaar (€539/maand effectief)
+- **Enterprise**: €12.949/jaar (€1.079/maand effectief)
+
+**Betalingsopties:**
+- Klanten kunnen kiezen tussen maandelijks of jaarlijks betalen
+- Bij jaarlijks betalen: automatisch 10% korting
+- Alle prijzen exclusief BTW (21%)
+
+**Value Proposition**: Gemiddeld €18.000/jaar besparing op juridische advieskosten
 
 ## Architecture
 Multi-Tenant Hierarchy:
@@ -105,7 +116,13 @@ SUPER ADMIN
 - ✅ Subscription status validation before operations
 
 ## Recent Updates (October 2025)
-0. **Compliance Update - Juridische Terminologie Vervangen** (October 10, 2025):
+0. **Jaarlijkse Betalingsoptie met 10% Korting** (October 10, 2025):
+   - Billing toggle toegevoegd: maandelijks vs jaarlijks
+   - Jaarlijkse prijzen: €5.389, €6.469, €12.949 (10% korting)
+   - "ex BTW" labels bij alle prijzen voor transparantie
+   - JavaScript toggle functie voor real-time prijsupdate
+   - Signup flow krijgt tier + billing_cycle parameters
+1. **Compliance Update - Juridische Terminologie Vervangen** (October 10, 2025):
    - Alle "Complete juridische AI-adviseur" → "AI-assistent voor CAO-vragen"
    - "Juridisch advies beschikbaar" → "CAO-informatie beschikbaar"
    - "Juridisch advies in 30 seconden" → "Uw antwoord in 30 seconden"
