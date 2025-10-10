@@ -70,15 +70,16 @@
                 1.000+ juridische documenten, 24/7 beschikbaar.
             </p>
 
-            <!-- Billing Toggle -->
+            <!-- Billing Buttons -->
             <div class="flex justify-center items-center gap-4 mb-8">
-                <span class="text-gray-600 dark:text-gray-400 font-medium" id="monthly-label">Maandelijks</span>
-                <button onclick="toggleBilling()" class="relative w-14 h-8 bg-gray-200 dark:bg-zinc-700 rounded-full transition-colors duration-300" id="billing-toggle">
-                    <div class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300" id="toggle-ball"></div>
+                <button onclick="selectMonthly()" id="monthly-btn" class="px-8 py-3 rounded-lg font-semibold transition-all duration-300 bg-gold-500 text-white">
+                    Maandelijks
                 </button>
-                <span class="text-gray-600 dark:text-gray-400 font-medium" id="yearly-label">Jaarlijks</span>
+                <button onclick="selectYearly()" id="yearly-btn" class="px-8 py-3 rounded-lg font-semibold transition-all duration-300 bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-gray-300">
+                    Jaarlijks
+                </button>
                 <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-sm font-semibold">
-                    10% korting
+                    10% korting bij jaarlijks
                 </span>
             </div>
         </div>
@@ -433,39 +434,48 @@ const pricing = {
     }
 };
 
-function toggleBilling() {
-    isYearly = !isYearly;
-    const toggle = document.getElementById('billing-toggle');
-    const ball = document.getElementById('toggle-ball');
-    const monthlyLabel = document.getElementById('monthly-label');
-    const yearlyLabel = document.getElementById('yearly-label');
+function selectMonthly() {
+    isYearly = false;
+    const monthlyBtn = document.getElementById('monthly-btn');
+    const yearlyBtn = document.getElementById('yearly-btn');
     
-    // Update toggle appearance
-    if (isYearly) {
-        toggle.classList.add('bg-gold-500');
-        toggle.classList.remove('bg-gray-200', 'dark:bg-zinc-700');
-        ball.style.transform = 'translateX(24px)';
-        monthlyLabel.classList.remove('font-bold', 'text-gray-900', 'dark:text-white');
-        yearlyLabel.classList.add('font-bold', 'text-gray-900', 'dark:text-white');
-    } else {
-        toggle.classList.remove('bg-gold-500');
-        toggle.classList.add('bg-gray-200', 'dark:bg-zinc-700');
-        ball.style.transform = 'translateX(0)';
-        monthlyLabel.classList.add('font-bold', 'text-gray-900', 'dark:text-white');
-        yearlyLabel.classList.remove('font-bold', 'text-gray-900', 'dark:text-white');
-    }
+    // Update button styles
+    monthlyBtn.classList.add('bg-gold-500', 'text-white');
+    monthlyBtn.classList.remove('bg-gray-200', 'dark:bg-zinc-700', 'text-gray-700', 'dark:text-gray-300');
+    
+    yearlyBtn.classList.remove('bg-gold-500', 'text-white');
+    yearlyBtn.classList.add('bg-gray-200', 'dark:bg-zinc-700', 'text-gray-700', 'dark:text-gray-300');
     
     // Update prices
-    const period = isYearly ? pricing.yearly : pricing.monthly;
-    const periodText = isYearly ? '/jaar' : '/maand';
+    document.getElementById('price-starter').textContent = pricing.monthly.starter;
+    document.getElementById('price-professional').textContent = pricing.monthly.professional;
+    document.getElementById('price-enterprise').textContent = pricing.monthly.enterprise;
     
-    document.getElementById('price-starter').textContent = period.starter;
-    document.getElementById('price-professional').textContent = period.professional;
-    document.getElementById('price-enterprise').textContent = period.enterprise;
+    document.getElementById('period-starter').textContent = '/maand';
+    document.getElementById('period-professional').textContent = '/maand';
+    document.getElementById('period-enterprise').textContent = '/maand';
+}
+
+function selectYearly() {
+    isYearly = true;
+    const monthlyBtn = document.getElementById('monthly-btn');
+    const yearlyBtn = document.getElementById('yearly-btn');
     
-    document.getElementById('period-starter').textContent = periodText;
-    document.getElementById('period-professional').textContent = periodText;
-    document.getElementById('period-enterprise').textContent = periodText;
+    // Update button styles
+    yearlyBtn.classList.add('bg-gold-500', 'text-white');
+    yearlyBtn.classList.remove('bg-gray-200', 'dark:bg-zinc-700', 'text-gray-700', 'dark:text-gray-300');
+    
+    monthlyBtn.classList.remove('bg-gold-500', 'text-white');
+    monthlyBtn.classList.add('bg-gray-200', 'dark:bg-zinc-700', 'text-gray-700', 'dark:text-gray-300');
+    
+    // Update prices
+    document.getElementById('price-starter').textContent = pricing.yearly.starter;
+    document.getElementById('price-professional').textContent = pricing.yearly.professional;
+    document.getElementById('price-enterprise').textContent = pricing.yearly.enterprise;
+    
+    document.getElementById('period-starter').textContent = '/jaar';
+    document.getElementById('period-professional').textContent = '/jaar';
+    document.getElementById('period-enterprise').textContent = '/jaar';
 }
 
 function toggleDarkMode() {
@@ -492,9 +502,6 @@ function startSignup(tier) {
     window.location.href = `/signup/tenant?tier=${tier}&billing=${billingCycle}`;
 }
 
-// Initialize monthly as default (bold label)
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('monthly-label').classList.add('font-bold', 'text-gray-900', 'dark:text-white');
-});
+// Initialize - monthly is already active in HTML
 </script>
 {% endblock %}

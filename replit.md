@@ -117,10 +117,11 @@ SUPER ADMIN
 
 ## Recent Updates (October 2025)
 0. **Jaarlijkse Betalingsoptie met 10% Korting** (October 10, 2025):
-   - Billing toggle toegevoegd: maandelijks vs jaarlijks
+   - Billing buttons toegevoegd: "Maandelijks" en "Jaarlijks" knoppen
+   - Actieve button wordt goud gekleurd voor duidelijkheid
    - Jaarlijkse prijzen: €5.389, €6.469, €12.949 (10% korting)
    - "ex BTW" labels bij alle prijzen voor transparantie
-   - JavaScript toggle functie voor real-time prijsupdate
+   - JavaScript functie voor real-time prijsupdate bij button klik
    - Signup flow krijgt tier + billing_cycle parameters
 1. **Compliance Update - Juridische Terminologie Vervangen** (October 10, 2025):
    - Alle "Complete juridische AI-adviseur" → "AI-assistent voor CAO-vragen"
