@@ -43,6 +43,10 @@ else:
 
 db.init_app(app)
 
+# Initialize Stripe globally
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+print(f"Stripe initialized: {stripe.api_key is not None}")
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -217,15 +221,14 @@ def signup_tenant():
         
         # Get Stripe Price ID
         price_id = get_price_id(tier, billing)
-        if not price_id:
-            flash('Ongeldige pricing optie.', 'danger')
+        if not price_id or not price_id.startswith('price_'):
+            app.logger.error(f"Invalid or missing Stripe Price ID for tier={tier}, billing={billing}, price_id={price_id}")
+            flash('Ongeldige pricing optie. Neem contact op met support.', 'danger')
             return render_template('signup_tenant.html', tier=tier, billing=billing)
         
         # Create Stripe Checkout Session FIRST to get session ID
         try:
             from models import PendingSignup
-            
-            stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
             
             # Get base URL (works in both dev and production)
             base_url = request.host_url.rstrip('/')
@@ -264,8 +267,17 @@ def signup_tenant():
             return redirect(checkout_session.url, code=303)
             
         except Exception as e:
-            print(f"Stripe checkout error: {e}")
-            flash('Er ging iets mis met de betaling. Probeer het opnieuw.', 'danger')
+            app.logger.exception(f"Stripe checkout error for tier={tier}, billing={billing}, price_id={price_id}: {str(e)}")
+            
+            # Provide more specific error messages
+            error_msg = str(e)
+            if 'No such price' in error_msg:
+                flash('De gekozen prijsoptie is niet geldig. Neem contact op met support.', 'danger')
+            elif 'API key' in error_msg:
+                flash('Betaalconfiguratie is niet correct ingesteld. Neem contact op met support.', 'danger')
+            else:
+                flash('Er ging iets mis met de betaling. Probeer het opnieuw.', 'danger')
+            
             return render_template('signup_tenant.html', tier=tier, billing=billing)
     
     # GET request - show signup form
