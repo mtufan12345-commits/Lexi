@@ -229,11 +229,15 @@ def signup_tenant():
         # Create Stripe Checkout Session FIRST to get session ID
         try:
             from models import PendingSignup
+            import stripe as stripe_lib
             
             # Get base URL (works in both dev and production)
             base_url = request.host_url.rstrip('/')
             
-            checkout_session = stripe.checkout.Session.create(
+            # Ensure Stripe is initialized
+            stripe_lib.api_key = os.getenv('STRIPE_SECRET_KEY')
+            
+            checkout_session = stripe_lib.checkout.Session.create(
                 payment_method_types=['card', 'ideal'],
                 line_items=[{
                     'price': price_id,
