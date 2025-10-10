@@ -434,7 +434,7 @@ const pricing = {
     }
 };
 
-function selectMonthly() {
+window.selectMonthly = function() {
     isYearly = false;
     const monthlyBtn = document.getElementById('monthly-btn');
     const yearlyBtn = document.getElementById('yearly-btn');
@@ -456,7 +456,7 @@ function selectMonthly() {
     document.getElementById('period-enterprise').textContent = '/maand';
 }
 
-function selectYearly() {
+window.selectYearly = function() {
     isYearly = true;
     const monthlyBtn = document.getElementById('monthly-btn');
     const yearlyBtn = document.getElementById('yearly-btn');
@@ -478,7 +478,7 @@ function selectYearly() {
     document.getElementById('period-enterprise').textContent = '/jaar';
 }
 
-function toggleDarkMode() {
+window.toggleDarkMode = function() {
     const html = document.documentElement;
     const isDark = html.classList.contains('dark');
     
@@ -491,13 +491,13 @@ function toggleDarkMode() {
     }
 }
 
-function toggleMobileMenu() {
+window.toggleMobileMenu = function() {
     const menu = document.getElementById('mobile-menu');
     menu.classList.toggle('hidden');
 }
 
 // Signup function with billing cycle
-function startSignup(tier) {
+window.startSignup = function(tier) {
     const billingCycle = isYearly ? 'yearly' : 'monthly';
     window.location.href = `/signup/tenant?tier=${tier}&billing=${billingCycle}`;
 }
