@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Algemene Voorwaarden - Lexi CAO Meester{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-white dark:bg-black py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Algemene Voorwaarden</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Laatst bijgewerkt: 10 oktober 2025</p>
+        </div>
+
+        <!-- Content -->
+        <div class="prose dark:prose-invert max-w-none">
+            <h2>1. Definities</h2>
+            <p>In deze algemene voorwaarden wordt verstaan onder:</p>
+            <ul>
+                <li><strong>LEXI AI</strong>: het bedrijf gevestigd aan Gouverneurlaan 445, 2523 CB Den Haag, KVK 96417609</li>
+                <li><strong>Dienst</strong>: de AI-assistent voor CAO-vragen zoals aangeboden via het platform</li>
+                <li><strong>Klant</strong>: de natuurlijke of rechtspersoon die een overeenkomst aangaat met LEXI AI</li>
+                <li><strong>Gebruiker</strong>: de eindgebruiker die toegang heeft tot het platform via de Klant</li>
+            </ul>
+
+            <h2>2. Toepasselijkheid</h2>
+            <p>Deze algemene voorwaarden zijn van toepassing op alle aanbiedingen, overeenkomsten en diensten van LEXI AI, tenzij uitdrukkelijk schriftelijk anders is overeengekomen.</p>
+
+            <h2>3. Dienstverlening</h2>
+            <p>LEXI AI biedt een AI-assistent voor CAO-vragen gespecialiseerd in de glastuinbouw-sector. De dienst verstrekt algemene informatie op basis van beschikbare CAO-documenten en juridische bronnen.</p>
+            
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 my-6">
+                <p class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">⚠️ Belangrijke Beperking</p>
+                <p class="text-sm text-yellow-700 dark:text-yellow-300">LEXI verstrekt algemene informatie uit CAO-documenten en wetgeving, maar geeft <strong>geen juridisch of fiscaal advies</strong>. Voor juridisch bindende adviezen dient u altijd een erkende juridisch adviseur of accountant te raadplegen.</p>
+            </div>
+
+            <h2>4. Abonnementen en Betaling</h2>
+            <p>De dienst wordt aangeboden via verschillende abonnementen:</p>
+            <ul>
+                <li><strong>Starter</strong>: €499/maand of €5.389/jaar (ex BTW)</li>
+                <li><strong>Professional</strong>: €599/maand of €6.469/jaar (ex BTW)</li>
+                <li><strong>Enterprise</strong>: €1.199/maand of €12.949/jaar (ex BTW)</li>
+            </ul>
+            <p>Bij jaarlijkse betaling geldt automatisch 10% korting. Alle prijzen zijn exclusief 21% BTW.</p>
+
+            <h2>5. Intellectueel Eigendom</h2>
+            <p>Alle rechten van intellectueel eigendom met betrekking tot de dienst berusten bij LEXI AI. Het is niet toegestaan om (delen van) de dienst te kopiëren, verspreiden of anderszins te exploiteren zonder voorafgaande schriftelijke toestemming.</p>
+
+            <h2>6. Aansprakelijkheid</h2>
+            <p>LEXI AI is niet aansprakelijk voor schade voortvloeiend uit:</p>
+            <ul>
+                <li>Onjuiste of onvolledige informatie verstrekt door de AI-assistent</li>
+                <li>Beslissingen genomen op basis van door de dienst verstrekte informatie</li>
+                <li>Technische storingen of onderbrekingen van de dienst</li>
+            </ul>
+            <p>De totale aansprakelijkheid van LEXI AI is in alle gevallen beperkt tot het bedrag van het abonnement over de betreffende maand.</p>
+
+            <h2>7. Privacy en Gegevensbescherming</h2>
+            <p>LEXI AI verwerkt persoonsgegevens in overeenstemming met de AVG. Zie ons <a href="/privacy" class="text-gold-600 hover:text-gold-700">privacybeleid</a> voor meer informatie.</p>
+
+            <h2>8. Opzegging</h2>
+            <p>Maandelijkse abonnementen kunnen per direct worden opgezegd. Jaarlijkse abonnementen eindigen aan het einde van de contractperiode zonder automatische verlenging.</p>
+
+            <h2>9. Toepasselijk Recht</h2>
+            <p>Op deze voorwaarden is Nederlands recht van toepassing. Eventuele geschillen zullen worden voorgelegd aan de bevoegde rechter in Den Haag.</p>
+
+            <h2>10. Contact</h2>
+            <p>Voor vragen over deze algemene voorwaarden kunt u contact opnemen via <a href="mailto:info@lexiai.nl" class="text-gold-600 hover:text-gold-700">info@lexiai.nl</a>.</p>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-12 pt-8 border-t border-gray-200 dark:border-zinc-800">
+            <a href="/" class="inline-flex items-center text-gold-600 hover:text-gold-700 font-medium">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Terug naar home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
