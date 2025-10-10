@@ -1,7 +1,9 @@
 # Lexi CAO Meester - Multi-Tenant SaaS Platform
 
 ## Project Overview
-**Lexi CAO Meester** is een premium multi-tenant SaaS platform gepositioneerd als "Complete juridische AI-adviseur voor uitzendbureaus, gespecialiseerd in de glastuinbouw-sector". De AI-agent (Lexi) beantwoordt juridische vragen op basis van 1.000+ juridische documenten (CAO's, arbeidsrecht, detacheringsregels) via Google Vertex AI RAG met gemini-2.5-pro. Gemiddelde kostenbesparing: **€18.000/jaar** t.o.v. traditionele juridische adviseurs.
+**Lexi CAO Meester** is een premium multi-tenant SaaS platform gepositioneerd als "AI-assistent voor CAO-vragen, gespecialiseerd in de glastuinbouw-sector". De AI-agent (Lexi) beantwoordt CAO-vragen op basis van 1.000+ documenten (CAO's, arbeidsrecht, detacheringsregels) via Google Vertex AI RAG met gemini-2.5-pro. Gemiddelde kostenbesparing: **€18.000/jaar** t.o.v. traditionele adviseurs.
+
+**Compliance Note**: Alle juridische terminologie vervangen door "AI-assistent voor CAO-vragen" om te benadrukken dat Lexi algemene informatie verstrekt, geen juridisch advies.
 
 ## Tech Stack
 - **Backend**: Flask (Python)
@@ -103,7 +105,13 @@ SUPER ADMIN
 - ✅ Subscription status validation before operations
 
 ## Recent Updates (October 2025)
-0. **Homepage Glastuinbouw-Specifieke Vragen** (October 10, 2025):
+0. **Compliance Update - Juridische Terminologie Vervangen** (October 10, 2025):
+   - Alle "Complete juridische AI-adviseur" → "AI-assistent voor CAO-vragen"
+   - "Juridisch advies beschikbaar" → "CAO-informatie beschikbaar"
+   - "Juridisch advies in 30 seconden" → "Uw antwoord in 30 seconden"
+   - Footer disclaimer toegevoegd: "⚠️ Lexi verstrekt algemene informatie, geen juridisch advies"
+   - Meta tags, titles, en descriptions aangepast voor compliance
+1. **Homepage Glastuinbouw-Specifieke Vragen** (October 10, 2025):
    - "Herkent u dit?" sectie vernieuwd met 4 glastuinbouw-gerichte voorbeelden:
      • Welke toeslagen gelden er voor nacht- en weekendwerk in de glastuinbouw?
      • Mag ik loon inhouden bij ziekte tijdens de proeftijd?
