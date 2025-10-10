@@ -84,6 +84,24 @@ SUPER ADMIN
 - **No runtime errors**: Server running clean, no console errors
 - **Production ready**: All user roles (User, Admin, Super Admin) fully functional
 
+### Tier-Based Functionality Verification
+**Export Functions:**
+- ✅ **Starter (€499)**: PDF export only (DOCX blocked with HTTP 403)
+- ✅ **Professional (€599)**: PDF + DOCX export (both formats available)
+- ✅ **Enterprise (€1.199)**: PDF + DOCX export (both formats available)
+
+**Upload Functions (All Tiers):**
+- ✅ PDF upload with MarkItDown text extraction
+- ✅ OCR fallback for scanned PDFs (Tesseract: Nederlands + Engels)
+- ✅ DOCX & TXT upload support
+- ✅ S3 storage with database metadata
+
+**Security Validation:**
+- ✅ Backend tier check: `tier not in ['professional', 'enterprise']` → HTTP 403
+- ✅ Frontend conditional rendering: Jinja2 + JavaScript tier checks
+- ✅ Tenant isolation: user_id + tenant_id filters on all queries
+- ✅ Subscription status validation before operations
+
 ## Recent Updates (October 2025)
 1. **Document Viewer Fix**: PDF viewer nu met presigned S3 URLs voor CORS-free viewing
 2. **Tailwind CSS Migration**: Upgraded van CDN naar PostCSS build setup
