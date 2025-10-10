@@ -9,6 +9,23 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
+class PendingSignup(db.Model):
+    """Temporary storage for signup data before Stripe payment is complete"""
+    __tablename__ = 'pending_signups'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    checkout_session_id = db.Column(db.String(255), unique=True, nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    company_name = db.Column(db.String(255), nullable=False)
+    contact_name = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    tier = db.Column(db.String(50), nullable=False)
+    billing = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
 class SuperAdmin(db.Model, UserMixin):
     __tablename__ = 'super_admins'
     

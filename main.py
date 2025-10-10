@@ -62,6 +62,23 @@ def get_max_users_for_tier(tier):
     }
     return tier_limits.get(tier, 5)
 
+def cleanup_stale_pending_signups():
+    """Clean up pending signups older than 24 hours"""
+    from models import PendingSignup
+    from datetime import datetime, timedelta
+    
+    cutoff_time = datetime.utcnow() - timedelta(hours=24)
+    stale_signups = PendingSignup.query.filter(PendingSignup.created_at < cutoff_time).all()
+    
+    count = len(stale_signups)
+    if count > 0:
+        for signup in stale_signups:
+            db.session.delete(signup)
+        db.session.commit()
+        print(f"🧹 Cleaned up {count} stale pending signups")
+    
+    return count
+
 @app.before_request
 def load_tenant():
     g.tenant = None
@@ -204,19 +221,11 @@ def signup_tenant():
             flash('Ongeldige pricing optie.', 'danger')
             return render_template('signup_tenant.html', tier=tier, billing=billing)
         
-        # Store signup data in session temporarily
-        session['signup_data'] = {
-            'company_name': company_name,
-            'contact_email': contact_email,
-            'contact_name': contact_name,
-            'password': password,
-            'tier': tier,
-            'billing': billing
-        }
-        
-        # Create Stripe Checkout Session
+        # Create Stripe Checkout Session FIRST to get session ID
         try:
             import stripe
+            from models import PendingSignup
+            
             stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
             
             # Get base URL (works in both dev and production)
@@ -230,7 +239,7 @@ def signup_tenant():
                 }],
                 mode='subscription',
                 success_url=f"{base_url}/signup/success?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=f"{base_url}/signup/cancel",
+                cancel_url=f"{base_url}/signup/cancel?session_id={{CHECKOUT_SESSION_ID}}",
                 customer_email=contact_email,
                 metadata={
                     'signup_email': contact_email,
@@ -238,6 +247,19 @@ def signup_tenant():
                     'billing': billing
                 }
             )
+            
+            # Store signup data in database (server-side) with checkout session ID
+            pending_signup = PendingSignup(
+                checkout_session_id=checkout_session.id,
+                email=contact_email,
+                company_name=company_name,
+                contact_name=contact_name,
+                tier=tier,
+                billing=billing
+            )
+            pending_signup.set_password(password)  # Hash the password
+            db.session.add(pending_signup)
+            db.session.commit()
             
             # Redirect to Stripe Checkout
             return redirect(checkout_session.url, code=303)
@@ -265,8 +287,15 @@ def signup_success():
 @app.route('/signup/cancel')
 def signup_cancel():
     """Cancel page if user cancels Stripe payment"""
-    # Clear signup data from session
-    session.pop('signup_data', None)
+    from models import PendingSignup
+    
+    # Try to clean up pending signup if session_id is provided
+    session_id = request.args.get('session_id')
+    if session_id:
+        pending = PendingSignup.query.filter_by(checkout_session_id=session_id).first()
+        if pending:
+            db.session.delete(pending)
+            db.session.commit()
     
     flash('Betaling geannuleerd. U kunt opnieuw proberen wanneer u klaar bent.', 'info')
     return redirect(url_for('pricing'))
@@ -1681,31 +1710,41 @@ def stripe_webhook():
     print(f"Received Stripe webhook event: {event['type']}")
     
     if event['type'] == 'checkout.session.completed':
+        from models import PendingSignup
+        
         session_obj = event['data']['object']
-        customer_email = session_obj.get('customer_email')
-        signup_email = session_obj['metadata'].get('signup_email')
-        tier = session_obj['metadata'].get('tier', 'starter')
-        billing = session_obj['metadata'].get('billing', 'monthly')
+        checkout_session_id = session_obj.get('id')
         
-        # Use signup email from metadata (most reliable)
-        email_to_use = signup_email or customer_email
+        print(f"Processing checkout.session.completed for session: {checkout_session_id}")
         
-        print(f"Processing signup for: {email_to_use}, tier: {tier}, billing: {billing}")
+        # Get pending signup from database using checkout session ID
+        pending_signup = PendingSignup.query.filter_by(checkout_session_id=checkout_session_id).first()
+        
+        if not pending_signup:
+            print(f"❌ No pending signup found for session {checkout_session_id}")
+            return jsonify({'error': 'No pending signup found'}), 404
         
         # Check if user already exists (prevent duplicates)
-        existing_user = User.query.filter_by(email=email_to_use).first()
+        existing_user = User.query.filter_by(email=pending_signup.email).first()
         if existing_user:
-            print(f"User {email_to_use} already exists, skipping account creation")
+            print(f"User {pending_signup.email} already exists, cleaning up pending signup")
+            try:
+                db.session.delete(pending_signup)
+                db.session.commit()
+            except Exception as cleanup_error:
+                print(f"Warning: Failed to cleanup pending signup: {cleanup_error}")
+                db.session.rollback()
             return jsonify({'success': True, 'message': 'User already exists'})
         
-        # Get signup data from session (this will work if webhook comes immediately)
-        # Otherwise we'll create account with email only
-        signup_data = session.get('signup_data', {})
+        # Extract data from pending signup
+        email_to_use = pending_signup.email
+        company_name = pending_signup.company_name
+        contact_name = pending_signup.contact_name
+        password_hash = pending_signup.password_hash  # Already hashed
+        tier = pending_signup.tier
+        billing = pending_signup.billing
         
-        # Use session data if available, otherwise use minimal data from Stripe
-        company_name = signup_data.get('company_name', 'New Company')
-        contact_name = signup_data.get('contact_name', email_to_use.split('@')[0])
-        password = signup_data.get('password', secrets.token_urlsafe(16))  # Generate random password if not in session
+        print(f"Creating account for: {email_to_use}, tier: {tier}, billing: {billing}")
         
         try:
             # Create subdomain
@@ -1741,9 +1780,9 @@ def stripe_webhook():
                 last_name=' '.join(name_parts[1:]) if len(name_parts) > 1 else '',
                 role='admin',
                 is_active=True,
-                disclaimer_accepted_at=datetime.utcnow()
+                disclaimer_accepted_at=datetime.utcnow(),
+                password_hash=password_hash  # Use pre-hashed password from pending signup
             )
-            admin_user.set_password(password)
             db.session.add(admin_user)
             
             # Create subscription
@@ -1760,12 +1799,13 @@ def stripe_webhook():
             
             print(f"✅ Account created successfully for {email_to_use}")
             
+            # Delete pending signup now that account is created
+            db.session.delete(pending_signup)
+            db.session.commit()
+            
             # Send welcome email
             login_url = f"https://{subdomain}.lex-cao.replit.app/login"
             email_service.send_welcome_email(admin_user, tenant, login_url)
-            
-            # Clear signup data from session
-            session.pop('signup_data', None)
             
         except Exception as e:
             db.session.rollback()
