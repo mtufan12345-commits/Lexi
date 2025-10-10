@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="nl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betaling Succesvol - Lexi CAO Meester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'navy': {
+                            50: '#f0f4f8',
+                            100: '#d9e2ec',
+                            200: '#bcccdc',
+                            300: '#9fb3c8',
+                            400: '#829ab1',
+                            500: '#1a2332',
+                            600: '#16 1e29',
+                            700: '#121920',
+                            800: '#0d1117',
+                            900: '#090c10',
+                        },
+                        'gold': {
+                            300: '#f2d48a',
+                            400: '#e8c054',
+                            500: '#d4af37',
+                            600: '#b8962d',
+                            700: '#9c7d24',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-gray-50 dark:bg-zinc-950">
+    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full">
+            <!-- Success Icon -->
+            <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 mb-6">
+                <svg class="h-12 w-12 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+
+            <!-- Success Message -->
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    Betaling Succesvol! 🎉
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300">
+                    Uw account wordt nu aangemaakt. Dit duurt slechts enkele seconden.
+                </p>
+            </div>
+
+            <!-- Info Card -->
+            <div class="bg-white dark:bg-zinc-900 shadow-xl rounded-xl p-8 border border-gray-200 dark:border-zinc-800 mb-6">
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-gold-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Welkomstmail onderweg</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">U ontvangt binnen enkele minuten een email met uw inloggegevens.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-gold-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Account wordt aangemaakt</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Uw account en subdomain worden automatisch geconfigureerd.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-gold-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Direct aan de slag</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">U kunt meteen inloggen zodra u de welkomstmail heeft ontvangen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="bg-navy-50 dark:bg-navy-900/30 rounded-xl p-6 mb-6">
+                <h3 class="font-semibold text-gray-900 dark:text-white mb-3">📋 Volgende stappen:</h3>
+                <ol class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <li class="flex items-start gap-2">
+                        <span class="font-semibold text-navy-600 dark:text-gold-400">1.</span>
+                        <span>Check uw inbox voor de welkomstmail</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="font-semibold text-navy-600 dark:text-gold-400">2.</span>
+                        <span>Klik op de login link in de email</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="font-semibold text-navy-600 dark:text-gold-400">3.</span>
+                        <span>Log in met uw gekozen wachtwoord</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="font-semibold text-navy-600 dark:text-gold-400">4.</span>
+                        <span>Start met het stellen van uw CAO vragen aan Lexi!</span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Action Button -->
+            <a href="/login" class="block w-full bg-navy-500 hover:bg-navy-600 text-white text-center py-3 px-4 rounded-lg font-semibold transition">
+                Naar Login Pagina →
+            </a>
+
+            <!-- Support Link -->
+            <p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+                Problemen? <a href="/support" class="text-gold-500 hover:text-gold-600 font-medium">Neem contact op met support</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
