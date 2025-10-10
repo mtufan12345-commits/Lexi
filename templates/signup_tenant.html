@@ -4,10 +4,23 @@
 <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
     <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         <h2 class="text-3xl font-bold text-center mb-2">Maak je account aan</h2>
-        <p class="text-center text-gray-600 mb-6">Direct toegang tot alle juridische AI-functionaliteit</p>
+        <p class="text-center text-gray-600 mb-4">Direct toegang tot alle juridische AI-functionaliteit</p>
+        
+        {% if tier and billing %}
+        <div class="bg-navy-50 dark:bg-navy-900/30 border border-navy-200 dark:border-navy-700 rounded-lg p-4 mb-6">
+            <div class="text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Gekozen plan:</p>
+                <p class="text-lg font-bold text-navy-600 dark:text-gold-400">
+                    {{ tier|title }} - {{ 'Jaarlijks' if billing == 'yearly' else 'Maandelijks' }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
         
         <form method="POST" action="/signup/tenant">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="tier" value="{{ tier or 'starter' }}"/>
+            <input type="hidden" name="billing" value="{{ billing or 'monthly' }}"/>
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Bedrijfsnaam</label>

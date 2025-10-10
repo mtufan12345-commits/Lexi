@@ -173,63 +173,103 @@ def count_user_questions(user_id):
 
 @app.route('/signup/tenant', methods=['GET', 'POST'])
 def signup_tenant():
+    # Get tier and billing cycle from query params (from pricing page)
+    tier = request.args.get('tier', 'starter')
+    billing = request.args.get('billing', 'monthly')
+    
     if request.method == 'POST':
+        from stripe_config import get_price_id
+        
         company_name = request.form.get('company_name') or ''
         contact_email = request.form.get('contact_email') or ''
         contact_name = request.form.get('contact_name') or ''
         password = request.form.get('password') or ''
+        tier = request.form.get('tier', 'starter')
+        billing = request.form.get('billing', 'monthly')
         
-        import re
-        base_subdomain = re.sub(r'[^a-z0-9]', '', company_name.lower().replace(' ', ''))[:20]
-        subdomain = base_subdomain if base_subdomain else 'tenant'
+        # Validate inputs
+        if not all([company_name, contact_email, contact_name, password]):
+            flash('Alle velden zijn verplicht.', 'danger')
+            return render_template('signup_tenant.html', tier=tier, billing=billing)
         
-        counter = 1
-        original_subdomain = subdomain
-        while Tenant.query.filter_by(subdomain=subdomain).first():
-            subdomain = f"{original_subdomain}{counter}"
-            counter += 1
+        # Check if email already exists
+        existing_user = User.query.filter_by(email=contact_email).first()
+        if existing_user:
+            flash('Dit email adres is al in gebruik.', 'danger')
+            return render_template('signup_tenant.html', tier=tier, billing=billing)
         
-        tenant = Tenant(
-            company_name=company_name,
-            subdomain=subdomain,
-            contact_email=contact_email,
-            contact_name=contact_name,
-            status='active'
-        )
-        db.session.add(tenant)
-        db.session.flush()
+        # Get Stripe Price ID
+        price_id = get_price_id(tier, billing)
+        if not price_id:
+            flash('Ongeldige pricing optie.', 'danger')
+            return render_template('signup_tenant.html', tier=tier, billing=billing)
         
-        name_parts = contact_name.split() if contact_name else []
-        admin_user = User(
-            tenant_id=tenant.id,
-            email=contact_email,
-            first_name=name_parts[0] if name_parts else 'Admin',
-            last_name=' '.join(name_parts[1:]) if len(name_parts) > 1 else '',
-            role='admin',
-            disclaimer_accepted_at=datetime.utcnow()  # Track disclaimer acceptance
-        )
-        admin_user.set_password(password)
-        db.session.add(admin_user)
+        # Store signup data in session temporarily
+        session['signup_data'] = {
+            'company_name': company_name,
+            'contact_email': contact_email,
+            'contact_name': contact_name,
+            'password': password,
+            'tier': tier,
+            'billing': billing
+        }
         
-        subscription = Subscription(
-            tenant_id=tenant.id,
-            plan='professional',
-            status='active'
-        )
-        db.session.add(subscription)
-        
-        db.session.commit()
-        
-        # Set tenant in session for development mode
-        session['tenant_id'] = tenant.id
-        
-        login_url = f"https://{subdomain}.lex-cao.replit.app/login"
-        email_service.send_welcome_email(admin_user, tenant, login_url)
-        
-        flash('Account aangemaakt! Je kunt nu inloggen.', 'success')
-        return redirect(url_for('login'))
+        # Create Stripe Checkout Session
+        try:
+            import stripe
+            stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+            
+            # Get base URL (works in both dev and production)
+            base_url = request.host_url.rstrip('/')
+            
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card', 'ideal'],
+                line_items=[{
+                    'price': price_id,
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url=f"{base_url}/signup/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{base_url}/signup/cancel",
+                customer_email=contact_email,
+                metadata={
+                    'signup_email': contact_email,
+                    'tier': tier,
+                    'billing': billing
+                }
+            )
+            
+            # Redirect to Stripe Checkout
+            return redirect(checkout_session.url, code=303)
+            
+        except Exception as e:
+            print(f"Stripe checkout error: {e}")
+            flash('Er ging iets mis met de betaling. Probeer het opnieuw.', 'danger')
+            return render_template('signup_tenant.html', tier=tier, billing=billing)
     
-    return render_template('signup_tenant.html')
+    # GET request - show signup form
+    return render_template('signup_tenant.html', tier=tier, billing=billing)
+
+@app.route('/signup/success')
+def signup_success():
+    """Success page after Stripe payment - account will be created via webhook"""
+    session_id = request.args.get('session_id')
+    
+    if not session_id:
+        flash('Geen geldige sessie gevonden.', 'danger')
+        return redirect(url_for('index'))
+    
+    # The webhook will create the account, just show success message
+    return render_template('signup_success.html', session_id=session_id)
+
+@app.route('/signup/cancel')
+def signup_cancel():
+    """Cancel page if user cancels Stripe payment"""
+    # Clear signup data from session
+    session.pop('signup_data', None)
+    
+    flash('Betaling geannuleerd. U kunt opnieuw proberen wanneer u klaar bent.', 'info')
+    return redirect(url_for('pricing'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1629,34 +1669,132 @@ def stripe_webhook():
     webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
     
     if not webhook_secret:
+        print("WARNING: No webhook secret configured!")
         return jsonify({'success': True})
     
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
     except Exception as e:
-        print(f"Webhook error: {e}")
+        print(f"Webhook signature verification failed: {e}")
         return jsonify({'error': str(e)}), 400
+    
+    print(f"Received Stripe webhook event: {event['type']}")
     
     if event['type'] == 'checkout.session.completed':
         session_obj = event['data']['object']
-        tenant_id = session_obj['metadata'].get('tenant_id')
-        plan = session_obj['metadata'].get('plan', 'professional')
+        customer_email = session_obj.get('customer_email')
+        signup_email = session_obj['metadata'].get('signup_email')
+        tier = session_obj['metadata'].get('tier', 'starter')
+        billing = session_obj['metadata'].get('billing', 'monthly')
         
-        if tenant_id:
-            subscription = Subscription.query.filter_by(tenant_id=tenant_id).first()
-            if subscription:
+        # Use signup email from metadata (most reliable)
+        email_to_use = signup_email or customer_email
+        
+        print(f"Processing signup for: {email_to_use}, tier: {tier}, billing: {billing}")
+        
+        # Check if user already exists (prevent duplicates)
+        existing_user = User.query.filter_by(email=email_to_use).first()
+        if existing_user:
+            print(f"User {email_to_use} already exists, skipping account creation")
+            return jsonify({'success': True, 'message': 'User already exists'})
+        
+        # Get signup data from session (this will work if webhook comes immediately)
+        # Otherwise we'll create account with email only
+        signup_data = session.get('signup_data', {})
+        
+        # Use session data if available, otherwise use minimal data from Stripe
+        company_name = signup_data.get('company_name', 'New Company')
+        contact_name = signup_data.get('contact_name', email_to_use.split('@')[0])
+        password = signup_data.get('password', secrets.token_urlsafe(16))  # Generate random password if not in session
+        
+        try:
+            # Create subdomain
+            import re
+            base_subdomain = re.sub(r'[^a-z0-9]', '', company_name.lower().replace(' ', ''))[:20]
+            subdomain = base_subdomain if base_subdomain else 'tenant'
+            
+            counter = 1
+            original_subdomain = subdomain
+            while Tenant.query.filter_by(subdomain=subdomain).first():
+                subdomain = f"{original_subdomain}{counter}"
+                counter += 1
+            
+            # Create tenant
+            tenant = Tenant(
+                company_name=company_name,
+                subdomain=subdomain,
+                contact_email=email_to_use,
+                contact_name=contact_name,
+                status='active',
+                subscription_tier=tier,
+                max_users=get_max_users_for_tier(tier)
+            )
+            db.session.add(tenant)
+            db.session.flush()
+            
+            # Create admin user
+            name_parts = contact_name.split() if contact_name else []
+            admin_user = User(
+                tenant_id=tenant.id,
+                email=email_to_use,
+                first_name=name_parts[0] if name_parts else 'Admin',
+                last_name=' '.join(name_parts[1:]) if len(name_parts) > 1 else '',
+                role='admin',
+                is_active=True,
+                disclaimer_accepted_at=datetime.utcnow()
+            )
+            admin_user.set_password(password)
+            db.session.add(admin_user)
+            
+            # Create subscription
+            subscription = Subscription(
+                tenant_id=tenant.id,
+                plan=tier,
+                status='active',
+                stripe_customer_id=session_obj.get('customer'),
+                stripe_subscription_id=session_obj.get('subscription')
+            )
+            db.session.add(subscription)
+            
+            db.session.commit()
+            
+            print(f"✅ Account created successfully for {email_to_use}")
+            
+            # Send welcome email
+            login_url = f"https://{subdomain}.lex-cao.replit.app/login"
+            email_service.send_welcome_email(admin_user, tenant, login_url)
+            
+            # Clear signup data from session
+            session.pop('signup_data', None)
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Error creating account: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    elif event['type'] == 'customer.subscription.updated':
+        subscription_obj = event['data']['object']
+        stripe_sub_id = subscription_obj.get('id')
+        status = subscription_obj.get('status')
+        
+        subscription = Subscription.query.filter_by(stripe_subscription_id=stripe_sub_id).first()
+        if subscription:
+            # Map Stripe status to our status
+            if status in ['active', 'trialing']:
                 subscription.status = 'active'
-                subscription.plan = plan
-                subscription.stripe_customer_id = session_obj.get('customer')
-                subscription.stripe_subscription_id = session_obj.get('subscription')
-                
-                tenant = Tenant.query.get(tenant_id)
+                tenant = Tenant.query.get(subscription.tenant_id)
                 if tenant:
                     tenant.status = 'active'
-                    tenant.subscription_tier = plan
-                    tenant.max_users = get_max_users_for_tier(plan)
-                
-                db.session.commit()
+            elif status in ['past_due', 'unpaid']:
+                subscription.status = 'past_due'
+            elif status in ['canceled', 'incomplete_expired']:
+                subscription.status = 'canceled'
+                tenant = Tenant.query.get(subscription.tenant_id)
+                if tenant:
+                    tenant.status = 'inactive'
+            
+            db.session.commit()
+            print(f"Updated subscription {stripe_sub_id} to status {status}")
     
     elif event['type'] == 'invoice.payment_failed':
         invoice = event['data']['object']
@@ -1666,6 +1804,7 @@ def stripe_webhook():
         if subscription:
             tenant = Tenant.query.get(subscription.tenant_id)
             email_service.send_payment_failed_email(tenant)
+            print(f"Payment failed email sent to {tenant.contact_email}")
     
     return jsonify({'success': True})
 
