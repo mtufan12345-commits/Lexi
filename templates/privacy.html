@@ -1,125 +1,543 @@
 {% extends "base.html" %}
 
-{% block title %}Privacy & Cookies - Lexi CAO Meester{% endblock %}
+{% block title %}Privacy & Cookiebeleid - Lexi CAO Meester{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-white dark:bg-black py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Privacy & Cookiebeleid</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Laatst bijgewerkt: 10 oktober 2025</p>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Privacy & Cookiebeleid LEXI AI</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Versie 1.0 - Oktober 2025</p>
         </div>
 
         <!-- Content -->
-        <div class="prose dark:prose-invert max-w-none">
-            <h2>1. Inleiding</h2>
-            <p>LEXI AI (KVK 96417609) hecht grote waarde aan uw privacy. In deze privacyverklaring leggen we uit welke persoonsgegevens we verzamelen, waarom we deze verzamelen en hoe we uw gegevens beschermen.</p>
-
-            <h2>2. Verantwoordelijke</h2>
-            <p>LEXI AI<br>
-            Gouverneurlaan 445<br>
-            2523 CB Den Haag<br>
-            BTW: NL867602144B01<br>
-            Email: info@lexiai.nl</p>
-
-            <h2>3. Welke Gegevens Verzamelen We?</h2>
-            <h3>Account Gegevens</h3>
-            <ul>
-                <li>Naam en e-mailadres</li>
-                <li>Bedrijfsinformatie (naam uitzendbureau, KVK-nummer)</li>
-                <li>Contactgegevens</li>
-            </ul>
-
-            <h3>Gebruiksgegevens</h3>
-            <ul>
-                <li>Chat conversaties en gestelde vragen aan LEXI</li>
-                <li>Geüploade documenten (PDF, DOCX, TXT)</li>
-                <li>Gegenereerde artifacts en documenten</li>
-                <li>Inlog- en gebruikstijden</li>
-            </ul>
-
-            <h3>Technische Gegevens</h3>
-            <ul>
-                <li>IP-adres</li>
-                <li>Browser type en versie</li>
-                <li>Apparaat informatie</li>
-            </ul>
-
-            <h2>4. Waarom Verzamelen We Deze Gegevens?</h2>
-            <p>We verwerken uw gegevens voor de volgende doeleinden:</p>
-            <ul>
-                <li><strong>Dienstverlening</strong>: Om de AI-assistent functionaliteit te leveren</li>
-                <li><strong>Verbetering</strong>: Om onze dienst te verbeteren en fouten op te lossen</li>
-                <li><strong>Facturering</strong>: Om abonnementen te beheren en facturen te versturen</li>
-                <li><strong>Communicatie</strong>: Om u te informeren over updates en wijzigingen</li>
-                <li><strong>Wettelijke verplichtingen</strong>: Om te voldoen aan fiscale en juridische eisen</li>
-            </ul>
-
-            <h2>5. Met Wie Delen We Uw Gegevens?</h2>
-            <p>We delen uw gegevens alleen met:</p>
-            <ul>
-                <li><strong>Google Cloud Platform</strong>: Voor AI-verwerking (Vertex AI)</li>
-                <li><strong>Hetzner</strong>: Voor object storage van bestanden en chat berichten</li>
-                <li><strong>Stripe</strong>: Voor betalingsverwerking</li>
-                <li><strong>SendGrid</strong>: Voor e-mail communicatie</li>
-            </ul>
-            <p>Al deze partijen hebben met ons een verwerkersovereenkomst gesloten en mogen uw gegevens niet voor eigen doeleinden gebruiken.</p>
-
-            <h2>6. AI Verwerking en Data Privacy</h2>
-            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 my-6">
-                <p class="font-semibold text-blue-800 dark:text-blue-200 mb-2">🔒 Uw Gegevens en AI</p>
-                <p class="text-sm text-blue-700 dark:text-blue-300">Chat conversaties worden verwerkt door Google Vertex AI met gemini-2.5-pro model. Google gebruikt uw data NIET voor het trainen van AI-modellen. Alle chat berichten worden versleuteld opgeslagen in Hetzner Object Storage (EU servers).</p>
+        <div class="prose dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-li:text-gray-700 dark:prose-li:text-gray-300">
+            
+            <h2>1. INLEIDING</h2>
+            <p>Welkom bij het Privacy- en Cookiebeleid van LEXI AI. Uw privacy is belangrijk voor ons. Dit beleid legt uit hoe Adem Management Holding B.V., handelend onder de naam LEXI AI ("wij", "ons", "LEXI"), omgaat met uw persoonsgegevens wanneer u gebruik maakt van onze diensten.</p>
+            
+            <div class="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 my-6 not-prose">
+                <p class="font-semibold text-gray-900 dark:text-white mb-3">Verantwoordelijke voor gegevensverwerking:</p>
+                <p class="text-gray-700 dark:text-gray-300 text-sm">
+                Adem Management Holding B.V.<br>
+                Handelsnaam: LEXI AI<br>
+                Gouverneurlaan 445<br>
+                2523 CB Den Haag<br>
+                Nederland</p>
+                <p class="text-gray-700 dark:text-gray-300 text-sm mt-3">
+                KVK-nummer: 96417609<br>
+                BTW-nummer: NL867602144B01<br>
+                E-mail: info@lexiai.nl<br>
+                Website: www.lexiai.nl</p>
             </div>
 
-            <h2>7. Bewaartermijn</h2>
-            <p>We bewaren uw gegevens zo lang als nodig voor de dienstverlening:</p>
+            <p>Dit privacybeleid is van toepassing op alle personen die gebruik maken van het LEXI platform, waaronder bezoekers van de website en gebruikers met een account (hierna: "u" of "gebruiker").</p>
+
+            <h2>2. WELKE PERSOONSGEGEVENS VERZAMELEN WIJ?</h2>
+            
+            <h3>2.1 Gegevens die u ons verstrekt</h3>
+            
+            <p><strong>Bij registratie voor een gratis proef (3 vragen):</strong></p>
             <ul>
-                <li><strong>Account gegevens</strong>: Tot 30 dagen na beëindiging abonnement</li>
-                <li><strong>Chat historiek</strong>: Tot 90 dagen na beëindiging abonnement</li>
-                <li><strong>Factuurgegevens</strong>: 7 jaar (wettelijke bewaarplicht)</li>
+                <li>E-mailadres</li>
             </ul>
 
-            <h2>8. Uw Rechten</h2>
-            <p>Onder de AVG heeft u de volgende rechten:</p>
+            <p><strong>Bij het aanmaken van een betaald account:</strong></p>
             <ul>
-                <li><strong>Inzage</strong>: Opvragen welke gegevens we van u hebben</li>
-                <li><strong>Correctie</strong>: Onjuiste gegevens laten aanpassen</li>
-                <li><strong>Verwijdering</strong>: Uw gegevens laten verwijderen</li>
-                <li><strong>Beperking</strong>: Verwerking laten beperken</li>
-                <li><strong>Bezwaar</strong>: Bezwaar maken tegen verwerking</li>
-                <li><strong>Overdraagbaarheid</strong>: Uw gegevens ontvangen in machine-leesbaar formaat</li>
-            </ul>
-            <p>U kunt deze rechten uitoefenen door contact op te nemen via info@lexiai.nl</p>
-
-            <h2>9. Cookies</h2>
-            <p>We gebruiken de volgende cookies:</p>
-            <h3>Functionele Cookies (Noodzakelijk)</h3>
-            <ul>
-                <li><strong>Session cookie</strong>: Voor inlog en authenticatie</li>
-                <li><strong>CSRF token</strong>: Voor beveiliging tegen aanvallen</li>
-                <li><strong>Dark mode voorkeur</strong>: Voor opslaan UI voorkeuren</li>
-            </ul>
-            <p>Deze cookies zijn noodzakelijk voor de werking van het platform en kunnen niet worden uitgeschakeld.</p>
-
-            <h3>Analytische Cookies</h3>
-            <p>We gebruiken momenteel geen analytische of tracking cookies.</p>
-
-            <h2>10. Beveiliging</h2>
-            <p>We nemen passende technische en organisatorische maatregelen om uw gegevens te beschermen:</p>
-            <ul>
-                <li>SSL/TLS encryptie voor alle data transfers</li>
-                <li>Versleutelde opslag van chat berichten</li>
-                <li>Regelmatige security audits</li>
-                <li>Multi-factor authenticatie voor admin accounts</li>
+                <li>Volledige naam</li>
+                <li>E-mailadres</li>
+                <li>Bedrijfsnaam (indien van toepassing)</li>
+                <li>Telefoonnummer (optioneel)</li>
+                <li>Factuuradres</li>
+                <li>BTW-nummer (indien van toepassing)</li>
             </ul>
 
-            <h2>11. Wijzigingen</h2>
-            <p>We kunnen dit privacybeleid wijzigen. De meest recente versie vindt u altijd op deze pagina. Bij grote wijzigingen informeren we u via e-mail.</p>
+            <p><strong>Bij gebruik van de dienst:</strong></p>
+            <ul>
+                <li>De vragen die u stelt aan LEXI (input)</li>
+                <li>De antwoorden die LEXI genereert (output)</li>
+                <li>Feedbackgegevens (indien u deze verstrekt)</li>
+                <li>Communicatie met onze klantenservice</li>
+            </ul>
 
-            <h2>12. Contact en Klachten</h2>
-            <p>Voor vragen over privacy kunt u contact opnemen via info@lexiai.nl</p>
-            <p>U heeft ook het recht om een klacht in te dienen bij de Autoriteit Persoonsgegevens.</p>
+            <h3>2.2 Gegevens die automatisch worden verzameld</h3>
+            
+            <p><strong>Technische gegevens:</strong></p>
+            <ul>
+                <li>IP-adres</li>
+                <li>Browsertype en -versie</li>
+                <li>Apparaattype (desktop, mobiel, tablet)</li>
+                <li>Besturingssysteem</li>
+                <li>Tijdzone en locatie (op basis van IP-adres)</li>
+                <li>Toegangstijden en -data</li>
+            </ul>
+
+            <p><strong>Gebruiksgegevens:</strong></p>
+            <ul>
+                <li>Aantal gestelde vragen</li>
+                <li>Gebruiksfrequentie</li>
+                <li>Functionaliteiten die u gebruikt</li>
+                <li>Klikgedrag op het platform</li>
+                <li>Sessieduur</li>
+            </ul>
+
+            <p><strong>Cookies en vergelijkbare technologieën:</strong><br>
+            Zie sectie 9 van dit beleid voor gedetailleerde informatie over ons cookiegebruik.</p>
+
+            <h3>2.3 Gegevens van derden</h3>
+            
+            <p><strong>Betalingsgegevens via Stripe:</strong><br>
+            Wij ontvangen bevestigingen van succesvolle betalingen, maar verwerken zelf geen creditcardgegevens of bankrekeninginformatie. Deze worden rechtstreeks door Stripe verwerkt.</p>
+
+            <h2>3. WAAROM VERWERKEN WIJ UW GEGEVENS? (DOELEINDEN)</h2>
+            
+            <p>Wij verwerken uw persoonsgegevens voor de volgende doeleinden:</p>
+
+            <h3>3.1 Uitvoering van de overeenkomst</h3>
+            <p><strong>Rechtsgrond: Overeenkomst (Art. 6 lid 1 sub b AVG)</strong></p>
+            <ul>
+                <li>Het aanmaken en beheren van uw account</li>
+                <li>Het verlenen van toegang tot LEXI</li>
+                <li>Het beantwoorden van uw vragen via de AI-dienst</li>
+                <li>Klantenservice en ondersteuning</li>
+                <li>Telefonisch contact opnemen voor urgente account-gerelateerde zaken of support, indien u uw telefoonnummer heeft verstrekt</li>
+                <li>Facturering en betalingsverwerking</li>
+                <li>Opzeggingen en abonnementsbeheer</li>
+            </ul>
+
+            <h3>3.2 Wettelijke verplichtingen</h3>
+            <p><strong>Rechtsgrond: Wettelijke verplichting (Art. 6 lid 1 sub c AVG)</strong></p>
+            <ul>
+                <li>Administratie en boekhoudkundige verplichtingen</li>
+                <li>Belastingverplichtingen (BTW-administratie)</li>
+                <li>Bewaring van facturen conform wettelijke bewaartermijnen (7 jaar)</li>
+            </ul>
+
+            <h3>3.3 Gerechtvaardigd belang</h3>
+            <p><strong>Rechtsgrond: Gerechtvaardigd belang (Art. 6 lid 1 sub f AVG)</strong></p>
+            <ul>
+                <li><strong>Verbetering van de dienstverlening</strong>: Analyseren van gebruikspatronen om LEXI te verbeteren</li>
+                <li><strong>Training van AI-modellen</strong>: Gebruik van geanonimiseerde en geaggregeerde input/output om de nauwkeurigheid van LEXI te verbeteren</li>
+                <li><strong>Fraudepreventie</strong>: Detectie van misbruik en ongeautoriseerde toegang</li>
+                <li><strong>Beveiliging</strong>: Bescherming van onze systemen tegen cyberaanvallen</li>
+                <li><strong>Analyse en statistieken</strong>: Inzicht in gebruik om onze diensten te optimaliseren</li>
+                <li><strong>Directe marketing</strong>: Informeren van bestaande klanten over updates, nieuwe functies of gelijksoortige diensten (met in elke communicatie een eenvoudige opt-out mogelijkheid)</li>
+            </ul>
+
+            <h3>3.4 Toestemming</h3>
+            <p><strong>Rechtsgrond: Toestemming (Art. 6 lid 1 sub a AVG)</strong></p>
+            <ul>
+                <li>Plaatsing van niet-essentiële cookies (zie sectie 9)</li>
+                <li>Nieuwsbrieven en marketingcommunicatie (indien u zich hiervoor heeft aangemeld)</li>
+                <li>Andere verwerkingen waarvoor wij expliciet uw toestemming vragen</li>
+            </ul>
+            <p>U kunt uw toestemming te allen tijde intrekken via uw accountinstellingen of door contact met ons op te nemen.</p>
+
+            <h2>4. HOE LANG BEWAREN WIJ UW GEGEVENS?</h2>
+            
+            <p>Wij bewaren uw persoonsgegevens niet langer dan noodzakelijk voor de doeleinden waarvoor ze zijn verzameld:</p>
+
+            <div class="overflow-x-auto my-6">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-zinc-900">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type gegevens</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Bewaartermijn</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reden</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tr>
+                            <td class="px-4 py-3 text-sm">Accountgegevens (naam, e-mail)</td>
+                            <td class="px-4 py-3 text-sm">Zolang account actief is + 1 maand na beëindiging</td>
+                            <td class="px-4 py-3 text-sm">Uitvoering overeenkomst</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">Betalings- en factuurgegevens</td>
+                            <td class="px-4 py-3 text-sm">7 jaar na laatste transactie</td>
+                            <td class="px-4 py-3 text-sm">Wettelijke verplichting (fiscaal)</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">Communicatie met klantenservice</td>
+                            <td class="px-4 py-3 text-sm">2 jaar na laatste contact</td>
+                            <td class="px-4 py-3 text-sm">Kwaliteitsbewaking en geschilbeslechting</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">Vragen en antwoorden (input/output)</td>
+                            <td class="px-4 py-3 text-sm">6 maanden in originele vorm, daarna geanonimiseerd voor onbepaalde tijd</td>
+                            <td class="px-4 py-3 text-sm">Serviceverbetering en AI-training</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">Technische logs (IP-adres, toegangstijd)</td>
+                            <td class="px-4 py-3 text-sm">90 dagen</td>
+                            <td class="px-4 py-3 text-sm">Beveiliging en fraudepreventie</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">Cookies</td>
+                            <td class="px-4 py-3 text-sm">Zie cookietabel in sectie 9</td>
+                            <td class="px-4 py-3 text-sm">Afhankelijk van type cookie</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><strong>Na beëindiging van uw account:</strong></p>
+            <ul>
+                <li>Uw persoonlijke gegevens worden binnen 1 maand verwijderd</li>
+                <li>Factuurgegevens worden 7 jaar bewaard (wettelijk verplicht)</li>
+                <li>Geanonimiseerde gebruiksdata kunnen langer worden bewaard voor statistieken</li>
+            </ul>
+
+            <p><strong>Vroegtijdige verwijdering:</strong><br>
+            U kunt te allen tijde verzoeken om uw gegevens eerder te laten verwijderen, tenzij wij wettelijk verplicht zijn deze langer te bewaren.</p>
+
+            <h2>5. MET WIE DELEN WIJ UW GEGEVENS?</h2>
+            
+            <p>Wij verkopen uw persoonsgegevens nooit aan derden. Wij delen alleen gegevens met de volgende partijen, en alleen voor zover noodzakelijk:</p>
+
+            <h3>5.1 Subverwerkers (derden die namens ons gegevens verwerken)</h3>
+            
+            <div class="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 my-6 not-prose">
+                <p class="font-semibold text-gray-900 dark:text-white mb-2">Google Cloud Platform & Vertex AI</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Doel</strong>: Hosting van het platform en AI-functionaliteit<br>
+                <strong>Locatie</strong>: Datacenters binnen de Europese Economische Ruimte (EER)<br>
+                <strong>Gegevens</strong>: Alle accountgegevens, vragen/antwoorden, technische logs<br>
+                <strong>Waarborgen</strong>: Google Cloud is AVG-gecertificeerd. Wij hebben een Data Processing Addendum (DPA) afgesloten met Google. Meer informatie: https://cloud.google.com/terms/data-processing-addendum</p>
+            </div>
+
+            <div class="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 my-6 not-prose">
+                <p class="font-semibold text-gray-900 dark:text-white mb-2">Stripe</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Doel</strong>: Betalingsverwerking en facturering<br>
+                <strong>Locatie</strong>: Verenigde Staten (VS), met doorgifte op basis van EU-VS Data Privacy Framework<br>
+                <strong>Gegevens</strong>: Naam, e-mail, factuuradres, betalingsgegevens<br>
+                <strong>Waarborgen</strong>: Stripe is PCI-DSS Level 1 gecertificeerd (hoogste beveiligingsniveau voor betalingen). Stripe verwerkt uw creditcard- of bankgegevens rechtstreeks; wij hebben hier geen toegang toe.</p>
+            </div>
+
+            <div class="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 my-6 not-prose">
+                <p class="font-semibold text-gray-900 dark:text-white mb-2">Google Workspace / Gmail API (indien van toepassing)</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Doel</strong>: Versturen van transactionele e-mails (accountbevestiging, wachtwoord reset, facturen)<br>
+                <strong>Locatie</strong>: Datacenters binnen de Europese Economische Ruimte (EER)<br>
+                <strong>Gegevens</strong>: E-mailadres, naam<br>
+                <strong>Waarborgen</strong>: Valt onder Google Cloud DPA (reeds vermeld), AVG-gecertificeerd</p>
+            </div>
+
+            <h3>5.2 Wettelijke verplichtingen</h3>
+            <p>Wij kunnen uw gegevens delen met:</p>
+            <ul>
+                <li><strong>Belastingdienst</strong>: Voor BTW-administratie en fiscale verplichtingen</li>
+                <li><strong>Opsporingsautoriteiten</strong>: Indien wij wettelijk verplicht zijn informatie te verstrekken op basis van een rechterlijk bevel of gerechtelijk verzoek</li>
+                <li><strong>Toezichthouders</strong>: Zoals de Autoriteit Persoonsgegevens bij onderzoeken</li>
+            </ul>
+
+            <h3>5.3 Bedrijfsoverdracht</h3>
+            <p>Bij een fusie, overname, verkoop van activa of faillissement kunnen uw gegevens worden overgedragen aan de opvolgende partij. U wordt hiervan vooraf op de hoogte gesteld.</p>
+
+            <h2>6. INTERNATIONALE GEGEVENSOVERDRACHT</h2>
+            
+            <h3>6.1 Binnen de EER</h3>
+            <p>De meeste gegevensverwerking vindt plaats binnen de Europese Economische Ruimte (EER). Google Cloud datacenters bevinden zich in de EU (Nederland/België).</p>
+
+            <h3>6.2 Buiten de EER</h3>
+            
+            <p><strong>Stripe (Verenigde Staten):</strong><br>
+            Stripe is gevestigd in de VS. Voor gegevensoverdracht naar de VS gebruiken wij de volgende waarborgen:</p>
+            <ul>
+                <li><strong>EU-VS Data Privacy Framework</strong>: Stripe is hiervoor gecertificeerd</li>
+                <li><strong>Standaard Contractbepalingen (SCC's)</strong>: Goedgekeurd door de Europese Commissie</li>
+            </ul>
+            <p>Voor meer informatie: https://stripe.com/privacy</p>
+
+            <p><strong>Google Vertex AI:</strong><br>
+            Hoewel onze Google Cloud datacenters in de EU staan, kan Google in beperkte gevallen toegang hebben tot gegevens vanuit de VS voor technisch onderhoud of support. Hiervoor gelden:</p>
+            <ul>
+                <li>Standaard Contractbepalingen (SCC's)</li>
+                <li>Google Cloud Data Processing Addendum</li>
+                <li>ISO 27001 en SOC 2 certificeringen</li>
+            </ul>
+
+            <h2>7. BEVEILIGING VAN UW GEGEVENS</h2>
+            
+            <p>Wij nemen de beveiliging van uw gegevens serieus en hebben passende technische en organisatorische maatregelen getroffen:</p>
+
+            <h3>7.1 Technische maatregelen</h3>
+            <ul>
+                <li><strong>Versleuteling</strong>: Alle data wordt versleuteld tijdens transport (TLS 1.3) en in rust (AES-256)</li>
+                <li><strong>Firewalls</strong>: Bescherming tegen ongeautoriseerde toegang</li>
+                <li><strong>Toegangscontrole</strong>: Alleen geautoriseerd personeel heeft toegang tot persoonsgegevens op "need-to-know" basis</li>
+                <li><strong>Twee-factor authenticatie</strong>: Voor medewerkers met toegang tot het systeem</li>
+                <li><strong>Regelmatige updates</strong>: Beveiligingspatches worden direct toegepast</li>
+                <li><strong>Logging en monitoring</strong>: Detectie van verdachte activiteiten</li>
+            </ul>
+
+            <h3>7.2 Organisatorische maatregelen</h3>
+            <ul>
+                <li><strong>Privacy by Design</strong>: Privacy is ingebouwd in onze systemen</li>
+                <li><strong>Geheimhoudingsverklaringen</strong>: Al onze medewerkers hebben een geheimhoudingsverklaring getekend</li>
+                <li><strong>Bewustwordingstraining</strong>: Regelmatige training over gegevensbescherming</li>
+                <li><strong>Incidentresponsplan</strong>: Voor snelle reactie bij datalekken</li>
+            </ul>
+
+            <h3>7.3 Datalekmeldingen</h3>
+            <p>Ondanks alle voorzorgsmaatregelen kan een datalek nooit volledig worden uitgesloten. Bij een datalek:</p>
+            <ul>
+                <li>Melden wij dit binnen 72 uur aan de Autoriteit Persoonsgegevens</li>
+                <li>Informeren wij u direct indien er een hoog risico is voor uw rechten en vrijheden</li>
+                <li>Nemen wij onmiddellijk maatregelen om verdere schade te beperken</li>
+            </ul>
+
+            <h2>8. UW RECHTEN ONDER DE AVG</h2>
+            
+            <p>Op grond van de Algemene Verordening Gegevensbescherming (AVG) heeft u de volgende rechten:</p>
+
+            <h3>8.1 Recht op inzage (Art. 15 AVG)</h3>
+            <p>U heeft het recht om te weten welke persoonsgegevens wij van u verwerken. U kunt een kopie van uw gegevens opvragen.</p>
+
+            <h3>8.2 Recht op correctie (Art. 16 AVG)</h3>
+            <p>U kunt verzoeken om onjuiste of onvolledige gegevens te corrigeren. Veel gegevens kunt u zelf aanpassen via uw accountinstellingen.</p>
+
+            <h3>8.3 Recht op verwijdering / "recht op vergetelheid" (Art. 17 AVG)</h3>
+            <p>U kunt verzoeken om uw gegevens te laten verwijderen, tenzij:</p>
+            <ul>
+                <li>Wij wettelijk verplicht zijn deze te bewaren (bijv. factuurgegevens)</li>
+                <li>De gegevens noodzakelijk zijn voor de uitvoering van de overeenkomst</li>
+                <li>Er andere wettelijke gronden zijn om de gegevens te bewaren</li>
+            </ul>
+
+            <h3>8.4 Recht op beperking van de verwerking (Art. 18 AVG)</h3>
+            <p>U kunt verzoeken om de verwerking van uw gegevens (tijdelijk) te beperken, bijvoorbeeld tijdens een onderzoek naar de juistheid van de gegevens.</p>
+
+            <h3>8.5 Recht op dataportabiliteit (Art. 20 AVG)</h3>
+            <p>U heeft het recht om de gegevens die u aan ons heeft verstrekt in een gestructureerd, gangbaar en machineleesbaar formaat te ontvangen. U kunt deze gegevens overdragen aan een andere dienstverlener.</p>
+
+            <h3>8.6 Recht van bezwaar (Art. 21 AVG)</h3>
+            <p>U kunt bezwaar maken tegen:</p>
+            <ul>
+                <li>Verwerking op basis van gerechtvaardigd belang</li>
+                <li>Verwerking voor direct marketing doeleinden (altijd toegestaan, zonder reden)</li>
+            </ul>
+
+            <h3>8.7 Recht op intrekking toestemming (Art. 7 lid 3 AVG)</h3>
+            <p>Als wij uw gegevens verwerken op basis van toestemming, kunt u deze toestemming te allen tijde intrekken. Dit heeft geen gevolgen voor de rechtmatigheid van de verwerking vóór de intrekking.</p>
+
+            <h3>8.8 Geautomatiseerde besluitvorming en profiling (Art. 22 AVG)</h3>
+            <p>Wij nemen geen geautomatiseerde beslissingen met rechtsgevolgen voor u op basis van profiling. LEXI is een informatietool; alle beslissingen worden door u zelf genomen.</p>
+
+            <h3>8.9 Uitoefenen van uw rechten</h3>
+            
+            <p><strong>Hoe kunt u uw rechten uitoefenen?</strong></p>
+            <ul>
+                <li>Stuur een e-mail naar: info@lexiai.nl</li>
+                <li>Vermeld duidelijk welk recht u wilt uitoefenen</li>
+                <li>Om uw identiteit te verifiëren, kunnen wij u vragen om uw verzoek te bevestigen via de e-mail die gekoppeld is aan uw account, of door in te loggen op uw account</li>
+            </ul>
+
+            <p><strong>Reactietermijn:</strong><br>
+            Wij reageren binnen 1 maand op uw verzoek. In complexe gevallen kunnen wij deze termijn met 2 maanden verlengen, waarvan wij u op de hoogte stellen.</p>
+
+            <p><strong>Kosten:</strong><br>
+            Het uitoefenen van uw rechten is in principe gratis. Bij kennelijk ongegronde of buitensporige verzoeken kunnen wij een redelijke vergoeding vragen.</p>
+
+            <h3>8.10 Klacht bij de toezichthouder</h3>
+            
+            <p>Bent u niet tevreden over hoe wij met uw gegevens omgaan? U heeft altijd het recht een klacht in te dienen bij de:</p>
+            
+            <div class="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 my-6 not-prose">
+                <p class="font-semibold text-gray-900 dark:text-white mb-2">Autoriteit Persoonsgegevens</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                Postbus 93374<br>
+                2509 AJ Den Haag<br>
+                Telefoon: 0900 - 200 12 01 (lokaal tarief)<br>
+                Website: www.autoriteitpersoonsgegevens.nl</p>
+            </div>
+
+            <h2>9. COOKIES EN VERGELIJKBARE TECHNOLOGIEËN</h2>
+            
+            <h3>9.1 Wat zijn cookies?</h3>
+            <p>Cookies zijn kleine tekstbestanden die op uw apparaat worden geplaatst wanneer u een website bezoekt. Cookies helpen ons om:</p>
+            <ul>
+                <li>Het platform goed te laten functioneren</li>
+                <li>Uw voorkeuren te onthouden</li>
+                <li>Inzicht te krijgen in hoe u onze dienst gebruikt</li>
+            </ul>
+
+            <h3>9.2 Welke cookies gebruiken wij?</h3>
+            <p>Wij maken onderscheid tussen drie categorieën cookies:</p>
+
+            <p><strong>A) Functionele cookies (altijd actief, geen toestemming vereist)</strong></p>
+            <p>Deze cookies zijn strikt noodzakelijk voor de werking van het platform. Zonder deze cookies zou LEXI niet goed functioneren.</p>
+
+            <div class="overflow-x-auto my-6">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-zinc-900">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cookie naam</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Doel</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Bewaartermijn</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tr>
+                            <td class="px-4 py-3 text-sm">session_id</td>
+                            <td class="px-4 py-3 text-sm">Ingelogd blijven tijdens uw sessie</td>
+                            <td class="px-4 py-3 text-sm">Tot einde sessie</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">csrf_token</td>
+                            <td class="px-4 py-3 text-sm">Bescherming tegen cross-site request forgery aanvallen</td>
+                            <td class="px-4 py-3 text-sm">Tot einde sessie</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">cookie_consent</td>
+                            <td class="px-4 py-3 text-sm">Onthoudt uw cookievoorkeuren</td>
+                            <td class="px-4 py-3 text-sm">12 maanden</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><strong>B) Analytische cookies (toestemming vereist)</strong></p>
+            <p>Deze cookies helpen ons begrijpen hoe bezoekers het platform gebruiken, zodat wij de gebruikerservaring kunnen verbeteren.</p>
+
+            <div class="overflow-x-auto my-6">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-zinc-900">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cookie naam</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Aanbieder</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Doel</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Bewaartermijn</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tr>
+                            <td class="px-4 py-3 text-sm">_ga</td>
+                            <td class="px-4 py-3 text-sm">Google Analytics</td>
+                            <td class="px-4 py-3 text-sm">Onderscheidt gebruikers</td>
+                            <td class="px-4 py-3 text-sm">2 jaar</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">_gid</td>
+                            <td class="px-4 py-3 text-sm">Google Analytics</td>
+                            <td class="px-4 py-3 text-sm">Onderscheidt gebruikers</td>
+                            <td class="px-4 py-3 text-sm">24 uur</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm">_gat</td>
+                            <td class="px-4 py-3 text-sm">Google Analytics</td>
+                            <td class="px-4 py-3 text-sm">Beperkt aantal verzoeken</td>
+                            <td class="px-4 py-3 text-sm">1 minuut</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><strong>Gegevensdeling Google Analytics:</strong><br>
+            Wij hebben Google Analytics zodanig geconfigureerd dat:</p>
+            <ul>
+                <li>IP-adressen worden geanonimiseerd (laatste octetten worden verwijderd)</li>
+                <li>Data-sharing met Google is uitgeschakeld</li>
+                <li>Geen persoonlijk identificeerbare informatie wordt verzonden</li>
+            </ul>
+
+            <p><strong>C) Marketing/tracking cookies (toestemming vereist)</strong></p>
+            <p>Op dit moment gebruiken wij geen marketing of tracking cookies van derden. Mocht dit in de toekomst veranderen, dan vragen wij vooraf uw toestemming via de cookiebanner.</p>
+
+            <h3>9.3 Uw cookievoorkeuren beheren</h3>
+            
+            <p><strong>Bij uw eerste bezoek:</strong><br>
+            U krijgt een cookiebanner te zien waarin u kunt kiezen:</p>
+            <ul>
+                <li>Alleen functionele cookies accepteren</li>
+                <li>Alle cookies accepteren</li>
+                <li>Uw voorkeuren aanpassen</li>
+            </ul>
+
+            <p><strong>Uw keuze wijzigen:</strong></p>
+            <ul>
+                <li>Via de link "Cookievoorkeuren" in de footer van onze website</li>
+                <li>Via uw browserinstellingen (zie hieronder)</li>
+            </ul>
+
+            <p><strong>Cookies verwijderen via uw browser:</strong></p>
+            <ul>
+                <li><strong>Chrome</strong>: Instellingen &gt; Privacy en beveiliging &gt; Cookies en andere sitegegevens</li>
+                <li><strong>Firefox</strong>: Instellingen &gt; Privacy en beveiliging &gt; Cookies en sitegegevens</li>
+                <li><strong>Safari</strong>: Voorkeuren &gt; Privacy &gt; Websitegegevens beheren</li>
+                <li><strong>Edge</strong>: Instellingen &gt; Privacy, zoeken en services &gt; Cookies en sitegegevens</li>
+            </ul>
+
+            <p><em>Let op: Als u alle cookies weigert of verwijdert, kunnen sommige functionaliteiten van LEXI mogelijk niet goed werken.</em></p>
+
+            <h3>9.4 Do Not Track</h3>
+            <p>Sommige browsers hebben een "Do Not Track" (DNT) functie. Op dit moment is er geen uniforme standaard voor DNT-signalen. Wij respecteren uw cookievoorkeuren zoals aangegeven via onze cookiebanner.</p>
+
+            <h2>10. KINDEREN EN PRIVACY</h2>
+            <p>LEXI is een zakelijke dienst en niet bedoeld voor personen onder de 16 jaar. Wij verzamelen niet bewust persoonsgegevens van kinderen. Mocht u ontdekken dat wij per ongeluk gegevens van een minderjarige hebben verzameld, neem dan contact met ons op via info@lexiai.nl, dan verwijderen wij deze onmiddellijk.</p>
+
+            <h2>11. LINKS NAAR EXTERNE WEBSITES</h2>
+            <p>Ons platform kan links bevatten naar externe websites, zoals de website van Stripe voor betalingen. Wij zijn niet verantwoordelijk voor de privacy practices van deze externe websites. Wij adviseren u om het privacybeleid van deze websites te lezen wanneer u deze bezoekt.</p>
+
+            <h2>12. WIJZIGINGEN IN DIT PRIVACYBELEID</h2>
+            <p>Wij behouden ons het recht voor om dit privacybeleid te wijzigen. Wijzigingen kunnen noodzakelijk zijn door:</p>
+            <ul>
+                <li>Wijzigingen in de wet- of regelgeving</li>
+                <li>Aanpassingen in onze dienstverlening</li>
+                <li>Nieuwe technologische ontwikkelingen</li>
+            </ul>
+
+            <p><strong>Bij belangrijke wijzigingen:</strong></p>
+            <ul>
+                <li>Plaatsen wij de nieuwe versie op onze website</li>
+                <li>Informeren wij u minimaal 30 dagen van tevoren per e-mail</li>
+                <li>Vermeldt wij duidelijk wat er is gewijzigd</li>
+            </ul>
+
+            <p><strong>Datum huidige versie:</strong> Oktober 2025<br>
+            <strong>Versie:</strong> 1.0</p>
+
+            <p>Wij adviseren u regelmatig dit privacybeleid te raadplegen om op de hoogte te blijven van wijzigingen.</p>
+
+            <h2>13. CONTACT EN VRAGEN</h2>
+            <p>Heeft u vragen over dit privacybeleid of over hoe wij met uw persoonsgegevens omgaan? Neem gerust contact met ons op:</p>
+
+            <div class="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 my-6 not-prose">
+                <p class="font-semibold text-gray-900 dark:text-white mb-3">Adem Management Holding B.V.</p>
+                <p class="text-gray-700 dark:text-gray-300 text-sm">
+                Handelsnaam: LEXI AI<br>
+                t.a.v. Privacy Officer<br>
+                Gouverneurlaan 445<br>
+                2523 CB Den Haag<br>
+                Nederland</p>
+                <p class="text-gray-700 dark:text-gray-300 text-sm mt-3">
+                <strong>E-mail:</strong> <a href="mailto:info@lexiai.nl" class="text-gold-600 hover:text-gold-700">info@lexiai.nl</a><br>
+                <strong>Website:</strong> <a href="https://www.lexiai.nl" class="text-gold-600 hover:text-gold-700">www.lexiai.nl</a></p>
+            </div>
+
+            <p>Wij streven ernaar om binnen 5 werkdagen te reageren op uw vragen.</p>
+
+            <hr class="my-8">
+
+            <h2>14. SAMENVATTING BELANGRIJKSTE PUNTEN</h2>
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 not-prose">
+                <p class="text-xs text-blue-700 dark:text-blue-300 mb-4"><em>Let op: Deze samenvatting is niet juridisch bindend. Het volledige privacybeleid hierboven is leidend.</em></p>
+                <ul class="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                    <li>📧 <strong>Wat verzamelen we?</strong> Naam, e-mail, bedrijfsgegevens, vragen/antwoorden, gebruiksgegevens</li>
+                    <li>🎯 <strong>Waarvoor?</strong> Dienstverlening, facturering, verbetering van LEXI, wettelijke verplichtingen</li>
+                    <li>🔐 <strong>Beveiliging:</strong> Versleuteling, firewalls, toegangscontrole, regelmatige audits</li>
+                    <li>☁️ <strong>Waar worden gegevens opgeslagen?</strong> Primair in EU (Google Cloud), betalingen via Stripe (VS met waarborgen)</li>
+                    <li>🤖 <strong>AI-training:</strong> Geanonimiseerde vragen/antwoorden worden gebruikt om LEXI te verbeteren</li>
+                    <li>⏱️ <strong>Hoe lang bewaren?</strong> Zolang account actief is + 1 maand; facturen 7 jaar (wettelijk); logs 90 dagen</li>
+                    <li>👤 <strong>Uw rechten:</strong> Inzage, correctie, verwijdering, beperking, dataportabiliteit, bezwaar</li>
+                    <li>🍪 <strong>Cookies:</strong> Functionele (altijd), analytische (met toestemming), geen marketing cookies</li>
+                    <li>✉️ <strong>Vragen?</strong> <a href="mailto:info@lexiai.nl" class="underline hover:text-gold-600">info@lexiai.nl</a></li>
+                    <li>⚖️ <strong>Klacht?</strong> Autoriteit Persoonsgegevens (www.autoriteitpersoonsgegevens.nl)</li>
+                </ul>
+            </div>
+
+            <hr class="my-8">
+
+            <p class="text-center text-sm text-gray-500 dark:text-gray-400"><em>Einde Privacy- en Cookiebeleid LEXI AI</em></p>
         </div>
 
         <!-- Back Button -->

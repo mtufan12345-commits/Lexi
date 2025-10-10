@@ -475,7 +475,10 @@ window.toggleDarkMode = function() {
 
 // First Chat Warning Modal Functions
 window.showFirstChatWarning = function() {
-    document.getElementById('first-chat-warning-modal').classList.remove('hidden');
+    const modal = document.getElementById('first-chat-warning-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
 }
 
 window.closeFirstChatWarningWithoutAccept = function() {
@@ -492,7 +495,10 @@ window.acceptFirstChatWarning = async function() {
         });
         
         hasShownFirstChatWarning = true;
-        document.getElementById('first-chat-warning-modal').classList.add('hidden');
+        const modal = document.getElementById('first-chat-warning-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
     } catch (error) {
         console.error('Failed to accept warning:', error);
     }
