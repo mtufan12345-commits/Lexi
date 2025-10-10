@@ -223,7 +223,6 @@ def signup_tenant():
         
         # Create Stripe Checkout Session FIRST to get session ID
         try:
-            import stripe
             from models import PendingSignup
             
             stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
