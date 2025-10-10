@@ -162,10 +162,10 @@ def count_user_questions(user_id):
 @app.route('/signup/tenant', methods=['GET', 'POST'])
 def signup_tenant():
     if request.method == 'POST':
-        company_name = request.form.get('company_name')
-        contact_email = request.form.get('contact_email')
-        contact_name = request.form.get('contact_name')
-        password = request.form.get('password')
+        company_name = request.form.get('company_name') or ''
+        contact_email = request.form.get('contact_email') or ''
+        contact_name = request.form.get('contact_name') or ''
+        password = request.form.get('password') or ''
         
         import re
         base_subdomain = re.sub(r'[^a-z0-9]', '', company_name.lower().replace(' ', ''))[:20]
@@ -187,11 +187,12 @@ def signup_tenant():
         db.session.add(tenant)
         db.session.flush()
         
+        name_parts = contact_name.split() if contact_name else []
         admin_user = User(
             tenant_id=tenant.id,
             email=contact_email,
-            first_name=contact_name.split()[0] if contact_name else 'Admin',
-            last_name=' '.join(contact_name.split()[1:]) if len(contact_name.split()) > 1 else '',
+            first_name=name_parts[0] if name_parts else 'Admin',
+            last_name=' '.join(name_parts[1:]) if len(name_parts) > 1 else '',
             role='admin'
         )
         admin_user.set_password(password)
@@ -275,8 +276,8 @@ def login():
 @app.route('/super-admin/login', methods=['GET', 'POST'])
 def super_admin_login():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        email = request.form.get('email') or ''
+        password = request.form.get('password') or ''
         
         admin = SuperAdmin.query.filter_by(email=email).first()
         if admin and admin.check_password(password):
@@ -335,11 +336,11 @@ def user_profile():
                 flash('Dit e-mailadres is al in gebruik!', 'error')
                 return redirect(url_for('user_profile'))
         
-        current_user.first_name = request.form.get('first_name')
-        current_user.last_name = request.form.get('last_name')
+        current_user.first_name = request.form.get('first_name') or current_user.first_name
+        current_user.last_name = request.form.get('last_name') or current_user.last_name
         current_user.email = new_email
         
-        new_password = request.form.get('new_password')
+        new_password = request.form.get('new_password') or ''
         if new_password:
             current_user.set_password(new_password)
         
@@ -362,7 +363,8 @@ def upload_avatar():
     
     # Check file type
     allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-    if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+    filename = file.filename or ''
+    if '.' not in filename or filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
         return jsonify({'error': 'Alleen afbeeldingen toegestaan (PNG, JPG, GIF, WEBP)'}), 400
     
     # Upload to S3
@@ -674,7 +676,7 @@ def rename_chat(chat_id):
         user_id=current_user.id
     ).first_or_404()
     
-    data = request.json
+    data = request.json or {}
     new_title = data.get('title', '').strip()
     
     if new_title:
@@ -737,7 +739,7 @@ def get_chats():
 @login_required
 @tenant_required
 def search_chats():
-    query = request.json.get('query', '').strip().lower()
+    query = (request.json or {}).get('query', '').strip().lower()
     if not query:
         return jsonify([])
     
@@ -956,7 +958,7 @@ def export_chat_pdf(chat_id):
 @login_required
 @tenant_required
 def submit_feedback():
-    data = request.json
+    data = request.json or {}
     message_id = data.get('message_id')
     rating = data.get('rating')
     comment = data.get('comment', '')
@@ -1202,7 +1204,7 @@ def new_support_ticket():
 @tenant_required
 def create_support_ticket():
     from models import SupportTicket, SupportReply
-    data = request.json
+    data = request.json or {}
     
     subject = data.get('subject', '').strip()
     category = data.get('category', '').strip()
@@ -1265,7 +1267,7 @@ def reply_support_ticket(ticket_id):
         user_id=current_user.id
     ).first_or_404()
     
-    data = request.json
+    data = request.json or {}
     message = data.get('message', '').strip()
     
     if not message:
@@ -1481,7 +1483,7 @@ def admin_reply_ticket(ticket_id):
         tenant_id=g.tenant.id
     ).first_or_404()
     
-    data = request.json
+    data = request.json or {}
     message = data.get('message', '').strip()
     
     if not message:
@@ -1515,7 +1517,7 @@ def admin_update_ticket_status(ticket_id):
         tenant_id=g.tenant.id
     ).first_or_404()
     
-    data = request.json
+    data = request.json or {}
     new_status = data.get('status')
     
     if new_status not in ['open', 'in_progress', 'answered', 'closed']:
@@ -1537,9 +1539,9 @@ def admin_update_ticket_status(ticket_id):
 @admin_required
 def admin_templates():
     if request.method == 'POST':
-        name = request.form.get('name')
-        category = request.form.get('category')
-        content = request.form.get('content')
+        name = request.form.get('name') or ''
+        category = request.form.get('category') or ''
+        content = request.form.get('content') or ''
         
         template = Template(
             tenant_id=g.tenant.id,
@@ -1585,7 +1587,7 @@ def billing_checkout(plan):
         g.tenant.id, plan, success_url, cancel_url
     )
     
-    if session_obj:
+    if session_obj and session_obj.url:
         return redirect(session_obj.url)
     
     flash('Er ging iets mis met de betaling.', 'danger')
@@ -1627,9 +1629,10 @@ def stripe_webhook():
                 subscription.stripe_subscription_id = session_obj.get('subscription')
                 
                 tenant = Tenant.query.get(tenant_id)
-                tenant.status = 'active'
-                tenant.subscription_tier = plan
-                tenant.max_users = get_max_users_for_tier(plan)
+                if tenant:
+                    tenant.status = 'active'
+                    tenant.subscription_tier = plan
+                    tenant.max_users = get_max_users_for_tier(plan)
                 
                 db.session.commit()
     
@@ -2075,7 +2078,7 @@ def super_admin_support_detail(ticket_id):
 @super_admin_required
 def super_admin_support_reply(ticket_id):
     ticket = SupportTicket.query.get_or_404(ticket_id)
-    message = request.json.get('message')
+    message = (request.json or {}).get('message')
     
     if not message:
         return jsonify({'error': 'Message is required'}), 400
@@ -2107,7 +2110,7 @@ def super_admin_support_reply(ticket_id):
 @super_admin_required
 def super_admin_support_status(ticket_id):
     ticket = SupportTicket.query.get_or_404(ticket_id)
-    new_status = request.json.get('status')
+    new_status = (request.json or {}).get('status')
     
     if new_status not in ['open', 'in_progress', 'answered', 'closed']:
         return jsonify({'error': 'Invalid status'}), 400
