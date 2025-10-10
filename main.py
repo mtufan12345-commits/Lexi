@@ -193,7 +193,8 @@ def signup_tenant():
             email=contact_email,
             first_name=name_parts[0] if name_parts else 'Admin',
             last_name=' '.join(name_parts[1:]) if len(name_parts) > 1 else '',
-            role='admin'
+            role='admin',
+            disclaimer_accepted_at=datetime.utcnow()  # Track disclaimer acceptance
         )
         admin_user.set_password(password)
         db.session.add(admin_user)

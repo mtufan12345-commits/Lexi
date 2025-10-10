@@ -1,0 +1,93 @@
+Implementeer een extreme disclaimer strategie voor LEXI AI met de volgende componenten:
+
+1. REGISTRATIE PAGE - Verplichte checkboxes
+Voor gebruikers kunnen registreren, moeten ze BEIDE checkboxes aanvinken:
+
+HTML/React component:
+- Checkbox 1: "Ik begrijp dat LEXI AI algemene informatie verstrekt uit CAO-documenten en GEEN juridisch, fiscaal of bindend advies geeft"
+- Checkbox 2: "Ik begrijp dat LEXI AI fouten kan maken en ik belangrijke informatie altijd controleer met een gekwalificeerde adviseur voordat ik beslissingen neem"
+- Submit button is disabled totdat beide checkboxes zijn aangevinkt
+- Styling: Checkboxes moeten duidelijk zichtbaar zijn, niet klein/verstopt
+
+2. EERSTE CHAT - Pop-up warning (one-time, eerste vraag)
+Na eerste inlog EN voor eerste vraag verschijnt modal/pop-up:
+
+Titel: "⚠️ Belangrijk - Let op bij gebruik LEXI"
+Tekst: 
+"LEXI is een AI-assistent die informatie verstrekt uit de Glastuinbouw CAO. 
+
+LEXI kan fouten maken en geeft GEEN bindend advies.
+
+Voor belangrijke beslissingen over:
+- Loonberekeningen
+- Arbeidsvoorwaarden  
+- Juridische interpretaties
+- Contractuele verplichtingen
+
+Raadpleeg ALTIJD een gekwalificeerd adviseur of jurist.
+
+Gebruik van LEXI is op eigen risico."
+
+Button: "Ik begrijp het" (moet klikken om door te gaan)
+Opslaan in database/localStorage dat user dit gezien heeft
+
+3. CHAT INTERFACE - Permanente disclaimer
+Voeg BOVEN het chat input veld een sticky disclaimer toe:
+
+Design: Lichtgele/oranje achtergrond (#FFF3CD), kleine waarschuwing icon
+Tekst: "⚠️ LEXI verstrekt algemene informatie, geen bindend advies. Controleer belangrijke info met een adviseur."
+Moet altijd zichtbaar zijn, ook tijdens scrollen
+
+4. ELKE AI RESPONSE - Footer disclaimer
+Voeg onder ELK antwoord van LEXI automatisch deze footer toe:
+
+Tekst: "ℹ️ Dit is algemene informatie uit CAO-documenten, geen juridisch of fiscaal advies. Raadpleeg bij belangrijke beslissingen altijd een gekwalificeerd adviseur."
+Styling: Kleinere font, grijze kleur, italic
+Deze footer moet NIET door AI gegenereerd worden, maar automatisch door frontend toegevoegd
+
+5. WEBSITE FOOTER - Permanente links
+Voeg aan de footer van elke pagina toe:
+
+Links (horizontaal):
+"Algemene Voorwaarden | Privacy & Cookies | Disclaimer"
+
+Bedrijfsinfo:
+"LEXI AI 
+KVK: 96417609 | BTW: NL867602144B01
+Gouverneurlaan 445, 2523 CB Den Haag
+info@lexiai.nl"
+
+AI Notice:
+"🤖 Powered by AI - LEXI gebruikt kunstmatige intelligentie en kan fouten maken"
+
+6. ACCOUNT SETTINGS PAGE
+Voeg een sectie "Juridische Kennisgevingen" toe waar gebruiker kan zien:
+- Datum wanneer ze AVG hebben geaccepteerd
+- Datum wanneer ze disclaimer pop-up hebben gezien
+- Link naar actuele AVG/disclaimer
+
+TECHNISCHE REQUIREMENTS:
+- Gebruik React state management voor disclaimer tracking
+- Sla acceptance timestamps op in user database
+- Maak components herbruikbaar
+- Zorg dat disclaimers NIET kunnen worden weggeklikt/verborgen (behalve one-time popup)
+- Test dat alle disclaimers zichtbaar zijn op mobile devices
+- Zorg dat footer disclaimer automatisch wordt toegevoegd aan AI responses (server-side of frontend, niet via AI prompt)
+
+STYLING GUIDELINES:
+- Disclaimers moeten opvallen maar niet storend zijn
+- Gebruik consistent waarschuwingskleuren (oranje/geel)
+- Icons gebruiken (⚠️ ℹ️) voor herkenbaarheid
+- Leesbaarheid belangrijker dan design
+- WCAG 2.1 AA compliant (toegankelijkheid)
+
+Implementeer deze disclaimer strategie compleet en test alle componenten.
+
+Verificatie Checklist (check na implementatie):
+□ Registratie: Beide checkboxes verplicht aanvinken?
+□ Eerste chat: Pop-up verschijnt en blokkeert gebruik?
+□ Chat interface: Sticky disclaimer altijd zichtbaar?
+□ AI responses: Elke response heeft footer disclaimer?
+□ Website footer: Alle links en bedrijfsinfo aanwezig?
+□ Mobile: Alles goed leesbaar op telefoon?
+□ Database: Acceptance timestamps worden opgeslagen?
