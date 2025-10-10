@@ -2,8 +2,7 @@ import os
 import json
 import boto3
 import stripe
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from mailersend import MailerSendClient, EmailBuilder
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import uuid
@@ -417,27 +416,43 @@ class StripeService:
 
 class EmailService:
     def __init__(self):
-        self.api_key = os.getenv('SENDGRID_API_KEY')
-        self.from_email = os.getenv('FROM_EMAIL', 'noreply@lex-cao.nl')
+        self.api_key = os.getenv('MAILERSEND_API_KEY')
+        self.from_email = os.getenv('FROM_EMAIL', 'noreply@trial-3vz9dle4n8z4kj50.mlsender.net')
+        self.from_name = os.getenv('FROM_NAME', 'Lexi CAO Meester')
         self.enabled = bool(self.api_key)
+        
+        if self.enabled:
+            # Initialize MailerSend client
+            os.environ['MAILERSEND_API_KEY'] = self.api_key
+            self.ms = MailerSendClient()
     
     def send_email(self, to_email, subject, html_content):
         if not self.enabled:
-            print(f"Email not sent (SendGrid not configured): {subject} to {to_email}")
+            print(f"Email not sent (MailerSend not configured): {subject} to {to_email}")
             return False
         
         try:
-            message = Mail(
-                from_email=self.from_email,
-                to_emails=to_email,
-                subject=subject,
-                html_content=html_content
-            )
-            sg = SendGridAPIClient(self.api_key)
-            response = sg.send(message)
-            return response.status_code in [200, 202]
+            # Build email using MailerSend EmailBuilder
+            email = (EmailBuilder()
+                .from_email(self.from_email, self.from_name)
+                .to_many([{"email": to_email}])
+                .subject(subject)
+                .html(html_content)
+                .text(html_content)  # Fallback plain text
+                .build())
+            
+            # Send email
+            response = self.ms.emails.send(email)
+            
+            if response.success:
+                print(f"Email sent successfully to {to_email}: {response.id}")
+                return True
+            else:
+                print(f"MailerSend error: Status {response.status_code}, {response.data}")
+                return False
+                
         except Exception as e:
-            print(f"SendGrid error: {e}")
+            print(f"MailerSend error: {e}")
             return False
     
     def send_welcome_email(self, user, tenant, login_url):
