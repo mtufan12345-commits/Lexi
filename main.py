@@ -133,6 +133,18 @@ def index():
 def pricing():
     return render_template('pricing.html')
 
+@app.route('/algemene-voorwaarden')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/disclaimer')
+def disclaimer():
+    return render_template('disclaimer.html')
+
 def count_user_questions(user_id):
     """Count total questions asked by user using message_count with fallbacks"""
     user_chats = Chat.query.filter_by(user_id=user_id).all()
@@ -719,6 +731,15 @@ def delete_chat(chat_id):
     db.session.delete(chat)
     db.session.commit()
     
+    return jsonify({'success': True})
+
+@app.route('/api/user/accept-first-chat-warning', methods=['POST'])
+@login_required
+def accept_first_chat_warning():
+    """Mark that user has seen and accepted the first chat warning"""
+    from datetime import datetime
+    current_user.first_chat_warning_seen_at = datetime.now()
+    db.session.commit()
     return jsonify({'success': True})
 
 @app.route('/api/chats', methods=['GET'])

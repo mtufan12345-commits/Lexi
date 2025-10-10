@@ -406,6 +406,8 @@ let currentView = 'chats';
 let fileToDelete = null;
 const userName = "{{ user.full_name if user and user.full_name else 'User' }}";
 const userAvatarUrl = "{{ user.avatar_url if user and user.avatar_url else '' }}";
+const firstChatWarningSeen = {{ 'true' if user.first_chat_warning_seen_at else 'false' }};
+let hasShownFirstChatWarning = firstChatWarningSeen;
 
 // Initialize sidebar state based on screen size
 let sidebarOpen = window.innerWidth >= 768;
@@ -468,6 +470,31 @@ window.toggleDarkMode = function() {
     } else {
         html.classList.add('dark');
         localStorage.setItem('darkMode', 'true');
+    }
+}
+
+// First Chat Warning Modal Functions
+window.showFirstChatWarning = function() {
+    document.getElementById('first-chat-warning-modal').classList.remove('hidden');
+}
+
+window.closeFirstChatWarningWithoutAccept = function() {
+    // Prevent closing without accepting - do nothing
+    return false;
+}
+
+window.acceptFirstChatWarning = async function() {
+    try {
+        // Mark warning as seen in backend
+        await fetch('/api/user/accept-first-chat-warning', {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCSRFToken()}
+        });
+        
+        hasShownFirstChatWarning = true;
+        document.getElementById('first-chat-warning-modal').classList.add('hidden');
+    } catch (error) {
+        console.error('Failed to accept warning:', error);
     }
 }
 
@@ -755,6 +782,11 @@ function addMessageToDOM(role, content, container = null, attachments = null) {
             </div>
             <div class="flex-1 max-w-[75%]">
                 <div class="text-sm leading-relaxed text-gray-900 dark:text-gray-100 prose dark:prose-invert prose-sm max-w-none">${formatMarkdown(content)}</div>
+                <div class="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-700">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 italic">
+                        ⚠️ LEXI verstrekt algemene informatie, geen juridisch of fiscaal advies. Verifieer belangrijke informatie altijd met een erkende adviseur.
+                    </p>
+                </div>
             </div>
         `;
     }
@@ -805,6 +837,12 @@ document.getElementById('message-form').addEventListener('submit', async (e) => 
     const input = document.getElementById('message-input');
     const message = input.value.trim();
     if (!message) return;
+    
+    // Show first chat warning if not shown yet
+    if (!hasShownFirstChatWarning) {
+        showFirstChatWarning();
+        return; // Don't send message yet, wait for user to accept
+    }
     
     if (!currentChatId) {
         await newChat();

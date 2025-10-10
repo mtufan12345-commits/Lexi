@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy & Cookies - Lexi CAO Meester{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-white dark:bg-black py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Privacy & Cookiebeleid</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Laatst bijgewerkt: 10 oktober 2025</p>
+        </div>
+
+        <!-- Content -->
+        <div class="prose dark:prose-invert max-w-none">
+            <h2>1. Inleiding</h2>
+            <p>LEXI AI (KVK 96417609) hecht grote waarde aan uw privacy. In deze privacyverklaring leggen we uit welke persoonsgegevens we verzamelen, waarom we deze verzamelen en hoe we uw gegevens beschermen.</p>
+
+            <h2>2. Verantwoordelijke</h2>
+            <p>LEXI AI<br>
+            Gouverneurlaan 445<br>
+            2523 CB Den Haag<br>
+            BTW: NL867602144B01<br>
+            Email: info@lexiai.nl</p>
+
+            <h2>3. Welke Gegevens Verzamelen We?</h2>
+            <h3>Account Gegevens</h3>
+            <ul>
+                <li>Naam en e-mailadres</li>
+                <li>Bedrijfsinformatie (naam uitzendbureau, KVK-nummer)</li>
+                <li>Contactgegevens</li>
+            </ul>
+
+            <h3>Gebruiksgegevens</h3>
+            <ul>
+                <li>Chat conversaties en gestelde vragen aan LEXI</li>
+                <li>Geüploade documenten (PDF, DOCX, TXT)</li>
+                <li>Gegenereerde artifacts en documenten</li>
+                <li>Inlog- en gebruikstijden</li>
+            </ul>
+
+            <h3>Technische Gegevens</h3>
+            <ul>
+                <li>IP-adres</li>
+                <li>Browser type en versie</li>
+                <li>Apparaat informatie</li>
+            </ul>
+
+            <h2>4. Waarom Verzamelen We Deze Gegevens?</h2>
+            <p>We verwerken uw gegevens voor de volgende doeleinden:</p>
+            <ul>
+                <li><strong>Dienstverlening</strong>: Om de AI-assistent functionaliteit te leveren</li>
+                <li><strong>Verbetering</strong>: Om onze dienst te verbeteren en fouten op te lossen</li>
+                <li><strong>Facturering</strong>: Om abonnementen te beheren en facturen te versturen</li>
+                <li><strong>Communicatie</strong>: Om u te informeren over updates en wijzigingen</li>
+                <li><strong>Wettelijke verplichtingen</strong>: Om te voldoen aan fiscale en juridische eisen</li>
+            </ul>
+
+            <h2>5. Met Wie Delen We Uw Gegevens?</h2>
+            <p>We delen uw gegevens alleen met:</p>
+            <ul>
+                <li><strong>Google Cloud Platform</strong>: Voor AI-verwerking (Vertex AI)</li>
+                <li><strong>Hetzner</strong>: Voor object storage van bestanden en chat berichten</li>
+                <li><strong>Stripe</strong>: Voor betalingsverwerking</li>
+                <li><strong>SendGrid</strong>: Voor e-mail communicatie</li>
+            </ul>
+            <p>Al deze partijen hebben met ons een verwerkersovereenkomst gesloten en mogen uw gegevens niet voor eigen doeleinden gebruiken.</p>
+
+            <h2>6. AI Verwerking en Data Privacy</h2>
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 my-6">
+                <p class="font-semibold text-blue-800 dark:text-blue-200 mb-2">🔒 Uw Gegevens en AI</p>
+                <p class="text-sm text-blue-700 dark:text-blue-300">Chat conversaties worden verwerkt door Google Vertex AI met gemini-2.5-pro model. Google gebruikt uw data NIET voor het trainen van AI-modellen. Alle chat berichten worden versleuteld opgeslagen in Hetzner Object Storage (EU servers).</p>
+            </div>
+
+            <h2>7. Bewaartermijn</h2>
+            <p>We bewaren uw gegevens zo lang als nodig voor de dienstverlening:</p>
+            <ul>
+                <li><strong>Account gegevens</strong>: Tot 30 dagen na beëindiging abonnement</li>
+                <li><strong>Chat historiek</strong>: Tot 90 dagen na beëindiging abonnement</li>
+                <li><strong>Factuurgegevens</strong>: 7 jaar (wettelijke bewaarplicht)</li>
+            </ul>
+
+            <h2>8. Uw Rechten</h2>
+            <p>Onder de AVG heeft u de volgende rechten:</p>
+            <ul>
+                <li><strong>Inzage</strong>: Opvragen welke gegevens we van u hebben</li>
+                <li><strong>Correctie</strong>: Onjuiste gegevens laten aanpassen</li>
+                <li><strong>Verwijdering</strong>: Uw gegevens laten verwijderen</li>
+                <li><strong>Beperking</strong>: Verwerking laten beperken</li>
+                <li><strong>Bezwaar</strong>: Bezwaar maken tegen verwerking</li>
+                <li><strong>Overdraagbaarheid</strong>: Uw gegevens ontvangen in machine-leesbaar formaat</li>
+            </ul>
+            <p>U kunt deze rechten uitoefenen door contact op te nemen via info@lexiai.nl</p>
+
+            <h2>9. Cookies</h2>
+            <p>We gebruiken de volgende cookies:</p>
+            <h3>Functionele Cookies (Noodzakelijk)</h3>
+            <ul>
+                <li><strong>Session cookie</strong>: Voor inlog en authenticatie</li>
+                <li><strong>CSRF token</strong>: Voor beveiliging tegen aanvallen</li>
+                <li><strong>Dark mode voorkeur</strong>: Voor opslaan UI voorkeuren</li>
+            </ul>
+            <p>Deze cookies zijn noodzakelijk voor de werking van het platform en kunnen niet worden uitgeschakeld.</p>
+
+            <h3>Analytische Cookies</h3>
+            <p>We gebruiken momenteel geen analytische of tracking cookies.</p>
+
+            <h2>10. Beveiliging</h2>
+            <p>We nemen passende technische en organisatorische maatregelen om uw gegevens te beschermen:</p>
+            <ul>
+                <li>SSL/TLS encryptie voor alle data transfers</li>
+                <li>Versleutelde opslag van chat berichten</li>
+                <li>Regelmatige security audits</li>
+                <li>Multi-factor authenticatie voor admin accounts</li>
+            </ul>
+
+            <h2>11. Wijzigingen</h2>
+            <p>We kunnen dit privacybeleid wijzigen. De meest recente versie vindt u altijd op deze pagina. Bij grote wijzigingen informeren we u via e-mail.</p>
+
+            <h2>12. Contact en Klachten</h2>
+            <p>Voor vragen over privacy kunt u contact opnemen via info@lexiai.nl</p>
+            <p>U heeft ook het recht om een klacht in te dienen bij de Autoriteit Persoonsgegevens.</p>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-12 pt-8 border-t border-gray-200 dark:border-zinc-800">
+            <a href="/" class="inline-flex items-center text-gold-600 hover:text-gold-700 font-medium">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Terug naar home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
