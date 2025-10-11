@@ -3,7 +3,7 @@
 
 STRIPE_PRICES = {
     'starter': {
-        'monthly': 'price_1SGiKZD8m8yYEAVBSAdF32kZ',
+        'monthly': 'price_1SH4ZOD8m8yYEAVBhGwj61n4',  # TEST MODE
         'yearly': 'price_1SGiM5D8m8yYEAVB0ynuVjvl'
     },
     'professional': {
