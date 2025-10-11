@@ -45,6 +45,7 @@ The platform features a multi-tenant hierarchy with SUPER ADMINs managing TENANT
 - **Duplicate Error Message Fix (Oct 11, 2025):** Fixed bug where every chat message triggered a duplicate error message "Er is een fout opgetreden. Probeer het opnieuw." Root cause: `window.loadChatFiles()` was being called but the function didn't exist, causing a JavaScript exception that triggered the catch handler. Removed the nonexistent function call - attachments are already fetched earlier in the message flow.
 - **Avatar Display Enhancement (Oct 11, 2025):** Improved user avatar validation to handle empty strings and 'undefined' values, with onerror fallback to initials display for broken image URLs.
 - **Favicon Implementation (Oct 11, 2025):** Created favicon.ico and favicon.png from Lexi logo and integrated into base.html template for proper browser tab display.
+- **Chat Disclaimer Simplification (Oct 11, 2025):** Removed repetitive disclaimer from every Lexi response. The sticky disclaimer at the top of the chat input area provides sufficient legal protection without cluttering each message.
 
 ## External Dependencies
 - **AI:** Google Vertex AI (gemini-2.5-pro)
