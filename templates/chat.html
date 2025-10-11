@@ -235,20 +235,23 @@
                     </button>
                 </div>
                 <form id="message-form">
-                    <div class="flex gap-3">
+                    <div class="flex gap-2 sm:gap-3">
                         <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt" onchange="window.handleFileSelect(event)">
                         <button type="button" onclick="document.getElementById('file-input').click()" 
-                                class="p-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition">
+                                class="p-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
                             </svg>
                         </button>
-                        <input type="text" id="message-input" placeholder="Ask about CAO regulations..." 
+                        <input type="text" id="message-input" placeholder="Stel uw vraag..." 
                                autocomplete="off"
-                               class="flex-1 px-4 py-3 bg-gray-100 dark:bg-zinc-900 border-0 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-navy-500">
+                               class="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-gray-100 dark:bg-zinc-900 border-0 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-navy-500 text-sm sm:text-base">
                         <button type="submit" 
-                                class="px-6 py-3 bg-navy-500 hover:bg-navy-600 text-white rounded-lg transition font-medium">
-                            Send
+                                class="px-4 sm:px-6 py-3 bg-navy-500 hover:bg-navy-600 active:bg-navy-700 text-white rounded-lg transition font-medium flex-shrink-0 text-sm sm:text-base touch-manipulation min-w-[70px] sm:min-w-[80px]">
+                            <span class="hidden sm:inline">Send</span>
+                            <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            </svg>
                         </button>
                     </div>
                 </form>
