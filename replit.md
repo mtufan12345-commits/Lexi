@@ -41,6 +41,7 @@ The platform features a multi-tenant hierarchy with SUPER ADMINs managing TENANT
 
 ## Recent Changes (October 2025)
 - **Branding Update:** All references to "Adem Management Holding B.V." have been replaced with "Lexi AI" across the entire website, including Privacy & Cookiebeleid and Algemene Voorwaarden pages. Lexi AI is now the official company name and brand identity.
+- **Chat Send Button Fix (Oct 11, 2025):** Resolved critical JavaScript timing issue where send button event handlers were being registered before DOM elements existed. Solution: Global variables (`currentChatId`, `hasShownFirstChatWarning`, `uploadedFileId`) and core functions (`window.handleMessageSubmit`, `window.addMessageToDOM`) are now defined in early script block BEFORE the message form loads. This ensures event listeners attach correctly when the form is parsed. All helper functions exposed on window object for reliable cross-script access.
 
 ## External Dependencies
 - **AI:** Google Vertex AI (gemini-2.5-pro)
