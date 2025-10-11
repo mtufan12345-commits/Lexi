@@ -278,8 +278,8 @@ def signup_tenant():
             db.session.add(pending_signup)
             db.session.commit()
             
-            # Redirect to Stripe Checkout
-            return redirect(checkout_session['url'], code=303)
+            # Use iframe-safe redirect to escape Replit preview and load Stripe Checkout in top window
+            return render_template('stripe_redirect.html', checkout_url=checkout_session['url'])
             
         except Exception as e:
             app.logger.exception(f"Stripe checkout error for tier={tier}, billing={billing}, price_id={price_id}: {str(e)}")
