@@ -234,7 +234,7 @@
                         </svg>
                     </button>
                 </div>
-                <form id="message-form">
+                <form id="message-form" onsubmit="window.handleMessageSubmit(event); return false;">
                     <div class="flex gap-2 sm:gap-3">
                         <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt" onchange="window.handleFileSelect(event)">
                         <button type="button" onclick="document.getElementById('file-input').click()" 
@@ -840,14 +840,13 @@ function removeLoadingMessage() {
     if (loading) loading.remove();
 }
 
-// Initialize event listeners when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('message-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const input = document.getElementById('message-input');
-        const message = input.value.trim();
-        if (!message) return;
+// Message form submit handler  
+window.handleMessageSubmit = async function(e) {
+    e.preventDefault();
+    
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+    if (!message) return;
     
     // Show first chat warning if not shown yet
     if (!hasShownFirstChatWarning) {
@@ -913,7 +912,7 @@ document.addEventListener('DOMContentLoaded', function() {
         removeLoadingMessage();
         addMessageToDOM('assistant', 'Er is een fout opgetreden. Probeer het opnieuw.');
     }
-});
+};
 
 let currentArtifacts = [];
 
@@ -1425,12 +1424,10 @@ window.closeDocumentViewer = function() {
 }
 
 // Close on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && !document.getElementById('document-viewer-modal').classList.contains('hidden')) {
-            closeDocumentViewer();
-        }
-    });
-
-}); // End of DOMContentLoaded
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('document-viewer-modal').classList.contains('hidden')) {
+        closeDocumentViewer();
+    }
+});
 </script>
 {% endblock %}
