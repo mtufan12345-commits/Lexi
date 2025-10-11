@@ -194,16 +194,16 @@
         
         <!-- Initialize chat variables and handlers -->
         <script>
-        // Global chat state
-        let currentChatId = null;
-        let currentView = 'chats';
-        let fileToDelete = null;
-        let uploadedFileId = null;
-        const userName = "{{ user.full_name if user and user.full_name else 'User' }}";
-        const userAvatarUrl = "{{ user.avatar_url if user and user.avatar_url else '' }}";
+        // Global chat state - exposed on window for cross-script access
+        window.currentChatId = null;
+        window.currentView = 'chats';
+        window.fileToDelete = null;
+        window.uploadedFileId = null;
+        window.userName = "{{ user.full_name if user and user.full_name else 'User' }}";
+        window.userAvatarUrl = "{{ user.avatar_url if user and user.avatar_url else '' }}";
         const firstChatWarningSeen = {{ 'true' if user.first_chat_warning_seen_at else 'false' }};
-        let hasShownFirstChatWarning = firstChatWarningSeen;
-        let sidebarOpen = window.innerWidth >= 768;
+        window.hasShownFirstChatWarning = firstChatWarningSeen;
+        window.sidebarOpen = window.innerWidth >= 768;
         </script>
 
         <!-- Messages -->
@@ -243,29 +243,29 @@
                     const message = input.value.trim();
                     if (!message) return;
                     
-                    if (!hasShownFirstChatWarning) {
+                    if (!window.hasShownFirstChatWarning) {
                         window.showFirstChatWarning();
                         return;
                     }
-                    if (!currentChatId) await window.newChat();
+                    if (!window.currentChatId) await window.newChat();
                     
                     const payload = { message };
-                    if (uploadedFileId) payload.file_id = uploadedFileId;
+                    if (window.uploadedFileId) payload.file_id = window.uploadedFileId;
                     input.value = '';
                     
                     let currentFiles = [];
                     try {
-                        const res = await fetch(`/api/chat/${currentChatId}/files`);
+                        const res = await fetch(`/api/chat/${window.currentChatId}/files`);
                         const data = await res.json();
                         if (data.files) currentFiles = data.files;
                     } catch(e) {}
                     
                     window.addMessageToDOM('user', message, null, currentFiles);
                     window.showLoadingMessage();
-                    if (uploadedFileId) window.clearFile();
+                    if (window.uploadedFileId) window.clearFile();
                     
                     try {
-                        const res = await fetch(`/api/chat/${currentChatId}/message`, {
+                        const res = await fetch(`/api/chat/${window.currentChatId}/message`, {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json', 'X-CSRFToken': window.getCSRFToken()},
                             body: JSON.stringify(payload)
@@ -273,7 +273,7 @@
                         const data = await res.json();
                         window.removeLoadingMessage();
                         window.addMessageToDOM('assistant', data.response);
-                        window.loadChatFiles(currentChatId);
+                        window.loadChatFiles(window.currentChatId);
                         if (data.artifacts?.length) data.artifacts.forEach(a => window.showArtifact(a));
                     } catch(err) {
                         window.removeLoadingMessage();
@@ -469,9 +469,9 @@ window.toggleSidebar = function() {
     const sidebar = document.getElementById('chat-sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
     
-    sidebarOpen = !sidebarOpen;
+    window.sidebarOpen = !window.sidebarOpen;
     
-    if (sidebarOpen) {
+    if (window.sidebarOpen) {
         sidebar.classList.remove('-translate-x-full');
         if (window.innerWidth >= 768) {
             backdrop.classList.add('hidden');
@@ -488,18 +488,18 @@ window.closeSidebar = function() {
     const sidebar = document.getElementById('chat-sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
     
-    if (sidebarOpen) {
-        sidebarOpen = false;
+    if (window.sidebarOpen) {
+        window.sidebarOpen = false;
         sidebar.classList.add('-translate-x-full');
         backdrop.classList.add('hidden');
     }
 }
 
 function getUserInitials() {
-    if (!userName || userName === 'undefined') {
+    if (!window.userName || window.userName === 'undefined') {
         return 'U';
     }
-    const names = userName.trim().split(' ').filter(n => n.length > 0);
+    const names = window.userName.trim().split(' ').filter(n => n.length > 0);
     if (names.length >= 2) {
         return (names[0][0] + names[names.length - 1][0]).toUpperCase();
     }
@@ -547,7 +547,7 @@ window.acceptFirstChatWarning = async function() {
             headers: {'X-CSRFToken': getCSRFToken()}
         });
         
-        hasShownFirstChatWarning = true;
+        window.hasShownFirstChatWarning = true;
         const modal = document.getElementById('first-chat-warning-modal');
         if (modal) {
             modal.classList.add('hidden');
@@ -563,7 +563,7 @@ window.newChat = async function() {
         headers: {'X-CSRFToken': getCSRFToken()}
     });
     const data = await response.json();
-    currentChatId = data.id;
+    window.currentChatId = data.id;
     document.getElementById('messages-container').innerHTML = '<div class="max-w-3xl mx-auto"></div>';
     
     // Hide tabs and show chats view for new chat
@@ -574,7 +574,7 @@ window.newChat = async function() {
 }
 
 window.loadChat = async function(chatId) {
-    currentChatId = chatId;
+    window.currentChatId = chatId;
     const response = await fetch(`/api/chat/${chatId}`);
     const data = await response.json();
     
@@ -602,7 +602,7 @@ window.loadChat = async function(chatId) {
 }
 
 window.showChatsView = function() {
-    currentView = 'chats';
+    window.currentView = 'chats';
     
     // Update tab styles
     const tabChats = document.getElementById('tab-chats');
@@ -619,7 +619,7 @@ window.showChatsView = function() {
 }
 
 window.showFilesView = function() {
-    currentView = 'files';
+    window.currentView = 'files';
     
     // Update tab styles
     const tabChats = document.getElementById('tab-chats');
@@ -635,8 +635,8 @@ window.showFilesView = function() {
     document.getElementById('new-chat-btn').classList.add('hidden');
     
     // Load files for current chat
-    if (currentChatId) {
-        loadSidebarFiles(currentChatId);
+    if (window.currentChatId) {
+        loadSidebarFiles(window.currentChatId);
     }
 }
 
@@ -698,13 +698,13 @@ window.handleSidebarFileSelect = async function(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    if (!currentChatId) {
+    if (!window.currentChatId) {
         alert('Start eerst een chat voordat je een bestand uploadt.');
         return;
     }
     
     await uploadFile(file);
-    loadSidebarFiles(currentChatId);
+    loadSidebarFiles(window.currentChatId);
     
     // Clear input
     document.getElementById('sidebar-file-input').value = '';
@@ -739,12 +739,12 @@ window.openFile = async function(fileId, event) {
 
 window.deleteFileFromSidebar = function(fileId, event) {
     event.stopPropagation(); // Prevent opening file when deleting
-    fileToDelete = fileId;
+    window.fileToDelete = fileId;
     document.getElementById('delete-file-modal').classList.remove('hidden');
 }
 
 window.closeDeleteFileModal = function() {
-    fileToDelete = null;
+    window.fileToDelete = null;
     document.getElementById('delete-file-modal').classList.add('hidden');
 }
 
@@ -761,8 +761,8 @@ window.confirmDeleteFile = async function() {
         
         if (data.success) {
             // Reload files list
-            if (currentChatId) {
-                loadSidebarFiles(currentChatId);
+            if (window.currentChatId) {
+                loadSidebarFiles(window.currentChatId);
             }
             closeDeleteFileModal();
         } else {
@@ -1202,8 +1202,8 @@ window.confirmDelete = async function() {
         const data = await response.json();
         
         if (data.success) {
-            if (currentChatId === chatToDelete) {
-                currentChatId = null;
+            if (window.currentChatId === chatToDelete) {
+                window.currentChatId = null;
                 document.getElementById('messages-container').innerHTML = '<div class="max-w-3xl mx-auto"><div class="text-center py-16"><div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-navy-500 to-gold-600 rounded-xl mb-4"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg></div><h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Welkom bij Lexi</h2><p class="text-sm text-gray-500 dark:text-gray-400">Stel Lexi al uw vragen over CAO-regels en arbeidsrecht</p></div></div>';
             }
             await updateChatList();
@@ -1277,8 +1277,8 @@ async function uploadFile(file) {
     
     const formData = new FormData();
     formData.append('file', file);
-    if (currentChatId) {
-        formData.append('chat_id', currentChatId);
+    if (window.currentChatId) {
+        formData.append('chat_id', window.currentChatId);
     }
     
     try {
@@ -1290,12 +1290,12 @@ async function uploadFile(file) {
         const data = await response.json();
         
         if (data.success && data.file_id) {
-            uploadedFileId = data.file_id;
+            window.uploadedFileId = data.file_id;
             fileName.textContent = file.name;
             
             // Refresh sidebar files list if we're in files view
-            if (currentChatId && currentView === 'files') {
-                loadSidebarFiles(currentChatId);
+            if (window.currentChatId && window.currentView === 'files') {
+                loadSidebarFiles(window.currentChatId);
             }
         } else {
             fileName.innerHTML = '<span class="text-red-600">Upload failed</span>';
@@ -1313,7 +1313,7 @@ async function uploadFile(file) {
 }
 
 window.clearFile = function() {
-    uploadedFileId = null;
+    window.uploadedFileId = null;
     document.getElementById('file-preview').classList.add('hidden');
     document.getElementById('file-input').value = '';
 }
