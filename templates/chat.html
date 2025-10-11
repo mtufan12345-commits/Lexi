@@ -280,12 +280,15 @@
                             headers: {'Content-Type': 'application/json', 'X-CSRFToken': window.getCSRFToken()},
                             body: JSON.stringify(payload)
                         });
+                        console.log('Response status:', res.status);
                         const data = await res.json();
+                        console.log('Response data:', data);
                         window.removeLoadingMessage();
                         window.addMessageToDOM('assistant', data.response);
                         window.loadChatFiles(window.currentChatId);
                         if (data.artifacts?.length) data.artifacts.forEach(a => window.showArtifact(a));
                     } catch(err) {
+                        console.error('Error sending message:', err);
                         window.removeLoadingMessage();
                         window.addMessageToDOM('assistant', 'Er is een fout opgetreden. Probeer het opnieuw.');
                     }
@@ -838,8 +841,8 @@ window.addMessageToDOM = function(role, content, container = null, attachments =
         }
         
         let userAvatarHTML = '';
-        if (userAvatarUrl) {
-            userAvatarHTML = `<img src="${userAvatarUrl}" class="flex-shrink-0 w-12 h-12 rounded-full object-cover" alt="User avatar" />`;
+        if (window.userAvatarUrl) {
+            userAvatarHTML = `<img src="${window.userAvatarUrl}" class="flex-shrink-0 w-12 h-12 rounded-full object-cover" alt="User avatar" />`;
         } else {
             userAvatarHTML = `
                 <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
