@@ -242,7 +242,8 @@ def signup_tenant():
             }
             
             stripe_data = {
-                'payment_method_types[]': 'card',  # Only card for now, iDEAL requires SEPA activation
+                'payment_method_types[0]': 'card',
+                'payment_method_types[1]': 'ideal',  # iDEAL (Dutch payment method)
                 'line_items[0][price]': price_id,
                 'line_items[0][quantity]': 1,
                 'mode': 'subscription',
