@@ -404,6 +404,9 @@
 </div>
 
 <script>
+// Wait for DOM to be fully loaded before initializing
+document.addEventListener('DOMContentLoaded', function() {
+
 let currentChatId = null;
 let currentView = 'chats';
 let fileToDelete = null;
@@ -1428,5 +1431,7 @@ document.addEventListener('keydown', function(e) {
         closeDocumentViewer();
     }
 });
+
+}); // End of DOMContentLoaded
 </script>
 {% endblock %}
