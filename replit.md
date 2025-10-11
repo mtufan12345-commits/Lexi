@@ -39,6 +39,9 @@ The platform features a multi-tenant hierarchy with SUPER ADMINs managing TENANT
 - **Storage:** S3-compatible object storage for chat messages, uploaded files, and generated artifacts.
 - **AI Integration:** Utilizes Google Vertex AI for the RAG agent.
 
+## Recent Changes (October 2025)
+- **Branding Update:** All references to "Adem Management Holding B.V." have been replaced with "Lexi AI" across the entire website, including Privacy & Cookiebeleid and Algemene Voorwaarden pages. Lexi AI is now the official company name and brand identity.
+
 ## External Dependencies
 - **AI:** Google Vertex AI (gemini-2.5-pro)
 - **Database:** PostgreSQL
