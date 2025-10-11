@@ -25,35 +25,33 @@
 <body class="bg-gray-50 flex items-center justify-center min-h-screen">
     <div class="text-center max-w-md mx-auto px-4">
         <div class="mb-8">
-            <svg class="animate-spin h-16 w-16 text-gold-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg class="h-16 w-16 text-gold-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
         </div>
-        <h1 class="text-2xl font-bold text-navy-900 mb-3">Doorverwijzen naar veilige betaalpagina...</h1>
-        <p class="text-gray-600 mb-6">U wordt automatisch doorgestuurd naar Stripe Checkout om uw betaling veilig af te ronden.</p>
+        <h1 class="text-2xl font-bold text-navy-900 mb-3">Account aanmaken succesvol!</h1>
+        <p class="text-gray-600 mb-6">Klik op de knop hieronder om door te gaan naar de veilige betaalpagina.</p>
+        
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p class="text-sm text-blue-800">
                 🔒 Uw betaalgegevens worden verwerkt door Stripe, onze beveiligde betalingspartner.
             </p>
         </div>
-        <p class="text-sm text-gray-500">
-            Pagina laadt niet? <a href="{{ checkout_url }}" class="text-gold-500 hover:underline font-medium">Klik hier om door te gaan</a>
+        
+        <a href="{{ checkout_url }}" target="_blank" class="inline-block bg-gold-500 hover:bg-gold-600 text-white font-bold py-4 px-8 rounded-lg text-lg transition duration-200 mb-4">
+            Doorgaan naar Betaling →
+        </a>
+        
+        <p class="text-xs text-gray-500">
+            De betaalpagina opent in een nieuw tabblad
         </p>
     </div>
 
     <script>
-        // Force top-level navigation to escape Replit iframe
-        const checkoutUrl = "{{ checkout_url }}";
-        
-        // Check if we're in an iframe
-        if (window.self !== window.top) {
-            // We're in an iframe (Replit preview) - navigate parent window
-            window.top.location.href = checkoutUrl;
-        } else {
-            // We're in a regular browser - normal redirect
-            window.location.href = checkoutUrl;
-        }
+        // Auto-open in new tab after short delay
+        setTimeout(function() {
+            window.open("{{ checkout_url }}", '_blank');
+        }, 1000);
     </script>
 </body>
 </html>
