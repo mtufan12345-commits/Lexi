@@ -250,10 +250,13 @@
                     console.log('Message:', message);
                     if (!message) return;
                     
-                    if (!window.hasShownFirstChatWarning) {
-                        window.showFirstChatWarning();
-                        return;
-                    }
+                    // TEMP FIX: Skip warning for now
+                    // if (!window.hasShownFirstChatWarning) {
+                    //     console.log('Showing first chat warning...');
+                    //     window.showFirstChatWarning();
+                    //     return;
+                    // }
+                    console.log('Proceeding with message send...');
                     if (!window.currentChatId) await window.newChat();
                     
                     const payload = { message };
