@@ -841,8 +841,11 @@ window.addMessageToDOM = function(role, content, container = null, attachments =
         }
         
         let userAvatarHTML = '';
-        if (window.userAvatarUrl) {
-            userAvatarHTML = `<img src="${window.userAvatarUrl}" class="flex-shrink-0 w-12 h-12 rounded-full object-cover" alt="User avatar" />`;
+        if (window.userAvatarUrl && window.userAvatarUrl !== '' && window.userAvatarUrl !== 'undefined') {
+            userAvatarHTML = `<img src="${window.userAvatarUrl}" class="flex-shrink-0 w-12 h-12 rounded-full object-cover" alt="User avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center" style="display:none;">
+                    <span class="text-sm font-semibold text-gold-500 dark:text-gold-400">${userInitials}</span>
+                </div>`;
         } else {
             userAvatarHTML = `
                 <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
