@@ -118,6 +118,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Bedrijf</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Subdomain</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Contact</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Klant sinds</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Tier</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">MRR</th>
@@ -139,6 +140,9 @@
                             </a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">{{ tenant.contact_email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                            {{ tenant.created_at.strftime('%d-%m-%Y') if tenant.created_at else '-' }}
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <form method="POST" action="/super-admin/tenants/{{ tenant.id }}/tier" class="inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
