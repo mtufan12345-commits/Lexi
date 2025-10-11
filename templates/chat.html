@@ -285,7 +285,6 @@
                         console.log('Response data:', data);
                         window.removeLoadingMessage();
                         window.addMessageToDOM('assistant', data.response);
-                        window.loadChatFiles(window.currentChatId);
                         if (data.artifacts?.length) data.artifacts.forEach(a => window.showArtifact(a));
                     } catch(err) {
                         console.error('Error sending message:', err);

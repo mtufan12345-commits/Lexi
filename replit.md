@@ -42,6 +42,9 @@ The platform features a multi-tenant hierarchy with SUPER ADMINs managing TENANT
 ## Recent Changes (October 2025)
 - **Branding Update:** All references to "Adem Management Holding B.V." have been replaced with "Lexi AI" across the entire website, including Privacy & Cookiebeleid and Algemene Voorwaarden pages. Lexi AI is now the official company name and brand identity.
 - **Chat Send Button Fix (Oct 11, 2025):** Resolved critical JavaScript timing issue where send button event handlers were being registered before DOM elements existed. Solution: Global variables (`currentChatId`, `hasShownFirstChatWarning`, `uploadedFileId`) and core functions (`window.handleMessageSubmit`, `window.addMessageToDOM`) are now defined in early script block BEFORE the message form loads. This ensures event listeners attach correctly when the form is parsed. All helper functions exposed on window object for reliable cross-script access.
+- **Duplicate Error Message Fix (Oct 11, 2025):** Fixed bug where every chat message triggered a duplicate error message "Er is een fout opgetreden. Probeer het opnieuw." Root cause: `window.loadChatFiles()` was being called but the function didn't exist, causing a JavaScript exception that triggered the catch handler. Removed the nonexistent function call - attachments are already fetched earlier in the message flow.
+- **Avatar Display Enhancement (Oct 11, 2025):** Improved user avatar validation to handle empty strings and 'undefined' values, with onerror fallback to initials display for broken image URLs.
+- **Favicon Implementation (Oct 11, 2025):** Created favicon.ico and favicon.png from Lexi logo and integrated into base.html template for proper browser tab display.
 
 ## External Dependencies
 - **AI:** Google Vertex AI (gemini-2.5-pro)
