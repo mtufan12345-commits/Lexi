@@ -204,6 +204,11 @@
         const firstChatWarningSeen = {{ 'true' if user.first_chat_warning_seen_at else 'false' }};
         window.hasShownFirstChatWarning = firstChatWarningSeen;
         window.sidebarOpen = window.innerWidth >= 768;
+        
+        console.log('Chat variables initialized:', {
+            currentChatId: window.currentChatId,
+            hasShownFirstChatWarning: window.hasShownFirstChatWarning
+        });
         </script>
 
         <!-- Messages -->
@@ -238,9 +243,11 @@
                 <script>
                 // Define submit handler before form
                 window.handleMessageSubmit = async function(e) {
+                    console.log('handleMessageSubmit called');
                     e.preventDefault();
                     const input = document.getElementById('message-input');
                     const message = input.value.trim();
+                    console.log('Message:', message);
                     if (!message) return;
                     
                     if (!window.hasShownFirstChatWarning) {
@@ -294,7 +301,7 @@
                         </svg>
                     </button>
                 </div>
-                <form id="message-form" onsubmit="window.handleMessageSubmit(event); return false;">
+                <form id="message-form">
                     <div class="flex gap-2 sm:gap-3">
                         <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt" onchange="window.handleFileSelect(event)">
                         <button type="button" onclick="document.getElementById('file-input').click()" 
@@ -315,6 +322,18 @@
                         </button>
                     </div>
                 </form>
+                <script>
+                // Attach form submit handler
+                (function() {
+                    console.log('Attaching form submit handler...');
+                    const form = document.getElementById('message-form');
+                    console.log('Form found:', form);
+                    if (form) {
+                        form.addEventListener('submit', window.handleMessageSubmit);
+                        console.log('Submit handler attached successfully');
+                    }
+                })();
+                </script>
             </div>
         </div>
     </div>
