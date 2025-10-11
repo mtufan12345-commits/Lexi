@@ -192,6 +192,20 @@
             </button>
         </div>
         
+        <!-- Initialize chat variables and handlers -->
+        <script>
+        // Global chat state
+        let currentChatId = null;
+        let currentView = 'chats';
+        let fileToDelete = null;
+        let uploadedFileId = null;
+        const userName = "{{ user.full_name if user and user.full_name else 'User' }}";
+        const userAvatarUrl = "{{ user.avatar_url if user and user.avatar_url else '' }}";
+        const firstChatWarningSeen = {{ 'true' if user.first_chat_warning_seen_at else 'false' }};
+        let hasShownFirstChatWarning = firstChatWarningSeen;
+        let sidebarOpen = window.innerWidth >= 768;
+        </script>
+
         <!-- Messages -->
         <div id="messages-container" class="flex-1 overflow-y-auto px-6 py-8 bg-white dark:bg-zinc-950">
             <div class="max-w-3xl mx-auto">
@@ -221,6 +235,52 @@
                 </div>
             </div>
             <div id="drop-zone" class="max-w-3xl mx-auto p-4">
+                <script>
+                // Define submit handler before form
+                window.handleMessageSubmit = async function(e) {
+                    e.preventDefault();
+                    const input = document.getElementById('message-input');
+                    const message = input.value.trim();
+                    if (!message) return;
+                    
+                    if (!hasShownFirstChatWarning) {
+                        window.showFirstChatWarning();
+                        return;
+                    }
+                    if (!currentChatId) await window.newChat();
+                    
+                    const payload = { message };
+                    if (uploadedFileId) payload.file_id = uploadedFileId;
+                    input.value = '';
+                    
+                    let currentFiles = [];
+                    try {
+                        const res = await fetch(`/api/chat/${currentChatId}/files`);
+                        const data = await res.json();
+                        if (data.files) currentFiles = data.files;
+                    } catch(e) {}
+                    
+                    window.addMessageToDOM('user', message, null, currentFiles);
+                    window.showLoadingMessage();
+                    if (uploadedFileId) window.clearFile();
+                    
+                    try {
+                        const res = await fetch(`/api/chat/${currentChatId}/message`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', 'X-CSRFToken': window.getCSRFToken()},
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json();
+                        window.removeLoadingMessage();
+                        window.addMessageToDOM('assistant', data.response);
+                        window.loadChatFiles(currentChatId);
+                        if (data.artifacts?.length) data.artifacts.forEach(a => window.showArtifact(a));
+                    } catch(err) {
+                        window.removeLoadingMessage();
+                        window.addMessageToDOM('assistant', 'Er is een fout opgetreden. Probeer het opnieuw.');
+                    }
+                };
+                </script>
                 <div id="file-preview" class="hidden mb-3 p-3 bg-navy-50 dark:bg-navy-900/20 border border-navy-200 dark:border-navy-800 rounded-lg flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5 text-gold-500 dark:text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -404,17 +464,7 @@
 </div>
 
 <script>
-let currentChatId = null;
-let currentView = 'chats';
-let fileToDelete = null;
-const userName = "{{ user.full_name if user and user.full_name else 'User' }}";
-const userAvatarUrl = "{{ user.avatar_url if user and user.avatar_url else '' }}";
-const firstChatWarningSeen = {{ 'true' if user.first_chat_warning_seen_at else 'false' }};
-let hasShownFirstChatWarning = firstChatWarningSeen;
-
-// Initialize sidebar state based on screen size
-let sidebarOpen = window.innerWidth >= 768;
-
+// Chat helper functions
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('chat-sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
@@ -738,7 +788,7 @@ function formatMarkdown(text) {
         .replace(/\n/g, '<br>');
 }
 
-function addMessageToDOM(role, content, container = null, attachments = null) {
+window.addMessageToDOM = function(role, content, container = null, attachments = null) {
     if (!container) {
         container = document.getElementById('messages-container').querySelector('div');
     }
@@ -809,7 +859,7 @@ function addMessageToDOM(role, content, container = null, attachments = null) {
     }, 10);
 }
 
-function showLoadingMessage() {
+window.showLoadingMessage = function() {
     const container = document.getElementById('messages-container').querySelector('div');
     const loadingDiv = document.createElement('div');
     loadingDiv.id = 'loading-message';
@@ -835,84 +885,10 @@ function showLoadingMessage() {
     }, 10);
 }
 
-function removeLoadingMessage() {
+window.removeLoadingMessage = function() {
     const loading = document.getElementById('loading-message');
     if (loading) loading.remove();
 }
-
-// Message form submit handler  
-window.handleMessageSubmit = async function(e) {
-    e.preventDefault();
-    
-    const input = document.getElementById('message-input');
-    const message = input.value.trim();
-    if (!message) return;
-    
-    // Show first chat warning if not shown yet
-    if (!hasShownFirstChatWarning) {
-        showFirstChatWarning();
-        return; // Don't send message yet, wait for user to accept
-    }
-    
-    if (!currentChatId) {
-        await newChat();
-    }
-    
-    const payload = { message };
-    if (uploadedFileId) {
-        payload.file_id = uploadedFileId;
-    }
-    
-    input.value = '';
-    
-    // Get current files to show with message
-    let currentFiles = [];
-    try {
-        const filesResponse = await fetch(`/api/chat/${currentChatId}/files`);
-        const filesData = await filesResponse.json();
-        if (filesData.files) {
-            currentFiles = filesData.files;
-        }
-    } catch (e) {
-        console.error('Could not fetch files', e);
-    }
-    
-    addMessageToDOM('user', message, null, currentFiles);
-    showLoadingMessage();
-    
-    // Clear file after sending
-    if (uploadedFileId) {
-        clearFile();
-    }
-    
-    try {
-        const response = await fetch(`/api/chat/${currentChatId}/message`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        const data = await response.json();
-        removeLoadingMessage();
-        
-        // Show only the response text in chat (no artifacts inline)
-        addMessageToDOM('assistant', data.response);
-        
-        // Refresh files list after message is sent
-        loadChatFiles(currentChatId);
-        
-        // If there are artifacts, show them in the right sidebar
-        if (data.artifacts && data.artifacts.length > 0) {
-            data.artifacts.forEach(artifact => showArtifact(artifact));
-        }
-    } catch (error) {
-        removeLoadingMessage();
-        addMessageToDOM('assistant', 'Er is een fout opgetreden. Probeer het opnieuw.');
-    }
-};
 
 let currentArtifacts = [];
 
@@ -1284,8 +1260,6 @@ document.addEventListener('keydown', function(e) {
         if (!document.getElementById('delete-file-modal').classList.contains('hidden')) closeDeleteFileModal();
     }
 });
-
-let uploadedFileId = null;
 
 window.handleFileSelect = function(event) {
     const file = event.target.files[0];
