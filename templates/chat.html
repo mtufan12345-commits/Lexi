@@ -6,7 +6,7 @@
     <div class="absolute top-0 left-0 right-0 bg-orange-600 text-white py-2 px-4 z-50 flex justify-between items-center">
         <span class="text-sm">Super Admin Mode - Viewing as {{ tenant.company_name }}</span>
         <form method="POST" action="{{ url_for('stop_impersonate') }}" class="inline">
-            <button type="submit" class="text-xs px-3 py-1 bg-white/20 hover:bg-white/30 rounded">Exit</button>
+            <button type="submit" class="text-sm px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded min-h-[44px]">Exit</button>
         </form>
     </div>
     {% endif %}
@@ -22,11 +22,11 @@
                 <a href="/" class="flex items-center gap-2">
                     <img src="/static/images/lexi-logo.png?v=3" alt="Lexi" class="h-12">
                 </a>
-                <button onclick="window.toggleDarkMode()" class="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800">
-                    <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onclick="window.toggleDarkMode()" class="p-2.5 min-w-[44px] min-h-[44px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-center">
+                    <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                     </svg>
-                    <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
                     </svg>
                 </button>
@@ -79,8 +79,8 @@
                             </div>
                             <div class="flex-shrink-0 hidden group-hover:flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                                 <div class="relative export-dropdown">
-                                    <button onclick="event.stopPropagation(); toggleExportMenu({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
-                                        <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button onclick="event.stopPropagation(); toggleExportMenu({{ chat.id }})" class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Export">
+                                        <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                         </svg>
                                     </button>
@@ -101,13 +101,13 @@
                                         {% endif %}
                                     </div>
                                 </div>
-                                <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
-                                    <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button onclick="event.stopPropagation(); renameChatFromSidebar({{ chat.id }}, '{{ chat.title }}')" class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Rename">
+                                    <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                     </svg>
                                 </button>
-                                <button onclick="event.stopPropagation(); deleteChatFromSidebar({{ chat.id }})" class="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Delete">
-                                    <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button onclick="event.stopPropagation(); deleteChatFromSidebar({{ chat.id }})" class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-zinc-700 rounded" title="Delete">
+                                    <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                     </svg>
                                 </button>
@@ -310,7 +310,7 @@
                     <div class="flex gap-2 sm:gap-3">
                         <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt" onchange="window.handleFileSelect(event)">
                         <button type="button" onclick="document.getElementById('file-input').click()" 
-                                class="p-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0">
+                                class="p-3 min-w-[44px] min-h-[44px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0 flex items-center justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
                             </svg>
@@ -319,7 +319,7 @@
                                autocomplete="off"
                                class="flex-1 min-w-0 px-3 sm:px-4 py-3 bg-gray-100 dark:bg-zinc-900 border-0 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-navy-500 text-sm sm:text-base">
                         <button type="submit" 
-                                class="px-6 py-3 bg-navy-500 hover:bg-navy-600 text-white rounded-lg transition font-medium flex items-center justify-center gap-2 flex-shrink-0 touch-manipulation min-w-[80px]">
+                                class="px-6 py-3 min-h-[44px] bg-navy-500 hover:bg-navy-600 text-white rounded-lg transition font-medium flex items-center justify-center gap-2 flex-shrink-0 touch-manipulation min-w-[80px]">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                             </svg>
