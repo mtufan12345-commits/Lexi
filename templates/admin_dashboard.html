@@ -6,7 +6,7 @@
     <div class="absolute top-0 left-0 right-0 bg-orange-600 text-white py-2 px-4 z-50 flex justify-between items-center">
         <span class="text-sm">Super Admin Mode - {{ tenant.company_name }}</span>
         <form method="POST" action="{{ url_for('stop_impersonate') }}" class="inline">
-            <button type="submit" class="text-xs px-3 py-1 bg-white/20 hover:bg-white/30 rounded">Exit</button>
+            <button type="submit" class="text-sm px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded min-h-[44px]">Exit</button>
         </form>
     </div>
     {% endif %}
