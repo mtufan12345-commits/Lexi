@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, g
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import secure_filename
 from models import db, SuperAdmin, Tenant, User, Chat, Message, Subscription, Template, UploadedFile, Artifact, SupportTicket, SupportReply
 from services import vertex_ai_service, s3_service, email_service, StripeService
 import stripe
@@ -1302,6 +1303,26 @@ def upload_file():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'Geen bestand geselecteerd'}), 400
+    
+    # SECURITY: File type whitelist - only allow specific document types
+    ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'txt'}
+    ALLOWED_MIMETYPES = {
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword',
+        'text/plain'
+    }
+    
+    filename = secure_filename(file.filename)
+    if not filename or '.' not in filename:
+        return jsonify({'error': 'Ongeldig bestand'}), 400
+    
+    file_ext = filename.rsplit('.', 1)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        return jsonify({'error': f'Alleen {", ".join(ALLOWED_EXTENSIONS).upper()} bestanden toegestaan'}), 400
+    
+    if file.content_type not in ALLOWED_MIMETYPES:
+        return jsonify({'error': 'Ongeldig bestandstype'}), 400
     
     chat_id = request.form.get('chat_id')
     
