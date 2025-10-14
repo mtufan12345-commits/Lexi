@@ -302,14 +302,92 @@ def signup_tenant():
 @app.route('/signup/success')
 def signup_success():
     """Success page after Stripe payment - account will be created via webhook"""
+    from models import PendingSignup
+    from flask_login import logout_user, login_user
+    import time
+    
     session_id = request.args.get('session_id')
     
     if not session_id:
         flash('Geen geldige sessie gevonden.', 'danger')
         return redirect(url_for('index'))
     
-    # The webhook will create the account, just show success message
-    return render_template('signup_success.html', session_id=session_id)
+    # SECURITY: Get email from server-side PendingSignup record, NOT from URL
+    # This prevents account-takeover attacks via URL manipulation
+    pending = PendingSignup.query.filter_by(checkout_session_id=session_id).first()
+    
+    # First, logout any existing user to prevent confusion
+    if current_user.is_authenticated:
+        app.logger.info(f"Logging out existing user: {current_user.email}")
+        logout_user()
+        session.clear()
+    
+    # If pending signup exists, webhook hasn't processed it yet
+    if pending:
+        email = pending.email
+        app.logger.info(f"Pending signup found for {email}, waiting for webhook...")
+        
+        # Wait for webhook to create account (with retries)
+        max_retries = 15
+        retry_delay = 1  # seconds
+        
+        for attempt in range(max_retries):
+            # Check if webhook has processed and created the account
+            # (pending record will be deleted by webhook after account creation)
+            db.session.expire(pending)
+            pending = PendingSignup.query.filter_by(checkout_session_id=session_id).first()
+            
+            if not pending:
+                # Pending deleted = webhook processed successfully
+                app.logger.info(f"Webhook processed signup for {email}")
+                break
+            
+            app.logger.info(f"Waiting for webhook (attempt {attempt + 1}/{max_retries})...")
+            time.sleep(retry_delay)
+        
+        if pending:
+            # Webhook still hasn't processed after max retries
+            app.logger.warning(f"Webhook hasn't processed signup for {email} after {max_retries} attempts")
+            return render_template('signup_success.html', session_id=session_id, waiting=True)
+    else:
+        # No pending signup = webhook already processed
+        # We need to find the user that was created for this checkout session
+        # SECURITY: We can't trust any user input here. We must verify via Stripe or give up.
+        app.logger.info(f"No pending signup for session {session_id} - webhook may have already processed")
+        email = None
+        
+        # Try to get email from Stripe session metadata (server-side verification)
+        try:
+            import stripe
+            checkout_session = stripe.checkout.Session.retrieve(session_id)
+            email = checkout_session.get('metadata', {}).get('signup_email') or checkout_session.get('customer_email')
+            app.logger.info(f"Retrieved email from Stripe: {email}")
+        except Exception as e:
+            app.logger.error(f"Failed to retrieve Stripe session: {e}")
+            flash('Kon account niet verifiëren. Probeer in te loggen met uw email en wachtwoord.', 'warning')
+            return redirect(url_for('login'))
+        
+        if not email:
+            flash('Kon account niet verifiëren. Probeer in te loggen met uw email en wachtwoord.', 'warning')
+            return redirect(url_for('login'))
+    
+    # Find the newly created admin user with verified email
+    new_user = User.query.filter_by(email=email, role='admin').first()
+    
+    if not new_user:
+        app.logger.error(f"Account not found for verified email {email}")
+        flash('Account niet gevonden. Neem contact op met support.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Login the verified user automatically
+    login_user(new_user)
+    session['tenant_id'] = new_user.tenant_id
+    session.permanent = True
+    
+    app.logger.info(f"✅ Auto-logged in verified user: {new_user.email} (tenant_id: {new_user.tenant_id})")
+    
+    flash(f'Welkom bij Lexi AI! Uw account is succesvol aangemaakt.', 'success')
+    return redirect(url_for('chat_page'))
 
 @app.route('/signup/cancel')
 def signup_cancel():
