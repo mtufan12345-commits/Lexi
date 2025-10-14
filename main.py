@@ -396,11 +396,11 @@ def signup_success():
             
             # FALLBACK: Verify with Stripe and provision account directly
             try:
-                import stripe
+                from stripe.checkout import Session as StripeSession
                 from provision_tenant import provision_tenant_from_signup
                 
                 # SECURITY: Validate checkout session with Stripe API (server-side)
-                checkout_session = stripe.checkout.Session.retrieve(session_id)
+                checkout_session = StripeSession.retrieve(session_id)
                 
                 # Verify payment was successful
                 if checkout_session.payment_status != 'paid':
@@ -435,8 +435,8 @@ def signup_success():
         
         # Try to get email from Stripe session metadata (server-side verification)
         try:
-            import stripe
-            checkout_session = stripe.checkout.Session.retrieve(session_id)
+            from stripe.checkout import Session as StripeSession
+            checkout_session = StripeSession.retrieve(session_id)
             email = checkout_session.get('metadata', {}).get('signup_email') or checkout_session.get('customer_email')
             app.logger.info(f"Retrieved email from Stripe: {email}")
         except Exception as e:
