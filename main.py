@@ -1807,40 +1807,21 @@ def stripe_webhook():
     sig_header = request.headers.get('Stripe-Signature')
     webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
     
-    # DEBUG: Log webhook details
-    print(f"🔍 Webhook received:")
-    print(f"  - Signature header: {sig_header[:50] if sig_header else 'MISSING'}...")
-    print(f"  - Webhook secret exists: {bool(webhook_secret)}")
-    print(f"  - Webhook secret starts with: {webhook_secret[:10] if webhook_secret else 'NONE'}...")
-    print(f"  - Payload size: {len(payload)} bytes")
-    
+    # SECURITY: Webhook secret MUST be configured
     if not webhook_secret:
-        print("⚠️  WARNING: No webhook secret configured - skipping verification")
-        # Parse event without verification (DEVELOPMENT ONLY)
-        try:
-            event = json.loads(payload)
-        except Exception as e:
-            print(f"❌ Failed to parse webhook payload: {e}")
-            return jsonify({'error': 'Invalid payload'}), 400
-    else:
-        # Try signature verification
-        try:
-            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-            print("✅ Webhook signature verified successfully")
-        except AttributeError as e:
-            # Stripe library bug workaround - parse without verification
-            print(f"⚠️  Stripe library error: {e} - parsing without verification")
-            try:
-                event = json.loads(payload)
-            except Exception as parse_error:
-                print(f"❌ Failed to parse webhook payload: {parse_error}")
-                return jsonify({'error': 'Invalid payload'}), 400
-        except Exception as e:
-            print(f"❌ Webhook signature verification failed: {e}")
-            print(f"   Error type: {type(e).__name__}")
-            return jsonify({'error': str(e)}), 400
+        print("❌ CRITICAL: STRIPE_WEBHOOK_SECRET not configured - webhook rejected")
+        return jsonify({'error': 'Webhook not properly configured'}), 500
     
-    print(f"Received Stripe webhook event: {event['type']}")
+    # SECURITY: Signature verification is MANDATORY - no bypasses
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        print(f"✅ Webhook signature verified - Event type: {event['type']}")
+    except stripe.error.SignatureVerificationError as e:
+        print(f"❌ Webhook signature verification FAILED: {e}")
+        return jsonify({'error': 'Invalid signature'}), 400
+    except Exception as e:
+        print(f"❌ Webhook processing error: {e}")
+        return jsonify({'error': 'Webhook error'}), 400
     
     if event['type'] == 'checkout.session.completed':
         from models import PendingSignup
