@@ -1201,16 +1201,24 @@ window.closeDeleteModal = function() {
 }
 
 window.confirmDelete = async function() {
-    if (!chatToDelete) return;
+    if (!chatToDelete) {
+        console.error('No chatToDelete set');
+        return;
+    }
+    
+    const deleteUrl = `/api/chat/${chatToDelete}/delete`;
+    console.log('Deleting chat:', chatToDelete, 'URL:', deleteUrl);
     
     try {
-        const response = await fetch(`/api/chat/${chatToDelete}/delete`, {
+        const response = await fetch(deleteUrl, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken(),
                 'Content-Type': 'application/json'
             }
         });
+        
+        console.log('Delete response status:', response.status);
         
         if (!response.ok) {
             console.error('Delete request failed with status:', response.status);
