@@ -7,8 +7,8 @@ STRIPE_PRICES = {
         'yearly': 'price_1SGiM5D8m8yYEAVB0ynuVjvl'
     },
     'professional': {
-        'monthly': 'price_1SGiNlD8m8yYEAVBVtUAS1f4',
-        'yearly': 'price_1SGiOrD8m8yYEAVBoAzWBMO9'
+        'monthly': 'price_1SI4LUD8m8yYEAVBbBcEI4CY',  # TEST MODE
+        'yearly': 'price_1SGiOrD8m8yYEAVBoAzWBMO9'  # TODO: Update to test mode price ID
     },
     'enterprise': {
         'monthly': 'price_1SGiPXD8m8yYEAVBMSOSV5Dz',
