@@ -21,3 +21,5 @@ markitdown
 pdf2image
 Pillow
 pytesseract
+docx
+Flask-Limiter
