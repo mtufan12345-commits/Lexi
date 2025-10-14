@@ -1802,6 +1802,13 @@ def stripe_webhook():
     sig_header = request.headers.get('Stripe-Signature')
     webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
     
+    # DEBUG: Log webhook details
+    print(f"🔍 Webhook received:")
+    print(f"  - Signature header: {sig_header[:50] if sig_header else 'MISSING'}...")
+    print(f"  - Webhook secret exists: {bool(webhook_secret)}")
+    print(f"  - Webhook secret starts with: {webhook_secret[:10] if webhook_secret else 'NONE'}...")
+    print(f"  - Payload size: {len(payload)} bytes")
+    
     if not webhook_secret:
         print("WARNING: No webhook secret configured!")
         return jsonify({'success': True})
@@ -1809,7 +1816,8 @@ def stripe_webhook():
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
     except Exception as e:
-        print(f"Webhook signature verification failed: {e}")
+        print(f"❌ Webhook signature verification failed: {e}")
+        print(f"   Error type: {type(e).__name__}")
         return jsonify({'error': str(e)}), 400
     
     print(f"Received Stripe webhook event: {event['type']}")
