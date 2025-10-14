@@ -115,10 +115,31 @@
             <table class="min-w-full divide-y divide-gray-700">
                 <thead class="bg-gray-900">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Bedrijf</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase cursor-pointer hover:text-gold-400" onclick="sortTable('company_name')">
+                            <div class="flex items-center gap-1">
+                                Bedrijf
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Subdomain</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Contact</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Klant sinds</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase cursor-pointer hover:text-gold-400" onclick="sortTable('contact_email')">
+                            <div class="flex items-center gap-1">
+                                Contact
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase cursor-pointer hover:text-gold-400" onclick="sortTable('created_at')">
+                            <div class="flex items-center gap-1">
+                                Klant sinds
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Tier</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">MRR</th>
@@ -174,14 +195,28 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ tenant.users|length }} / {{ tenant.max_users }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <form method="POST" action="/super-admin/tenants/{{ tenant.id }}/status" class="inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                <select name="status" onchange="this.form.submit()" 
-                                        class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1">
-                                    <option value="active" {% if tenant.status == 'active' %}selected{% endif %}>Actief</option>
-                                    <option value="suspended" {% if tenant.status == 'suspended' %}selected{% endif %}>Suspended</option>
-                                </select>
-                            </form>
+                            <div class="flex gap-2">
+                                <form method="POST" action="/super-admin/tenants/{{ tenant.id }}/status" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <select name="status" onchange="this.form.submit()" 
+                                            class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1">
+                                        <option value="active" {% if tenant.status == 'active' %}selected{% endif %}>Actief</option>
+                                        <option value="suspended" {% if tenant.status == 'suspended' %}selected{% endif %}>Suspended</option>
+                                        <option value="archived" {% if tenant.status == 'archived' %}selected{% endif %}>Gearchiveerd</option>
+                                    </select>
+                                </form>
+                                {% if tenant.status != 'archived' %}
+                                <form method="POST" action="/super-admin/tenants/{{ tenant.id }}/status" class="inline" onsubmit="return confirm('Weet je zeker dat je deze tenant wilt archiveren?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="status" value="archived"/>
+                                    <button type="submit" class="text-xs px-2 py-1 bg-red-900/50 text-red-300 rounded hover:bg-red-900" title="Archiveer tenant">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -263,6 +298,18 @@
                 row.style.display = 'none';
             }
         });
+    }
+
+    function sortTable(column) {
+        const currentSort = '{{ sort_by }}';
+        const currentOrder = '{{ sort_order }}';
+        
+        let newOrder = 'asc';
+        if (currentSort === column && currentOrder === 'asc') {
+            newOrder = 'desc';
+        }
+        
+        window.location.href = `/super-admin/dashboard?sort_by=${column}&sort_order=${newOrder}`;
     }
 </script>
 {% endblock %}

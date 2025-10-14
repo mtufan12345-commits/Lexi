@@ -2029,7 +2029,24 @@ def stripe_webhook():
 @app.route('/super-admin/dashboard')
 @super_admin_required
 def super_admin_dashboard():
-    tenants = Tenant.query.order_by(Tenant.created_at.desc()).all()
+    sort_by = request.args.get('sort_by', 'created_at')
+    sort_order = request.args.get('sort_order', 'desc')
+    
+    valid_sort_columns = {
+        'company_name': Tenant.company_name,
+        'contact_email': Tenant.contact_email,
+        'created_at': Tenant.created_at,
+        'subscription_tier': Tenant.subscription_tier,
+        'subscription_status': Tenant.subscription_status
+    }
+    
+    sort_column = valid_sort_columns.get(sort_by, Tenant.created_at)
+    
+    if sort_order == 'asc':
+        tenants = Tenant.query.order_by(sort_column.asc()).all()
+    else:
+        tenants = Tenant.query.order_by(sort_column.desc()).all()
+    
     total_users = User.query.count()
     
     mrr_prices = {'starter': 499, 'professional': 599, 'enterprise': 1199}
@@ -2077,7 +2094,9 @@ def super_admin_dashboard():
                          starter_mrr=starter_mrr,
                          professional_mrr=professional_mrr,
                          enterprise_mrr=enterprise_mrr,
-                         mrr_history=mrr_history)
+                         mrr_history=mrr_history,
+                         sort_by=sort_by,
+                         sort_order=sort_order)
 
 @app.route('/super-admin/tenants/create', methods=['POST'])
 @super_admin_required
@@ -2108,7 +2127,7 @@ def super_admin_update_tenant_status(tenant_id):
     tenant = Tenant.query.get_or_404(tenant_id)
     new_status = request.form.get('status')
     
-    if new_status in ['active', 'suspended']:
+    if new_status in ['active', 'suspended', 'archived']:
         tenant.status = new_status
         db.session.commit()
         flash('Tenant status bijgewerkt!', 'success')
