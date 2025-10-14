@@ -391,9 +391,41 @@ def signup_success():
             time.sleep(retry_delay)
         
         if pending:
-            # Webhook still hasn't processed after max retries
-            app.logger.warning(f"Webhook hasn't processed signup for {email} after {max_retries} attempts")
-            return render_template('signup_success.html', session_id=session_id, waiting=True)
+            # Webhook still hasn't processed after max retries - USE FALLBACK
+            app.logger.warning(f"Webhook hasn't processed signup for {email} after {max_retries} attempts - using fallback")
+            
+            # FALLBACK: Verify with Stripe and provision account directly
+            try:
+                import stripe
+                from services.provision_tenant import provision_tenant_from_signup
+                
+                # SECURITY: Validate checkout session with Stripe API (server-side)
+                checkout_session = stripe.checkout.Session.retrieve(session_id)
+                
+                # Verify payment was successful
+                if checkout_session.payment_status != 'paid':
+                    app.logger.error(f"Checkout session {session_id} payment status: {checkout_session.payment_status}")
+                    flash('Betaling niet gelukt. Neem contact op met support.', 'danger')
+                    return redirect(url_for('index'))
+                
+                # Use shared provisioning service (idempotent and safe)
+                success, user, error_msg = provision_tenant_from_signup(
+                    pending_signup=pending,
+                    stripe_session_data=checkout_session
+                )
+                
+                if not success:
+                    app.logger.error(f"Fallback provisioning failed: {error_msg}")
+                    flash('Account aanmaken mislukt. Neem contact op met support.', 'danger')
+                    return redirect(url_for('index'))
+                
+                app.logger.info(f"✅ Fallback: Account provisioned successfully for {email}")
+                # Continue to auto-login below
+                
+            except Exception as fallback_error:
+                app.logger.error(f"Fallback provisioning error: {fallback_error}")
+                flash('Account aanmaken mislukt. Neem contact op met support.', 'danger')
+                return redirect(url_for('index'))
     else:
         # No pending signup = webhook already processed
         # We need to find the user that was created for this checkout session
@@ -1889,106 +1921,34 @@ def stripe_webhook():
     
     if event['type'] == 'checkout.session.completed':
         from models import PendingSignup
+        from services.provision_tenant import provision_tenant_from_signup
         
         session_obj = event['data']['object']
         checkout_session_id = session_obj.get('id')
         
-        print(f"Processing checkout.session.completed for session: {checkout_session_id}")
+        print(f"🔔 Webhook: Processing checkout.session.completed for session: {checkout_session_id}")
         
         # Get pending signup from database using checkout session ID
         pending_signup = PendingSignup.query.filter_by(checkout_session_id=checkout_session_id).first()
         
         if not pending_signup:
-            print(f"❌ No pending signup found for session {checkout_session_id}")
-            return jsonify({'error': 'No pending signup found'}), 404
+            # No pending signup = fallback already processed or duplicate webhook
+            # Return 200 to prevent Stripe retry loops
+            print(f"⚠️ No pending signup for session {checkout_session_id} - likely already processed by fallback")
+            return jsonify({'success': True, 'message': 'Already processed'}), 200
         
-        # Check if user already exists (prevent duplicates)
-        existing_user = User.query.filter_by(email=pending_signup.email).first()
-        if existing_user:
-            print(f"User {pending_signup.email} already exists, cleaning up pending signup")
-            try:
-                db.session.delete(pending_signup)
-                db.session.commit()
-            except Exception as cleanup_error:
-                print(f"Warning: Failed to cleanup pending signup: {cleanup_error}")
-                db.session.rollback()
-            return jsonify({'success': True, 'message': 'User already exists'})
+        # Use shared provisioning service (idempotent)
+        success, user, error_msg = provision_tenant_from_signup(
+            pending_signup=pending_signup,
+            stripe_session_data=session_obj
+        )
         
-        # Extract data from pending signup
-        email_to_use = pending_signup.email
-        company_name = pending_signup.company_name
-        contact_name = pending_signup.contact_name
-        password_hash = pending_signup.password_hash  # Already hashed
-        tier = pending_signup.tier
-        billing = pending_signup.billing
-        
-        print(f"Creating account for: {email_to_use}, tier: {tier}, billing: {billing}")
-        
-        try:
-            # Create subdomain
-            import re
-            base_subdomain = re.sub(r'[^a-z0-9]', '', company_name.lower().replace(' ', ''))[:20]
-            subdomain = base_subdomain if base_subdomain else 'tenant'
-            
-            counter = 1
-            original_subdomain = subdomain
-            while Tenant.query.filter_by(subdomain=subdomain).first():
-                subdomain = f"{original_subdomain}{counter}"
-                counter += 1
-            
-            # Create tenant
-            tenant = Tenant(
-                company_name=company_name,
-                subdomain=subdomain,
-                contact_email=email_to_use,
-                contact_name=contact_name,
-                status='active',
-                subscription_tier=tier,
-                max_users=get_max_users_for_tier(tier)
-            )
-            db.session.add(tenant)
-            db.session.flush()
-            
-            # Create admin user
-            name_parts = contact_name.split() if contact_name else []
-            admin_user = User(
-                tenant_id=tenant.id,
-                email=email_to_use,
-                first_name=name_parts[0] if name_parts else 'Admin',
-                last_name=' '.join(name_parts[1:]) if len(name_parts) > 1 else '',
-                role='admin',
-                is_active=True,
-                disclaimer_accepted_at=datetime.utcnow(),
-                password_hash=password_hash  # Use pre-hashed password from pending signup
-            )
-            db.session.add(admin_user)
-            
-            # Create subscription
-            subscription = Subscription(
-                tenant_id=tenant.id,
-                plan=tier,
-                status='active',
-                stripe_customer_id=session_obj.get('customer'),
-                stripe_subscription_id=session_obj.get('subscription')
-            )
-            db.session.add(subscription)
-            
-            db.session.commit()
-            
-            print(f"✅ Account created successfully for {email_to_use}")
-            
-            # Delete pending signup now that account is created
-            db.session.delete(pending_signup)
-            db.session.commit()
-            
-            # Send welcome email
-            login_url = f"https://{subdomain}.lex-cao.replit.app/login"
-            email_service.send_welcome_email(admin_user, tenant, login_url)
-            
-        except Exception as e:
-            db.session.rollback()
-            print(f"❌ Error creating account: {e}")
-            return jsonify({'error': str(e)}), 500
+        if success:
+            print(f"✅ Webhook: Account provisioned successfully for {user.email if user else 'existing user'}")
+            return jsonify({'success': True})
+        else:
+            print(f"❌ Webhook: Failed to provision account: {error_msg}")
+            return jsonify({'error': error_msg}), 500
     
     elif event['type'] == 'customer.subscription.updated':
         subscription_obj = event['data']['object']
