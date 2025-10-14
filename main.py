@@ -5,6 +5,8 @@ import json
 from flask import Flask, render_template, request, redirect, url_for, jsonify, g, session, flash, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from models import db, SuperAdmin, Tenant, User, Chat, Message, Subscription, Template, UploadedFile, Artifact, SupportTicket, SupportReply
@@ -48,6 +50,14 @@ else:
         return {'csrf_token': lambda: ''}
 
 db.init_app(app)
+
+# Initialize Rate Limiter for security
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Initialize Stripe globally
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
@@ -412,6 +422,7 @@ def signup_cancel():
     return redirect(url_for('pricing'))
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated and not g.is_super_admin:
         return redirect(url_for('chat_page'))
@@ -467,6 +478,7 @@ def login():
     return render_template('login.html')
 
 @app.route('/super-admin/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def super_admin_login():
     if request.method == 'POST':
         email = request.form.get('email') or ''
@@ -666,6 +678,7 @@ def get_chat(chat_id):
 @app.route('/api/chat/<int:chat_id>/message', methods=['POST'])
 @login_required
 @tenant_required
+@limiter.limit("30 per minute")
 def send_message(chat_id):
     if g.tenant.subscription_status not in ['active', 'trial', 'trialing']:
         return jsonify({'error': 'Subscription niet actief'}), 403
@@ -1823,6 +1836,7 @@ def billing_success():
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/webhook/stripe', methods=['POST'])
+@limiter.limit("100 per hour")
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
