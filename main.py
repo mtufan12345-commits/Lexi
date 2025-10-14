@@ -25,7 +25,14 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # SECURITY: Enable Jinja2 autoescape to prevent XSS attacks
 app.jinja_env.autoescape = True
 
-app.secret_key = os.environ.get("SESSION_SECRET") or os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"
+# SECURITY: REQUIRE session secret - NEVER use hardcoded fallback (prevents session forgery)
+app.secret_key = os.environ.get("SESSION_SECRET") or os.environ.get("SECRET_KEY")
+if not app.secret_key:
+    raise RuntimeError(
+        "❌ SECURITY ERROR: SESSION_SECRET environment variable is required!\n"
+        "Set SESSION_SECRET to a strong random value (minimum 32 characters).\n"
+        "Generate one with: python -c 'import secrets; print(secrets.token_hex(32))'"
+    )
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
@@ -103,6 +110,26 @@ def cleanup_stale_pending_signups():
     return count
 
 @app.before_request
+def validate_host_header():
+    """SECURITY: Global Host header validation - prevents Host header injection attacks"""
+    # SECURITY: Validate Host header against allowed domains (GLOBAL protection)
+    request_host = request.host.split(':')[0]  # Remove port
+    
+    # Get allowed hosts from environment (default includes localhost + Replit domains)
+    allowed_hosts_env = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,replit.dev,replit.app')
+    allowed_hosts = [h.strip() for h in allowed_hosts_env.split(',')]
+    
+    # Check if host is allowed (exact match or subdomain of allowed domain)
+    is_allowed = request_host in allowed_hosts or any(
+        request_host.endswith(f'.{allowed}') or request_host == allowed 
+        for allowed in allowed_hosts
+    )
+    
+    if not is_allowed:
+        app.logger.warning(f"🚨 SECURITY: Rejected Host header: {request_host}")
+        return "Invalid Host header", 400
+
+@app.before_request
 def load_tenant():
     g.tenant = None
     g.is_super_admin = session.get('is_super_admin', False)
@@ -118,7 +145,7 @@ def load_tenant():
         print(f"[DEBUG] Tenant loaded from session: {g.tenant.company_name if g.tenant else None}")
         return
     
-    # Production mode: tenant via subdomain
+    # Production mode: tenant via subdomain (Host header already validated by validate_host_header)
     host = request.host.split(':')[0]
     parts = host.split('.')
     print(f"[DEBUG] Host parts: {parts}")
@@ -250,7 +277,7 @@ def signup_tenant():
             from models import PendingSignup
             import requests
             
-            # Get base URL (works in both dev and production)
+            # Get base URL (Host header already validated globally by validate_host_header)
             base_url = request.host_url.rstrip('/')
             
             # Use Stripe HTTP API directly to avoid SDK issues
