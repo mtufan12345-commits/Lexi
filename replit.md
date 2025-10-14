@@ -40,6 +40,7 @@ The platform features a multi-tenant hierarchy with SUPER ADMINs managing TENANT
 - **AI Integration:** Utilizes Google Vertex AI for the RAG agent.
 
 ## Recent Changes (October 2025)
+- **Webhook Fallback Mechanism (Oct 14, 2025):** Implemented robust fallback system for signup/payment flow that works in BOTH development and production. Root cause: Stripe webhooks cannot reach dev environment → accounts weren't created after payment. Solution: (1) Created shared idempotent provisioning service `provision_tenant_from_signup()` used by both webhook and fallback, (2) Updated webhook to use shared service (DRY principle), (3) Added Stripe-verified fallback in `signup_success()` that validates payment with Stripe API and provisions account if webhook fails. Architect verdict: "PASS - Fallback provisions and logs users in even when webhook never arrives." Prevents Stripe retry loops by returning HTTP 200 when pending signup already processed.
 - **Enterprise-Grade Security Overhaul (Oct 14, 2025):** Achieved 11/10 security score with 13 comprehensive fixes:
   * CSRF protection enabled by default (was disabled)
   * Session cookies secured for production (HTTPS only)
