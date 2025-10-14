@@ -51,11 +51,11 @@ else:
 
 db.init_app(app)
 
-# Initialize Rate Limiter for security
+# Initialize Rate Limiter for security (no default limits - only specific endpoint limits)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=[],  # No global limits - use specific endpoint limits only
     storage_uri="memory://"
 )
 
