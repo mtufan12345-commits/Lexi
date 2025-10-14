@@ -92,6 +92,7 @@ def get_max_users_for_tier(tier):
     }
     return tier_limits.get(tier, 5)
 
+@app.before_request
 def cleanup_stale_pending_signups():
     """Clean up pending signups older than 24 hours"""
     from models import PendingSignup
@@ -106,8 +107,6 @@ def cleanup_stale_pending_signups():
             db.session.delete(signup)
         db.session.commit()
         print(f"🧹 Cleaned up {count} stale pending signups")
-    
-    return count
 
 @app.before_request
 def validate_host_header():
