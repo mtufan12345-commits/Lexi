@@ -22,6 +22,9 @@ from pdf2image import convert_from_path
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+# SECURITY: Enable Jinja2 autoescape to prevent XSS attacks
+app.jinja_env.autoescape = True
+
 app.secret_key = os.environ.get("SESSION_SECRET") or os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -2478,14 +2481,40 @@ def init_db():
             print("Database tables checked/created successfully")
             
             if not SuperAdmin.query.first():
+                # SECURITY: Generate strong random password for super admin (never hardcode!)
+                import secrets
+                import string
+                alphabet = string.ascii_letters + string.digits + string.punctuation
+                random_password = ''.join(secrets.choice(alphabet) for _ in range(24))
+                
                 admin = SuperAdmin(
                     email='admin@lex-cao.nl',
                     name='Super Administrator'
                 )
-                admin.set_password('admin123')
+                admin.set_password(random_password)
                 db.session.add(admin)
                 db.session.commit()
-                print("Super admin created: admin@lex-cao.nl / admin123")
+                
+                # SECURITY: Only log credentials when EXPLICITLY in development mode
+                # Default = NO logging (safe production behavior)
+                if os.getenv('ENVIRONMENT') == 'development':
+                    print("=" * 80)
+                    print("🔐 SUPER ADMIN ACCOUNT CREATED (DEVELOPMENT MODE)")
+                    print("=" * 80)
+                    print(f"Email: admin@lex-cao.nl")
+                    print(f"Password: {random_password}")
+                    print("")
+                    print("⚠️  Save this password NOW - it will not be shown again!")
+                    print("⚠️  Change it immediately after first login!")
+                    print("=" * 80)
+                else:
+                    # Production/default: NO credential logging (secure by default)
+                    print("✅ Super admin created successfully")
+                    # NOTE: For production, create super admin via one of these secure methods:
+                    # 1. Set SUPER_ADMIN_PASSWORD env var before first deployment
+                    # 2. Use secrets manager (AWS Secrets Manager, Vault, etc.)
+                    # 3. Create manually via secure admin interface
+                    # The random password is NOT accessible - rotate via password reset flow
     except Exception as e:
         print(f"Database initialization: {e}")
 

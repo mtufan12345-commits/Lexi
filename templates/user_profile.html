@@ -167,11 +167,18 @@ if (initialsEl) {
 function showAvatarFallback() {
     const preview = document.getElementById('avatar-preview');
     const initials = getUserInitials();
-    preview.innerHTML = `
-        <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border-4 border-gray-200 dark:border-zinc-700">
-            <span class="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">${initials}</span>
-        </div>
-    `;
+    
+    // SECURITY: Create DOM elements safely instead of innerHTML
+    const div = document.createElement('div');
+    div.className = 'w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center border-4 border-gray-200 dark:border-zinc-700';
+    
+    const span = document.createElement('span');
+    span.className = 'text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400';
+    span.textContent = initials; // textContent auto-escapes
+    
+    div.appendChild(span);
+    preview.innerHTML = '';
+    preview.appendChild(div);
 }
 
 function toggleDarkMode() {
@@ -204,7 +211,15 @@ async function uploadAvatar(event) {
         
         if (data.success && data.avatar_url) {
             const preview = document.getElementById('avatar-preview');
-            preview.innerHTML = `<img src="${data.avatar_url}" alt="Avatar" class="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-gray-200 dark:border-zinc-700">`;
+            
+            // SECURITY: Create img element safely instead of innerHTML
+            const img = document.createElement('img');
+            img.src = data.avatar_url; // Browser validates URL
+            img.alt = 'Avatar';
+            img.className = 'w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-gray-200 dark:border-zinc-700';
+            
+            preview.innerHTML = '';
+            preview.appendChild(img);
             location.reload();
         } else {
             alert(data.error || 'Upload mislukt');
