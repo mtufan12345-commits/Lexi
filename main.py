@@ -185,10 +185,10 @@ def super_admin_required(f):
 
 @app.after_request
 def add_cache_headers(response):
-    """Add cache headers for faster page loads"""
-    if request.endpoint and request.endpoint in ['index', 'pricing', 'login']:
-        # Cache static pages for 5 minutes
-        response.headers['Cache-Control'] = 'public, max-age=300'
+    """Disable cache in development to always get fresh content"""
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
     return response
 
 @app.route('/')
