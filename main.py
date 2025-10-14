@@ -26,11 +26,15 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
 }
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
-app.config['WTF_CSRF_ENABLED'] = os.getenv('ENABLE_CSRF', 'false').lower() == 'true'
+
+# CSRF Protection - ENABLED by default for security (disable only in dev with ENABLE_CSRF=false)
+app.config['WTF_CSRF_ENABLED'] = os.getenv('ENABLE_CSRF', 'true').lower() == 'true'
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 app.config['WTF_CSRF_SSL_STRICT'] = False
+
+# Session Cookie Security
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('ENVIRONMENT', 'production') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 if app.config['WTF_CSRF_ENABLED']:
