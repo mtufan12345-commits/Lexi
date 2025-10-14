@@ -397,7 +397,7 @@ def signup_success():
             # FALLBACK: Verify with Stripe and provision account directly
             try:
                 import stripe
-                from services.provision_tenant import provision_tenant_from_signup
+                from provision_tenant import provision_tenant_from_signup
                 
                 # SECURITY: Validate checkout session with Stripe API (server-side)
                 checkout_session = stripe.checkout.Session.retrieve(session_id)
@@ -1921,7 +1921,7 @@ def stripe_webhook():
     
     if event['type'] == 'checkout.session.completed':
         from models import PendingSignup
-        from services.provision_tenant import provision_tenant_from_signup
+        from provision_tenant import provision_tenant_from_signup
         
         session_obj = event['data']['object']
         checkout_session_id = session_obj.get('id')
