@@ -136,17 +136,8 @@
                         // Reinitialize nav links
                         initNavLinks();
                         
-                        // Re-run any page-specific scripts
-                        const scripts = doc.querySelectorAll('script');
-                        scripts.forEach(script => {
-                            if (script.innerHTML && !script.src) {
-                                try {
-                                    eval(script.innerHTML);
-                                } catch(e) {
-                                    console.error('Script error:', e);
-                                }
-                            }
-                        });
+                        // SECURITY: Do NOT use eval() - it creates XSS vulnerabilities
+                        // Scripts are automatically executed when inserted into DOM via innerHTML
                     }
                 })
                 .catch(error => {
