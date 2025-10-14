@@ -24,7 +24,7 @@
                 <input type="hidden" name="force_login" value="true"/>
                 <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wachtwoord om te bevestigen</label>
-                    <input type="password" name="password" required 
+                    <input type="password" name="password" required autocomplete="current-password"
                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
                 </div>
                 <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-md font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2">
@@ -42,13 +42,13 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                    <input type="email" name="email" value="{{ email or '' }}" required 
+                    <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email"
                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wachtwoord</label>
-                    <input type="password" name="password" required 
+                    <input type="password" name="password" required autocomplete="current-password"
                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 
