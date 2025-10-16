@@ -2525,9 +2525,6 @@ def init_db():
 
 init_db()
 
-def job():
-    print("Running scheduled task...")
-
 if __name__ == '__main__':  
     app.run(host='0.0.0.0', port=5000, debug=True)
     
