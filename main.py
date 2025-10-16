@@ -18,9 +18,6 @@ from functools import wraps
 from markitdown import MarkItDown
 import pytesseract
 from pdf2image import convert_from_path
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-import time
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -2531,19 +2528,6 @@ init_db()
 def job():
     print("Running scheduled task...")
 
-if __name__ == '__main__':
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(job, CronTrigger.from_crontab("*/1 * * * *"))  # every 5 min
-    scheduler.start()
-
-    print("Scheduler started...")
-
-    # Keep the script alive
-    try:
-        while True:
-            time.sleep(1)
-    except (KeyboardInterrupt, SystemExit):
-        scheduler.shutdown()
-        
+if __name__ == '__main__':  
     app.run(host='0.0.0.0', port=5000, debug=True)
     

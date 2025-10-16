@@ -23,4 +23,3 @@ Pillow
 pytesseract
 docx
 Flask-Limiter
-apscheduler
