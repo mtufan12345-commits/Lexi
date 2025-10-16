@@ -2532,9 +2532,8 @@ def job():
     print("Running scheduled task...")
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
     scheduler = BackgroundScheduler()
-    scheduler.add_job(job, CronTrigger.from_crontab("*/5 * * * *"))  # every 5 min
+    scheduler.add_job(job, CronTrigger.from_crontab("*/1 * * * *"))  # every 5 min
     scheduler.start()
 
     print("Scheduler started...")
@@ -2545,3 +2544,6 @@ if __name__ == '__main__':
             time.sleep(1)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
+        
+    app.run(host='0.0.0.0', port=5000, debug=True)
+    
