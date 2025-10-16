@@ -1,0 +1,56 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    # Trigger this workflow only on pushes to the 'main' branch
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Add the private SSH key to the agent
+      - name: Set up SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 3. Deploy using SSH
+      - name: Deploy Application
+        run: |
+          # The IP/Domain of your server. Add this as a GitHub Secret if needed.
+          SSH_USER="root"
+          SSH_HOST="88.198.191.193"
+          #SSH_HOST="65.21.148.97"
+          DEPLOY_PATH="/var/www/"
+          sudo apt update && sudo apt install -y zip 
+          zip -r Lexi-pipe.zip ../Lexi
+          # 3a. Ensure host key is known to avoid SSH prompt (security measure)
+          ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+          scp  Lexi-pipe.zip  $SSH_USER@$SSH_HOST:$DEPLOY_PATH
+          # 3b. Execute commands on the remote server
+          ssh $SSH_USER@$SSH_HOST "
+            # Navigate to the deployment directory
+            cd $DEPLOY_PATH
+            rm -r Lexi
+            unzip Lexi-pipe.zip
+            rm Lexi/.env
+            cp .env Lexi/.env
+            cd Lexi-pipe
+            export $(grep -v '^#' .env | xargs)
+            
+            export PATH=/root/.nvm/versions/node/v22.20.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+            node -v
+            npm install
+            npm run build
+            pm2 delete 0
+            pm2 start --name "Lexi" main.py --interpreter python3
+            #pm2 restart 0 #|| true # Use your specific restart command (PM2, systemd, etc.)
+            rm ../Casemeister-pipe.zip
+
+          "
