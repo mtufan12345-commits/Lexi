@@ -2528,5 +2528,20 @@ def init_db():
 
 init_db()
 
+def job():
+    print("Running scheduled task...")
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(job, CronTrigger.from_crontab("*/5 * * * *"))  # every 5 min
+    scheduler.start()
+
+    print("Scheduler started...")
+
+    # Keep the script alive
+    try:
+        while True:
+            time.sleep(1)
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
