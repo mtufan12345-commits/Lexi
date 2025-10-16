@@ -43,5 +43,5 @@ channel = "stable-25_05"
 packages = ["cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "poppler", "poppler_utils", "rustc", "stripe-cli", "tcl", "tesseract", "tk", "zlib"]
 
 [deployment]
-deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "main:app"]
+deploymentTarget = "scheduled"
+run = ["python3", "scripts/run_git_autopush.py"]
