@@ -10,7 +10,8 @@ import io
 from PyPDF2 import PdfReader
 from docx import Document
 
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY', '')
+# Productie Stripe key heeft voorrang over test key
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY_PROD') or os.getenv('STRIPE_SECRET_KEY', '')
 
 class VertexAIService:
     def __init__(self):

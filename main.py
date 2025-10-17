@@ -69,9 +69,11 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
-# Initialize Stripe globally
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
-print(f"Stripe initialized: {stripe.api_key is not None}")
+# Initialize Stripe globally - Gebruik productie keys met fallback naar test keys
+# Productie heeft voorrang: STRIPE_SECRET_KEY_PROD > STRIPE_SECRET_KEY
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY_PROD') or os.getenv('STRIPE_SECRET_KEY')
+is_production_stripe = bool(os.getenv('STRIPE_SECRET_KEY_PROD'))
+print(f"Stripe initialized: {'Production' if is_production_stripe else 'Test'} mode - Key present: {stripe.api_key is not None}")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -280,7 +282,8 @@ def signup_tenant():
             base_url = request.host_url.rstrip('/')
             
             # Use Stripe HTTP API directly to avoid SDK issues
-            stripe_api_key = os.getenv('STRIPE_SECRET_KEY')
+            # Productie key heeft voorrang over test key
+            stripe_api_key = os.getenv('STRIPE_SECRET_KEY_PROD') or os.getenv('STRIPE_SECRET_KEY')
             stripe_headers = {
                 'Authorization': f'Bearer {stripe_api_key}',
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -1901,12 +1904,16 @@ def billing_success():
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
-    webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
+    # Productie webhook secret heeft voorrang over test webhook secret
+    webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET_PROD') or os.getenv('STRIPE_WEBHOOK_SECRET')
     
     # SECURITY: Webhook secret MUST be configured
     if not webhook_secret:
         print("❌ CRITICAL: STRIPE_WEBHOOK_SECRET not configured - webhook rejected")
         return jsonify({'error': 'Webhook not properly configured'}), 500
+    
+    is_prod_webhook = bool(os.getenv('STRIPE_WEBHOOK_SECRET_PROD'))
+    print(f"📥 Webhook received - Mode: {'Production' if is_prod_webhook else 'Test'}")
     
     # SECURITY: Signature verification is MANDATORY - no bypasses
     try:
