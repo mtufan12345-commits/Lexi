@@ -1,18 +1,18 @@
-# Stripe Price IDs Configuration
-# These correspond to the products created in Stripe Dashboard
+# Stripe Price IDs Configuration - PRODUCTION MODE
+# These correspond to the products created in Stripe Dashboard (Live Mode)
 
 STRIPE_PRICES = {
     'starter': {
-        'monthly': 'price_1SH4ZOD8m8yYEAVBhGwj61n4',  # TEST MODE
-        'yearly': 'price_1SGiM5D8m8yYEAVB0ynuVjvl'
+        'monthly': 'price_1SGiKZD8m8yYEAVBSAdF32kZ',  # €499/maand
+        'yearly': 'price_1SGiM5D8m8yYEAVB0ynuVjvl'    # Starter yearly
     },
     'professional': {
-        'monthly': 'price_1SI4LUD8m8yYEAVBbBcEI4CY',  # TEST MODE
-        'yearly': 'price_1SGiOrD8m8yYEAVBoAzWBMO9'  # TODO: Update to test mode price ID
+        'monthly': 'price_1SGiNlD8m8yYEAVBVtUAS1f4',  # €599/maand
+        'yearly': 'price_1SGiOrD8m8yYEAVBoAzWBMO9'    # Professional yearly
     },
     'enterprise': {
-        'monthly': 'price_1SGiPXD8m8yYEAVBMSOSV5Dz',
-        'yearly': 'price_1SGiQGD8m8yYEAVBQCSMOClc'
+        'monthly': 'price_1SGiPXD8m8yYEAVBMSOSV5Dz',  # €1.199/maand
+        'yearly': 'price_1SGiQGD8m8yYEAVBQCSMOClc'    # Enterprise yearly
     }
 }
 
