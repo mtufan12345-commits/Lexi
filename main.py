@@ -254,6 +254,7 @@ def signup_tenant():
         password = request.form.get('password') or ''
         tier = request.form.get('tier', 'starter')
         billing = request.form.get('billing', 'monthly')
+        cao_preference = request.form.get('cao_preference', 'NBBU')
         
         # Validate inputs
         if not all([company_name, contact_email, contact_name, password]):
@@ -299,7 +300,8 @@ def signup_tenant():
                 'customer_email': contact_email,
                 'metadata[signup_email]': contact_email,
                 'metadata[tier]': tier,
-                'metadata[billing]': billing
+                'metadata[billing]': billing,
+                'metadata[cao_preference]': cao_preference
             }
             
             response = requests.post(
@@ -320,7 +322,8 @@ def signup_tenant():
                 company_name=company_name,
                 contact_name=contact_name,
                 tier=tier,
-                billing=billing
+                billing=billing,
+                cao_preference=cao_preference
             )
             pending_signup.set_password(password)  # Hash the password
             db.session.add(pending_signup)
@@ -857,8 +860,10 @@ def send_message(chat_id):
             return jsonify({'response': f"⚠️ Kon geen bestanden lezen:\n{error_msg}\n\nProbeer andere bestanden.", 'has_errors': True})
     
     print("[DEBUG] Calling Vertex AI service...")
-    lex_response = vertex_ai_service.chat(ai_message)
-    print(f"[DEBUG] Lexi response: {lex_response[:100]}...")
+    from cao_config import get_system_instruction
+    cao_instruction = get_system_instruction(g.tenant)
+    lex_response = vertex_ai_service.chat(ai_message, system_instruction=cao_instruction)
+    print(f"[DEBUG] Lexi response ({g.tenant.cao_preference} CAO): {lex_response[:100]}...")
     
     # Create assistant message dict for S3
     assistant_msg_dict = {
@@ -1648,6 +1653,26 @@ def admin_dashboard():
                          messages_this_month=messages_this_month,
                          active_users_count=active_users_count,
                          top_users=top_users)
+
+@app.route('/admin/cao/update', methods=['POST'])
+@login_required
+@tenant_required
+@admin_required
+def update_cao_preference():
+    from cao_config import validate_cao_preference, get_cao_display_name
+    
+    new_cao = request.form.get('cao_preference')
+    
+    if not validate_cao_preference(new_cao):
+        flash('Ongeldige CAO keuze.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    
+    g.tenant.cao_preference = new_cao
+    db.session.commit()
+    
+    cao_name = get_cao_display_name(new_cao)
+    flash(f'CAO voorkeur succesvol gewijzigd naar {cao_name}. Alle nieuwe chats gebruiken nu deze CAO.', 'success')
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/users', methods=['GET', 'POST'])
 @login_required

@@ -1,0 +1,90 @@
+Ik wil CAO selectie functionaliteit toevoegen aan mijn applicatie. Gebruikers moeten kunnen kiezen tussen NBBU CAO en ABU CAO, en de AI agent moet alleen de gekozen CAO gebruiken in antwoorden.
+
+STAP 1 - DATABASE WIJZIGINGEN:
+1. Voeg `cao_preference` field toe aan Tenant model in models.py:
+   - Type: String(10)
+   - Default: 'NBBU'
+   - Mogelijke waardes: 'NBBU' of 'ABU'
+
+2. Voeg ook `cao_preference` field toe aan PendingSignup model
+
+3. Run database migratie om de kolom toe te voegen aan bestaande tabellen:
+   ALTER TABLE tenants ADD COLUMN cao_preference VARCHAR(10) DEFAULT 'NBBU';
+   ALTER TABLE pending_signups ADD COLUMN cao_preference VARCHAR(10) DEFAULT 'NBBU';
+
+STAP 2 - REGISTRATION FORM:
+Voeg CAO selector toe aan signup/registration form (waarschijnlijk in templates/prijzen.html of signup.html):
+```html
+<div class="form-group">
+    <label for="cao_preference">
+        <i class="fas fa-file-contract"></i>
+        Welke CAO gebruikt jouw bedrijf? *
+    </label>
+    <select name="cao_preference" id="cao_preference" class="form-control" required>
+        <option value="NBBU">NBBU CAO (Metalektro - Metaal & Techniek)</option>
+        <option value="ABU">ABU CAO (Uitzendkrachten - Flex & Detachering)</option>
+    </select>
+    <small class="form-text text-muted">
+        Deze keuze bepaalt welke CAO-informatie Lexi gebruikt
+    </small>
+</div>
+```
+
+STAP 3 - BACKEND UPDATES:
+1. Update create-checkout-session route om cao_preference op te slaan in PendingSignup
+2. Update stripe webhook handler om cao_preference van PendingSignup naar Tenant te kopieren bij account creation
+
+STAP 4 - DYNAMIC SYSTEM PROMPT:
+Maak nieuw bestand cao_config.py met deze functie:
+```python
+def get_system_instruction(tenant):
+    cao = tenant.cao_preference if tenant else 'NBBU'
+    
+    if cao == 'ABU':
+        cao_full = "ABU CAO (Uitzendkrachten)"
+        cao_description = "de uitzendbranche en flexwerkers"
+        alternative_cao = "NBBU"
+    else:
+        cao_full = "NBBU CAO (Metalektro)"
+        cao_description = "de metaal-, elektro- en technologische industrie"
+        alternative_cao = "ABU"
+    
+    return f"""Je bent Lexi, een AI-assistent gespecialiseerd in arbeidsrecht en CAO-regelingen.
+
+🎯 BELANGRIJKE CONTEXT:
+Deze gebruiker werkt onder de {cao_full} voor {cao_description}.
+
+📋 STRIKTE INSTRUCTIES:
+1. Gebruik ALLEEN de {cao_full} voor CAO-specifieke vragen
+2. Als je informatie vindt over BEIDE CAO's:
+   → Gebruik UITSLUITEND informatie uit de {cao_full}
+   → NEGEER volledig informatie uit de {alternative_cao} CAO
+3. Bij antwoorden over vakantiedagen, salaris, werktijden:
+   → Begin met: "Volgens de {cao_full}..."
+4. Voeg altijd deze disclaimer toe:
+   "⚠️ Dit is algemene informatie over de {cao_full}. Voor persoonlijk advies raadpleeg een juridisch expert."
+
+Blijf altijd binnen de context van de {cao_full}."""
+```
+
+STAP 5 - UPDATE CHAT ENDPOINT:
+In de chat route (waar Vertex AI agent wordt aangeroepen):
+1. Import: from cao_config import get_system_instruction
+2. Haal tenant op: tenant = current_user.tenant
+3. Generate instruction: system_instruction = get_system_instruction(tenant)
+4. Gebruik deze instruction bij Vertex AI call
+
+STAP 6 - SETTINGS PAGE:
+Voeg CAO wijzigings-optie toe aan settings page:
+- Dropdown om CAO te wijzigen (alleen voor admins)
+- Warning dat dit invloed heeft op alle gebruikers
+- POST route /settings/cao om wijziging op te slaan
+
+IMPLEMENTEER ALLE STAPPEN EN TEST OF:
+1. Bij registratie de CAO keuze wordt opgeslagen
+2. Chat responses gebruiken de juiste CAO
+3. CAO kan worden gewijzigd in settings
+4. Database migratie succesvol is
+
+Start met stap 1 en werk door alle stappen heen.
+```

@@ -21,6 +21,7 @@ class PendingSignup(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     tier = db.Column(db.String(50), nullable=False)
     billing = db.Column(db.String(50), nullable=False)
+    cao_preference = db.Column(db.String(10), default='NBBU', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def set_password(self, password):
@@ -58,6 +59,7 @@ class Tenant(db.Model):
     custom_branding_enabled = db.Column(db.Boolean, default=False)
     api_access_enabled = db.Column(db.Boolean, default=False)
     dedicated_manager_email = db.Column(db.String(255), nullable=True)
+    cao_preference = db.Column(db.String(10), default='NBBU', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

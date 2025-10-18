@@ -93,7 +93,7 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
             print(f"Vertex AI initialization failed: {e}")
             self.enabled = False
 
-    def chat(self, message, conversation_history=None):
+    def chat(self, message, conversation_history=None, system_instruction=None):
         if not self.enabled:
             return "Lexi is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om Lexi te activeren."
         
@@ -127,12 +127,14 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
                 )
             ]
             
+            instruction_text = system_instruction if system_instruction else self.system_instruction
+            
             config = self.types.GenerateContentConfig(
                 temperature=1,
                 top_p=0.95,
                 max_output_tokens=65535,
                 tools=tools,
-                system_instruction=[self.types.Part.from_text(text=self.system_instruction)],
+                system_instruction=[self.types.Part.from_text(text=instruction_text)],
                 thinking_config=self.types.ThinkingConfig(thinking_budget=-1),
             )
             

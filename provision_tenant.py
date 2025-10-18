@@ -56,8 +56,9 @@ def provision_tenant_from_signup(pending_signup, stripe_session_data=None):
     password_hash = pending_signup.password_hash  # Already hashed
     tier = pending_signup.tier
     billing = pending_signup.billing
+    cao_preference = pending_signup.cao_preference if hasattr(pending_signup, 'cao_preference') else 'NBBU'
     
-    print(f"🔄 Provisioning tenant for: {email}, tier: {tier}, billing: {billing}")
+    print(f"🔄 Provisioning tenant for: {email}, tier: {tier}, billing: {billing}, CAO: {cao_preference}")
     
     try:
         # Create unique subdomain
@@ -78,7 +79,8 @@ def provision_tenant_from_signup(pending_signup, stripe_session_data=None):
             contact_name=contact_name,
             status='active',
             subscription_tier=tier,
-            max_users=get_max_users_for_tier(tier)
+            max_users=get_max_users_for_tier(tier),
+            cao_preference=cao_preference
         )
         db.session.add(tenant)
         db.session.flush()  # Get tenant.id
