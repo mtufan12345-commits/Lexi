@@ -88,6 +88,10 @@ class User(db.Model, UserMixin):
     disclaimer_accepted_at = db.Column(db.DateTime, nullable=True)
     first_chat_warning_seen_at = db.Column(db.DateTime, nullable=True)
     
+    # Password reset tokens
+    reset_token = db.Column(db.String(255), unique=True, nullable=True)
+    reset_token_expires_at = db.Column(db.DateTime, nullable=True)
+    
     chats = db.relationship('Chat', backref='user', lazy=True, cascade='all, delete-orphan')
     support_tickets = db.relationship('SupportTicket', backref='user', lazy=True, cascade='all, delete-orphan')
     
