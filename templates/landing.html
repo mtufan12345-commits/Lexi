@@ -1,6 +1,88 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Organization Schema Markup -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Lexi AI",
+  "url": "https://lexiai.nl",
+  "logo": "https://lexiai.nl/static/images/lexi-logo.png",
+  "description": "AI-assistent voor CAO-vragen in de glastuinbouw",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Gouverneurlaan 445",
+    "addressLocality": "Den Haag",
+    "postalCode": "2523 CB",
+    "addressCountry": "NL"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "email": "info@lexiai.nl",
+    "contactType": "customer service"
+  }
+}
+</script>
+
+<!-- FAQPage Schema Markup -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Welke CAO's zitten in Lexi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ABU & NBBU CAO voor Uitzendkrachten, CAO Glastuinbouw, plus Burgerlijk Wetboek, arbeidsregelgeving, pensioen, loonberekeningen en detacheringsregels. Meer dan 1.000 juridische documenten."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Lexi altijd actueel?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, we updaten automatisch bij CAO-wijzigingen en nieuwe wetgeving. U werkt altijd met de laatste versie."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hoeveel kost Lexi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Vanaf €499/maand voor 5 gebruikers."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hoe begin ik met Lexi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Kies een plan dat bij uw team past, maak een account aan en binnen 5 minuten kunt u juridische vragen stellen aan Lexi."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Voor wie is Lexi geschikt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Uitzendbureaus in de glastuinbouw-sector. Specifiek voor HR-managers, payroll specialisten, operations en planning."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hoe snel krijg ik een antwoord?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Gemiddeld binnen 30 seconden krijgt u een compleet antwoord met bronvermelding."
+      }
+    }
+  ]
+}
+</script>
+
 <div class="min-h-screen bg-white dark:bg-black">
     <!-- Navigation -->
     <nav class="border-b border-gray-100 dark:border-zinc-900">
@@ -59,7 +141,6 @@
     <section class="max-w-7xl mx-auto px-6 py-20 md:py-32">
         <div class="max-w-4xl mx-auto text-center">
             <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6">
-                Complete<br/>
                 <span class="text-gold-500">AI-assistent</span> voor CAO-vragen
             </h1>
             
@@ -183,7 +264,7 @@
                     <p class="font-semibold text-lg">"Welke toeslagen gelden er voor nacht- en weekendwerk in de glastuinbouw?"</p>
                     <p class="font-semibold text-lg">"Mag ik loon inhouden bij ziekte tijdens de proeftijd?"</p>
                     <p class="font-semibold text-lg">"Wat zijn de transitievergoedingsregels bij seizoenscontracten?"</p>
-                    <p class="font-semibold text-lg">"Hoe bereken ik de de fase telling bij wisselende diensten?"</p>
+                    <p class="font-semibold text-lg">"Hoe bereken ik de fase telling bij wisselende diensten?"</p>
                 </div>
             </div>
             
