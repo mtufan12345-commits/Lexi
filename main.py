@@ -576,7 +576,10 @@ def forgot_password():
                 flash('Een email met een reset link is verzonden! Check je inbox.', 'success')
                 return redirect(url_for('login'))
             else:
-                flash('Account is gedeactiveerd of tenant niet gevonden.', 'danger')
+                # Account inactive or tenant not found
+                # Don't reveal this to prevent email enumeration - show generic message
+                flash('Als dit email adres bestaat, ontvang je een reset email.', 'info')
+                return redirect(url_for('login'))
         else:
             # Security: Don't reveal if email exists or not
             # Still show success to prevent email enumeration
