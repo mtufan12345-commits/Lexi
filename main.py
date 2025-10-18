@@ -1712,7 +1712,8 @@ def admin_users():
                 db.session.commit()
                 
                 login_url = f"https://{g.tenant.subdomain}.lex-cao.replit.app/login"
-                email_service.send_welcome_email(user, g.tenant, login_url)
+                admin_name = f"{current_user.first_name} {current_user.last_name}"
+                email_service.send_user_invitation_email(user, g.tenant, login_url, password, admin_name)
                 
                 flash(f'Gebruiker toegevoegd als {role}!', 'success')
         
