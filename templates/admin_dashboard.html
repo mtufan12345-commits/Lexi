@@ -184,7 +184,7 @@
                 
                 <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-4">
                     <p class="text-sm text-yellow-800 dark:text-yellow-300">
-                        <strong>⚠️ Belangrijk:</strong> Deze instelling bepaalt welke CAO informatie Lexi gebruikt voor <strong>alle gebruikers</strong> in je organisatie.
+                        <strong>⚠️ Belangrijk:</strong> Lexi gebruikt altijd alle 1.000+ documenten. Deze instelling bepaalt hoe CAO-antwoorden worden geframed voor <strong>alle gebruikers</strong> in je organisatie.
                     </p>
                 </div>
                 
@@ -198,10 +198,10 @@
                         <select name="cao_preference" id="cao_preference" required
                                 class="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500 dark:bg-zinc-900 dark:text-white">
                             <option value="NBBU" {% if tenant.cao_preference == 'NBBU' %}selected{% endif %}>
-                                NBBU CAO (Metalektro - Metaal & Techniek)
+                                NBBU CAO (Uitzendkrachten)
                             </option>
                             <option value="ABU" {% if tenant.cao_preference == 'ABU' %}selected{% endif %}>
-                                ABU CAO (Uitzendkrachten - Flex & Detachering)
+                                ABU CAO (Uitzendkrachten)
                             </option>
                         </select>
                     </div>
