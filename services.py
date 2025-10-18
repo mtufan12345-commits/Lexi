@@ -475,6 +475,133 @@ class EmailService:
         """
         return self.send_email(user.email, subject, html_content)
     
+    def send_user_invitation_email(self, user, tenant, login_url, password, admin_name):
+        """Send invitation email to new user created by admin with login credentials"""
+        subject = f"Je bent uitgenodigd voor Lexi CAO Meester bij {tenant.company_name}"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <!-- Header met Lexi branding -->
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">
+                                        LEXI
+                                    </h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">
+                                        CAO MEESTER
+                                    </p>
+                                </td>
+                            </tr>
+                            
+                            <!-- Content -->
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">
+                                        Welkom bij Lexi CAO Meester! 👋
+                                    </h2>
+                                    
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Hoi {user.first_name},
+                                    </p>
+                                    
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        {admin_name} heeft een account voor je aangemaakt bij <strong style="color: #1a2332;">{tenant.company_name}</strong>. 
+                                        Je hebt nu toegang tot Lexi, jouw AI-assistent voor CAO-vragen in de glastuinbouw sector.
+                                    </p>
+                                    
+                                    <!-- Login credentials box -->
+                                    <div style="background-color: #f9fafb; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <h3 style="margin: 0 0 16px 0; color: #1a2332; font-size: 18px; font-weight: 600;">
+                                            📧 Jouw inloggegevens
+                                        </h3>
+                                        
+                                        <table width="100%" cellpadding="8" cellspacing="0">
+                                            <tr>
+                                                <td style="color: #6b7280; font-size: 14px; font-weight: 600; width: 100px;">Email:</td>
+                                                <td style="color: #1a2332; font-size: 14px; font-family: 'Courier New', monospace;">
+                                                    {user.email}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #6b7280; font-size: 14px; font-weight: 600;">Wachtwoord:</td>
+                                                <td style="color: #1a2332; font-size: 14px; font-family: 'Courier New', monospace; background-color: #ffffff; padding: 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                                                    <strong>{password}</strong>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                                            💡 <strong>Tip:</strong> We raden aan om je wachtwoord te wijzigen na je eerste login via je profielinstellingen.
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- CTA Button -->
+                                    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 32px 0;">
+                                        <tr>
+                                            <td align="center">
+                                                <a href="{login_url}" 
+                                                   style="display: inline-block; background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); color: #d4af37; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(26, 35, 50, 0.3);">
+                                                    Inloggen →
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <p style="margin: 24px 0 0 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Met Lexi kun je direct antwoorden krijgen op al je CAO-vragen. Vraag gewoon wat je wilt weten!
+                                    </p>
+                                    
+                                    <!-- Features -->
+                                    <div style="margin: 32px 0; padding: 24px; background-color: #f9fafb; border-radius: 8px;">
+                                        <h3 style="margin: 0 0 16px 0; color: #1a2332; font-size: 16px; font-weight: 600;">
+                                            ✨ Wat kun je met Lexi?
+                                        </h3>
+                                        <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 2;">
+                                            <li>Stel CAO-vragen en krijg direct antwoorden</li>
+                                            <li>Gebaseerd op 1.000+ officiële documenten</li>
+                                            <li>Upload eigen documenten voor analyse</li>
+                                            <li>Genereer contracten en brieven</li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Footer -->
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+                                        Veel succes met Lexi! 🚀
+                                    </p>
+                                    <p style="margin: 0; color: #9ca3af; font-size: 13px;">
+                                        Het <strong style="color: #d4af37;">Lexi AI</strong> Team
+                                    </p>
+                                    
+                                    <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 12px; line-height: 1.6;">
+                                        Deze email is verstuurd naar {user.email}<br>
+                                        omdat je bent uitgenodigd voor Lexi CAO Meester.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        
+        return self.send_email(user.email, subject, html_content)
+    
     def send_payment_failed_email(self, tenant):
         subject = "⚠️ Betaling mislukt"
         html_content = f"""
