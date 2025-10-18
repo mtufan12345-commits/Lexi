@@ -585,6 +585,50 @@ def forgot_password():
     
     return render_template('forgot_password.html')
 
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
+def reset_password(token):
+    """Reset password using token (GET: show form, POST: process new password)"""
+    from datetime import datetime
+    
+    # Find user by reset token
+    user = User.query.filter_by(reset_token=token).first()
+    
+    # Validate token exists and is not expired
+    if not user or not user.reset_token_expires_at:
+        flash('Ongeldige of verlopen reset link.', 'danger')
+        return redirect(url_for('forgot_password'))
+    
+    if datetime.utcnow() > user.reset_token_expires_at:
+        flash('Deze reset link is verlopen. Vraag een nieuwe aan.', 'danger')
+        return redirect(url_for('forgot_password'))
+    
+    # GET: Show reset password form
+    if request.method == 'GET':
+        return render_template('reset_password.html', token=token)
+    
+    # POST: Process new password
+    new_password = request.form.get('password', '').strip()
+    confirm_password = request.form.get('confirm_password', '').strip()
+    
+    # Validate password
+    if not new_password or len(new_password) < 8:
+        flash('Wachtwoord moet minimaal 8 karakters zijn.', 'danger')
+        return render_template('reset_password.html', token=token)
+    
+    if new_password != confirm_password:
+        flash('Wachtwoorden komen niet overeen.', 'danger')
+        return render_template('reset_password.html', token=token)
+    
+    # Update password and invalidate token (single-use token)
+    user.set_password(new_password)
+    user.reset_token = None
+    user.reset_token_expires_at = None
+    db.session.commit()
+    
+    flash('Je wachtwoord is succesvol gereset! Je kunt nu inloggen.', 'success')
+    return redirect(url_for('login'))
+
 @app.route('/super-admin/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def super_admin_login():
