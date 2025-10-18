@@ -1,0 +1,81 @@
+Ik wil de SEO van mijn LexiAI website verbeteren. De site draait op Python/Flask in Replit. 
+Voer de volgende SEO-optimalisaties uit:
+
+### 1. TECHNISCHE SEO FUNDAMENTEN
+
+**Sitemap.xml genereren:**
+- Creëer een dynamische sitemap.xml route in Flask
+- Voeg alle belangrijke pagina's toe (/, /prijzen, /login, /privacy)
+- Stel de juiste lastmod, changefreq en priority in
+- Zorg dat de sitemap toegankelijk is op /sitemap.xml
+
+**Robots.txt aanmaken:**
+- Creëer een robots.txt route in Flask
+- Sta alle crawlers toe (User-agent: *)
+- Verwijs naar de sitemap locatie
+- Blokkeer geen belangrijke pagina's
+
+**Canonical tags toevoegen:**
+- Voeg een self-referencing canonical tag toe aan alle pagina's
+- Zorg dat de canonical URL altijd https://lexiai.nl/ gebruikt (zonder www )
+
+### 2. SCHEMA MARKUP IMPLEMENTEREN
+
+**Organization Schema toevoegen aan homepage:**
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Lexi AI",
+  "url": "https://lexiai.nl",
+  "logo": "https://lexiai.nl/static/images/lexi-logo.png",
+  "description": "AI-assistent voor CAO-vragen in de glastuinbouw",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Gouverneurlaan 445",
+    "addressLocality": "Den Haag",
+    "postalCode": "2523 CB",
+    "addressCountry": "NL"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "email": "info@lexiai.nl",
+    "contactType": "customer service"
+  }
+}
+FAQPage Schema toevoegen:
+Converteer de "Veelgestelde vragen" sectie naar FAQPage schema
+Voeg alle 6 FAQ items toe met Question en Answer types
+3. META TAGS OPTIMALISEREN
+Open Graph tags verbeteren:
+Voeg og:image toe (gebruik het Lexi logo )
+Zorg dat og:description consistent is met de meta description
+Voeg og:url toe met de canonical URL
+Voeg og:type="website" toe
+Twitter Card tags toevoegen:
+twitter:card = "summary_large_image"
+twitter:title = "Lexi CAO Meester - AI-assistent voor CAO-vragen"
+twitter:description = (zelfde als meta description)
+twitter:image = (zelfde als og:image)
+4. CONTENT VERBETERINGEN
+Typfout repareren:
+Zoek en vervang "de de fase telling" naar "de fase telling"
+H1 tag optimaliseren:
+Zorg dat de H1 alleen de tekst bevat: "AI-assistent voor CAO-vragen"
+Verwijder het woord "Complete" uit de H1 (kan in een span met andere styling)
+5. PAGINASNELHEID OPTIMALISATIE
+Afbeeldingen optimaliseren:
+Converteer het logo naar WebP formaat indien mogelijk
+Voeg width en height attributes toe aan de img tag
+Implementeer lazy loading voor afbeeldingen below the fold
+CSS/JS optimalisatie:
+Zorg dat /static/css/output.css gecomprimeerd wordt geserveerd (gzip)
+Voeg cache headers toe voor statische bestanden
+6. IMPLEMENTATIE DETAILS
+Pas de volgende Flask code aan:
+Voeg routes toe voor sitemap.xml en robots.txt
+Update de base template met alle meta tags en schema markup
+Voeg canonical tags toe aan alle templates
+Implementeer gzip compressie voor responses
+Voeg cache headers toe voor statische files
+Genereer de volledige code voor deze wijzigingen en test of alles correct werkt.

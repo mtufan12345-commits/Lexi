@@ -4,13 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon.png') }}">
+    
+    <!-- SEO Meta Tags -->
     <title>{% block title %}Lexi CAO Meester - AI-assistent voor CAO-vragen{% endblock %}</title>
     <meta name="description" content="{% block description %}AI-assistent voor CAO-vragen in de glastuinbouw. Van CAO-regels tot arbeidsrecht, van loonberekening tot internationale detacheringsregels. Bespaar €18.000/jaar aan advieskosten.{% endblock %}">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{% block canonical %}https://lexiai.nl{{ request.path }}{% endblock %}">
+    
+    <!-- Open Graph Tags -->
     <meta property="og:title" content="{% block og_title %}Lexi CAO Meester - AI-assistent voor CAO-vragen{% endblock %}">
     <meta property="og:description" content="{% block og_description %}1.000+ juridische documenten, 24/7 beschikbaar. Gemiddeld €18.000/jaar kostenbesparing.{% endblock %}">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="{% block og_url %}https://lexiai.nl{{ request.path }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}https://lexiai.nl/static/images/lexi-logo.png{% endblock %}">
+    <meta property="og:site_name" content="Lexi AI">
+    <meta property="og:locale" content="nl_NL">
+    
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Lexi CAO Meester - AI-assistent voor CAO-vragen{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}AI-assistent voor CAO-vragen in de glastuinbouw. 1.000+ juridische documenten, 24/7 beschikbaar. Bespaar €18.000/jaar.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}https://lexiai.nl/static/images/lexi-logo.png{% endblock %}">
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
     <style>
         .lexi-animation {

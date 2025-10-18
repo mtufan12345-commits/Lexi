@@ -186,12 +186,63 @@ def super_admin_required(f):
     return decorated_function
 
 @app.after_request
-def add_cache_headers(response):
-    """Disable cache in development to always get fresh content"""
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
+def add_cache_and_compression_headers(response):
+    """Add cache headers and gzip compression"""
+    # Enable gzip compression for text-based responses
+    if response.mimetype in ['text/html', 'text/css', 'text/javascript', 'application/javascript', 'application/json', 'text/xml', 'application/xml']:
+        response.headers['Vary'] = 'Accept-Encoding'
+    
+    # Cache static files for 1 year, no cache for dynamic pages
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    else:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    
     return response
+
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate dynamic sitemap.xml for SEO"""
+    from datetime import datetime
+    from flask import Response
+    
+    pages = [
+        {'loc': url_for('index', _external=True), 'lastmod': '2025-01-18', 'changefreq': 'weekly', 'priority': '1.0'},
+        {'loc': url_for('pricing', _external=True), 'lastmod': '2025-01-18', 'changefreq': 'weekly', 'priority': '0.9'},
+        {'loc': url_for('login', _external=True), 'lastmod': '2025-01-18', 'changefreq': 'monthly', 'priority': '0.8'},
+        {'loc': url_for('privacy', _external=True), 'lastmod': '2025-01-18', 'changefreq': 'monthly', 'priority': '0.5'},
+        {'loc': url_for('terms', _external=True), 'lastmod': '2025-01-18', 'changefreq': 'monthly', 'priority': '0.5'},
+    ]
+    
+    sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    sitemap_xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    for page in pages:
+        sitemap_xml += '  <url>\n'
+        sitemap_xml += f'    <loc>{page["loc"]}</loc>\n'
+        sitemap_xml += f'    <lastmod>{page["lastmod"]}</lastmod>\n'
+        sitemap_xml += f'    <changefreq>{page["changefreq"]}</changefreq>\n'
+        sitemap_xml += f'    <priority>{page["priority"]}</priority>\n'
+        sitemap_xml += '  </url>\n'
+    
+    sitemap_xml += '</urlset>'
+    
+    return Response(sitemap_xml, mimetype='application/xml')
+
+@app.route('/robots.txt')
+def robots():
+    """Generate robots.txt for SEO"""
+    from flask import Response
+    
+    robots_txt = f"""User-agent: *
+Allow: /
+
+Sitemap: {url_for('sitemap', _external=True)}
+"""
+    
+    return Response(robots_txt, mimetype='text/plain')
 
 @app.route('/')
 def index():
