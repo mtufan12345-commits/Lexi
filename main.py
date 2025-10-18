@@ -2145,6 +2145,25 @@ def super_admin_update_tenant_tier(tenant_id):
     
     return redirect(url_for('super_admin_dashboard'))
 
+@app.route('/super-admin/tenants/<int:tenant_id>/cao', methods=['POST'])
+@super_admin_required
+def super_admin_update_tenant_cao(tenant_id):
+    from cao_config import validate_cao_preference, get_cao_display_name
+    
+    tenant = Tenant.query.get_or_404(tenant_id)
+    new_cao = request.form.get('cao_preference')
+    
+    if validate_cao_preference(new_cao):
+        tenant.cao_preference = new_cao
+        db.session.commit()
+        
+        cao_name = get_cao_display_name(new_cao)
+        flash(f'CAO voorkeur voor {tenant.company_name} bijgewerkt naar {cao_name}!', 'success')
+    else:
+        flash('Ongeldige CAO keuze.', 'danger')
+    
+    return redirect(url_for('super_admin_dashboard'))
+
 @app.route('/super-admin/impersonate/<int:tenant_id>', methods=['POST'])
 @super_admin_required
 def super_admin_impersonate(tenant_id):

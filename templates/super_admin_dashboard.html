@@ -141,6 +141,7 @@
                             </div>
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Tier</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">CAO</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">MRR</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Gebruikers</th>
@@ -172,6 +173,20 @@
                                     <option value="starter" {% if tenant.subscription_tier == 'starter' %}selected{% endif %}>Starter</option>
                                     <option value="professional" {% if tenant.subscription_tier == 'professional' %}selected{% endif %}>Professional</option>
                                     <option value="enterprise" {% if tenant.subscription_tier == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <form method="POST" action="/super-admin/tenants/{{ tenant.id }}/cao" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <select name="cao_preference" onchange="this.form.submit()" 
+                                        class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1 text-gray-300">
+                                    <option value="NBBU" {% if tenant.cao_preference == 'NBBU' %}selected{% endif %}>NBBU</option>
+                                    <option value="ABU" {% if tenant.cao_preference == 'ABU' %}selected{% endif %}>ABU</option>
+                                    <option value="Hortiplan" {% if tenant.cao_preference == 'Hortiplan' %}selected{% endif %}>Hortiplan</option>
+                                    <option value="CAO_Uitzendkrachten" {% if tenant.cao_preference == 'CAO_Uitzendkrachten' %}selected{% endif %}>Uitzendkrachten</option>
+                                    <option value="Agrarisch" {% if tenant.cao_preference == 'Agrarisch' %}selected{% endif %}>Agrarisch</option>
+                                    <option value="Overig" {% if tenant.cao_preference == 'Overig' %}selected{% endif %}>Overig</option>
                                 </select>
                             </form>
                         </td>
