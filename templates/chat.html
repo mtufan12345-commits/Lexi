@@ -568,7 +568,7 @@ window.acceptFirstChatWarning = async function() {
         // Mark warning as seen in backend
         await fetch('/api/user/accept-first-chat-warning', {
             method: 'POST',
-            headers: {'X-CSRFToken': getCSRFToken()}
+            headers: {'X-CSRFToken': window.getCSRFToken()}
         });
         
         window.hasShownFirstChatWarning = true;
@@ -584,7 +584,7 @@ window.acceptFirstChatWarning = async function() {
 window.newChat = async function() {
     const response = await fetch('/api/chat/new', {
         method: 'POST',
-        headers: {'X-CSRFToken': getCSRFToken()}
+        headers: {'X-CSRFToken': window.getCSRFToken()}
     });
     const data = await response.json();
     window.currentChatId = data.id;
@@ -778,7 +778,7 @@ window.confirmDeleteFile = async function() {
     try {
         const response = await fetch(`/api/files/${fileToDelete}`, {
             method: 'DELETE',
-            headers: {'X-CSRFToken': getCSRFToken()}
+            headers: {'X-CSRFToken': window.getCSRFToken()}
         });
         
         const data = await response.json();
@@ -1069,7 +1069,7 @@ window.searchChats = function(query) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
+                    'X-CSRFToken': window.getCSRFToken()
                 },
                 body: JSON.stringify({ query: query })
             });
@@ -1177,7 +1177,7 @@ window.confirmRename = async function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
+                'X-CSRFToken': window.getCSRFToken()
             },
             body: JSON.stringify({title: newTitle})
         });
@@ -1213,7 +1213,7 @@ window.confirmDelete = async function() {
         const response = await fetch(deleteUrl, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCSRFToken(),
+                'X-CSRFToken': window.getCSRFToken(),
                 'Content-Type': 'application/json'
             }
         });
@@ -1314,7 +1314,7 @@ async function uploadFile(file) {
     try {
         const response = await fetch('/api/upload', {
             method: 'POST',
-            headers: {'X-CSRFToken': getCSRFToken()},
+            headers: {'X-CSRFToken': window.getCSRFToken()},
             body: formData
         });
         const data = await response.json();
