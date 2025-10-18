@@ -2380,24 +2380,27 @@ def super_admin_tenant_detail(tenant_id):
 @app.route('/super-admin/users/<int:user_id>/reset-password', methods=['POST'])
 @super_admin_required
 def super_admin_reset_password(user_id):
-    """Super admin can reset any user's password (without seeing it)"""
+    """Super admin can trigger password reset for any user (token-based, secure)"""
+    from datetime import datetime, timedelta
+    
     user = User.query.get_or_404(user_id)
     tenant = Tenant.query.get(user.tenant_id)
     
-    # Generate new random password (super admin NEVER sees it)
-    import string
-    alphabet = string.ascii_letters + string.digits + '!@#$%'
-    new_password = ''.join(secrets.choice(alphabet) for _ in range(16))
+    # Generate secure reset token (super admin NEVER sees user password)
+    reset_token = secrets.token_urlsafe(32)
     
-    # Update password in database
-    user.set_password(new_password)
+    # Set token expiration (1 hour from now)
+    user.reset_token = reset_token
+    user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=1)
     db.session.commit()
     
-    # Send email to user with new password
-    login_url = f"https://{tenant.subdomain}.lex-cao.replit.app/login"
-    email_service.send_password_reset_email(user, tenant, new_password, login_url)
+    # Create reset URL
+    reset_url = f"https://{tenant.subdomain}.lex-cao.replit.app/reset-password/{reset_token}"
     
-    flash(f'Wachtwoord gereset voor {user.first_name} {user.last_name}. Email verzonden naar {user.email}.', 'success')
+    # Send password reset link email (NO password in email)
+    email_service.send_password_reset_link_email(user, tenant, reset_url)
+    
+    flash(f'Password reset link verzonden naar {user.first_name} {user.last_name} ({user.email}). Link is 1 uur geldig.', 'success')
     return redirect(url_for('super_admin_tenant_detail', tenant_id=tenant.id))
 
 @app.route('/super-admin/analytics/export')

@@ -621,6 +621,118 @@ class EmailService:
         
         return self.send_email(user.email, subject, html_content)
     
+    def send_password_reset_link_email(self, user, tenant, reset_url):
+        """Send password reset link email (NO password in email - token-based)"""
+        subject = "Wachtwoord resetten - Lexi CAO Meester"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <!-- Header -->
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">
+                                        LEXI
+                                    </h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">
+                                        CAO MEESTER
+                                    </p>
+                                </td>
+                            </tr>
+                            
+                            <!-- Content -->
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">
+                                        🔒 Wachtwoord Reset Aangevraagd
+                                    </h2>
+                                    
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Hoi {user.first_name},
+                                    </p>
+                                    
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        We hebben een verzoek ontvangen om je wachtwoord te resetten voor je Lexi CAO Meester account bij <strong style="color: #1a2332;">{tenant.company_name}</strong>.
+                                    </p>
+                                    
+                                    <!-- Reset Link Box -->
+                                    <div style="background-color: #f9fafb; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <h3 style="margin: 0 0 16px 0; color: #1a2332; font-size: 18px; font-weight: 600;">
+                                            🔑 Reset je wachtwoord
+                                        </h3>
+                                        
+                                        <p style="margin: 0 0 16px 0; color: #6b7280; font-size: 14px; line-height: 1.5;">
+                                            Klik op de onderstaande knop om een nieuw wachtwoord in te stellen. Deze link is <strong>1 uur geldig</strong> en kan maar <strong>één keer gebruikt</strong> worden.
+                                        </p>
+                                        
+                                        <!-- CTA Button -->
+                                        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+                                            <tr>
+                                                <td align="center">
+                                                    <a href="{reset_url}" 
+                                                       style="display: inline-block; background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); color: #d4af37; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(26, 35, 50, 0.3);">
+                                                        Wachtwoord Resetten →
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <p style="margin: 16px 0 0 0; color: #9ca3af; font-size: 12px; line-height: 1.5; word-break: break-all;">
+                                            Of kopieer deze link: <br>
+                                            <span style="color: #6b7280;">{reset_url}</span>
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- Security Notice -->
+                                    <div style="margin: 32px 0; padding: 20px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+                                        <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                                            <strong>⚡ Veiligheidswaarschuwing:</strong> Heb je deze wachtwoordreset NIET aangevraagd? Negeer deze email en je account blijft veilig. Neem contact op met je administrator als je dit verdacht vindt.
+                                        </p>
+                                    </div>
+                                    
+                                    <div style="margin: 24px 0; padding: 16px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px;">
+                                        <p style="margin: 0; color: #1e40af; font-size: 13px; line-height: 1.6;">
+                                            💡 <strong>Tip:</strong> Deze link werkt maar 1 keer en verloopt over 1 uur. Als de link niet meer werkt, kun je een nieuwe aanvragen.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Footer -->
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+                                        Veilig wachtwoord resetten! 🔐
+                                    </p>
+                                    <p style="margin: 0; color: #9ca3af; font-size: 13px;">
+                                        Het <strong style="color: #d4af37;">Lexi AI</strong> Team
+                                    </p>
+                                    
+                                    <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 12px; line-height: 1.6;">
+                                        Deze email is verstuurd naar {user.email}<br>
+                                        omdat er een wachtwoordreset is aangevraagd.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        
+        return self.send_email(user.email, subject, html_content)
+    
     def send_password_reset_email(self, user, tenant, new_password, login_url):
         """Send password reset email with new credentials"""
         subject = "Je wachtwoord is gereset - Lexi CAO Meester"
