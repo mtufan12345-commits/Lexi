@@ -2,7 +2,7 @@ import os
 import json
 import boto3
 import stripe
-from mailersend import MailerSendClient, EmailBuilder
+import requests
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import uuid
@@ -423,35 +423,54 @@ class EmailService:
         self.from_email = os.getenv('FROM_EMAIL', 'noreply@trial-3vz9dle4n8z4kj50.mlsender.net')
         self.from_name = os.getenv('FROM_NAME', 'Lexi CAO Meester')
         self.enabled = bool(self.api_key)
-        
-        if self.enabled:
-            # Initialize MailerSend client
-            os.environ['MAILERSEND_API_KEY'] = self.api_key
-            self.ms = MailerSendClient()
+        self.api_url = "https://api.mailersend.com/v1/email"
     
     def send_email(self, to_email, subject, html_content):
+        """Send email via MailerSend API using direct HTTP request"""
         if not self.enabled:
             print(f"Email not sent (MailerSend not configured): {subject} to {to_email}")
             return False
         
         try:
-            # Build email using MailerSend EmailBuilder
-            email = (EmailBuilder()
-                .from_email(self.from_email, self.from_name)
-                .to_many([{"email": to_email}])
-                .subject(subject)
-                .html(html_content)
-                .text(html_content)  # Fallback plain text
-                .build())
+            # Strip HTML tags for plain text version
+            import re
+            text_content = re.sub('<[^<]+?>', '', html_content)
             
-            # Send email
-            response = self.ms.emails.send(email)
+            # Build email payload
+            payload = {
+                "from": {
+                    "email": self.from_email,
+                    "name": self.from_name
+                },
+                "to": [
+                    {
+                        "email": to_email
+                    }
+                ],
+                "subject": subject,
+                "text": text_content,
+                "html": html_content
+            }
             
-            if response.success:
-                print(f"Email sent successfully to {to_email}: {response.id}")
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "X-Requested-With": "XMLHttpRequest"
+            }
+            
+            # Send email via HTTP POST
+            response = requests.post(
+                self.api_url,
+                headers=headers,
+                json=payload,
+                timeout=10
+            )
+            
+            if response.status_code == 202:
+                print(f"✓ Email sent successfully to {to_email}")
                 return True
             else:
-                print(f"MailerSend error: Status {response.status_code}, {response.data}")
+                print(f"MailerSend error: Status {response.status_code}, Response: {response.text}")
                 return False
                 
         except Exception as e:
