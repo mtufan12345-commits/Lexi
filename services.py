@@ -621,6 +621,116 @@ class EmailService:
         
         return self.send_email(user.email, subject, html_content)
     
+    def send_password_reset_email(self, user, tenant, new_password, login_url):
+        """Send password reset email with new credentials"""
+        subject = "Je wachtwoord is gereset - Lexi CAO Meester"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <!-- Header -->
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">
+                                        LEXI
+                                    </h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">
+                                        CAO MEESTER
+                                    </p>
+                                </td>
+                            </tr>
+                            
+                            <!-- Content -->
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">
+                                        🔒 Je wachtwoord is gereset
+                                    </h2>
+                                    
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Hoi {user.first_name},
+                                    </p>
+                                    
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Je wachtwoord voor je Lexi CAO Meester account bij <strong style="color: #1a2332;">{tenant.company_name}</strong> is gereset.
+                                    </p>
+                                    
+                                    <!-- New Password Box -->
+                                    <div style="background-color: #f9fafb; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <h3 style="margin: 0 0 16px 0; color: #1a2332; font-size: 18px; font-weight: 600;">
+                                            🔑 Je nieuwe wachtwoord
+                                        </h3>
+                                        
+                                        <div style="background-color: #ffffff; padding: 16px; border-radius: 4px; border: 2px solid #d4af37; margin: 16px 0;">
+                                            <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                Nieuw Wachtwoord:
+                                            </p>
+                                            <p style="margin: 8px 0 0 0; color: #1a2332; font-size: 20px; font-family: 'Courier New', monospace; font-weight: 700; letter-spacing: 1px;">
+                                                {new_password}
+                                            </p>
+                                        </div>
+                                        
+                                        <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                                            ⚠️ <strong>Belangrijk:</strong> Wijzig dit wachtwoord direct na inloggen via je profielinstellingen voor extra veiligheid.
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- CTA Button -->
+                                    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 32px 0;">
+                                        <tr>
+                                            <td align="center">
+                                                <a href="{login_url}" 
+                                                   style="display: inline-block; background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); color: #d4af37; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(26, 35, 50, 0.3);">
+                                                    Inloggen →
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <!-- Security Notice -->
+                                    <div style="margin: 32px 0; padding: 20px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+                                        <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                                            <strong>⚡ Veiligheids tip:</strong> Heb je deze wachtwoordreset niet aangevraagd? Neem dan direct contact op met je administrator.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Footer -->
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+                                        Veilig inloggen! 🔐
+                                    </p>
+                                    <p style="margin: 0; color: #9ca3af; font-size: 13px;">
+                                        Het <strong style="color: #d4af37;">Lexi AI</strong> Team
+                                    </p>
+                                    
+                                    <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 12px; line-height: 1.6;">
+                                        Deze email is verstuurd naar {user.email}<br>
+                                        omdat je wachtwoord is gereset.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        
+        return self.send_email(user.email, subject, html_content)
+    
     def send_payment_failed_email(self, tenant):
         subject = "⚠️ Betaling mislukt"
         html_content = f"""
