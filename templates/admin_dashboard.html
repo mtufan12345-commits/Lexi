@@ -170,11 +170,61 @@
                 </div>
             </div>
             {% endif %}
+            
+            <!-- CAO Settings -->
+            <div class="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow mt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">CAO Instellingen</h3>
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-navy-500 to-gold-600 dark:bg-transparent flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white dark:text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-yellow-800 dark:text-yellow-300">
+                        <strong>⚠️ Belangrijk:</strong> Deze instelling bepaalt welke CAO informatie Lexi gebruikt voor <strong>alle gebruikers</strong> in je organisatie.
+                    </p>
+                </div>
+                
+                <form method="POST" action="{{ url_for('update_cao_preference') }}" onsubmit="return confirmCAOChange()">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Huidige CAO voorkeur:
+                        </label>
+                        <select name="cao_preference" id="cao_preference" required
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500 dark:bg-zinc-900 dark:text-white">
+                            <option value="NBBU" {% if tenant.cao_preference == 'NBBU' %}selected{% endif %}>
+                                NBBU CAO (Metalektro - Metaal & Techniek)
+                            </option>
+                            <option value="ABU" {% if tenant.cao_preference == 'ABU' %}selected{% endif %}>
+                                ABU CAO (Uitzendkrachten - Flex & Detachering)
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" 
+                            class="w-full bg-gradient-to-r from-navy-500 to-navy-600 hover:from-navy-600 hover:to-navy-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg">
+                        CAO Voorkeur Opslaan
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+function confirmCAOChange() {
+    const select = document.getElementById('cao_preference');
+    const selectedOption = select.options[select.selectedIndex].text;
+    
+    return confirm(`Weet je zeker dat je de CAO wilt wijzigen naar:\n\n${selectedOption}\n\nDeze wijziging is van toepassing op alle gebruikers in je organisatie.`);
+}
+
+
 if (localStorage.getItem('darkMode') === 'true') {
     document.documentElement.classList.add('dark');
 }
