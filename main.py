@@ -543,6 +543,45 @@ def login():
     
     return render_template('login.html')
 
+@app.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
+def forgot_password():
+    """Reset password and send new password via email"""
+    if request.method == 'POST':
+        email = request.form.get('email', '').lower().strip()
+        
+        # Find user by email
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Get tenant for email context
+            tenant = Tenant.query.get(user.tenant_id)
+            
+            if tenant and user.is_active:
+                # Generate new random password
+                import string
+                alphabet = string.ascii_letters + string.digits + '!@#$%'
+                new_password = ''.join(secrets.choice(alphabet) for _ in range(16))
+                
+                # Update password in database
+                user.set_password(new_password)
+                db.session.commit()
+                
+                # Send email with new password
+                login_url = f"https://{tenant.subdomain}.lex-cao.replit.app/login"
+                email_service.send_password_reset_email(user, tenant, new_password, login_url)
+                
+                flash('Een email met je nieuwe wachtwoord is verzonden!', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash('Account is gedeactiveerd of tenant niet gevonden.', 'danger')
+        else:
+            # Security: Don't reveal if email exists or not
+            flash('Als dit email adres bestaat, ontvang je een reset email.', 'info')
+            return redirect(url_for('login'))
+    
+    return render_template('forgot_password.html')
+
 @app.route('/super-admin/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def super_admin_login():
@@ -2290,6 +2329,29 @@ def super_admin_tenant_detail(tenant_id):
                          avg_questions=avg_questions,
                          top_questions=top_questions,
                          trial_days_left=trial_days_left)
+
+@app.route('/super-admin/users/<int:user_id>/reset-password', methods=['POST'])
+@super_admin_required
+def super_admin_reset_password(user_id):
+    """Super admin can reset any user's password (without seeing it)"""
+    user = User.query.get_or_404(user_id)
+    tenant = Tenant.query.get(user.tenant_id)
+    
+    # Generate new random password (super admin NEVER sees it)
+    import string
+    alphabet = string.ascii_letters + string.digits + '!@#$%'
+    new_password = ''.join(secrets.choice(alphabet) for _ in range(16))
+    
+    # Update password in database
+    user.set_password(new_password)
+    db.session.commit()
+    
+    # Send email to user with new password
+    login_url = f"https://{tenant.subdomain}.lex-cao.replit.app/login"
+    email_service.send_password_reset_email(user, tenant, new_password, login_url)
+    
+    flash(f'Wachtwoord gereset voor {user.first_name} {user.last_name}. Email verzonden naar {user.email}.', 'success')
+    return redirect(url_for('super_admin_tenant_detail', tenant_id=tenant.id))
 
 @app.route('/super-admin/analytics/export')
 @super_admin_required
