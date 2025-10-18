@@ -181,12 +181,8 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <select name="cao_preference" onchange="this.form.submit()" 
                                         class="text-sm border border-gray-700 bg-gray-900 rounded px-2 py-1 text-gray-300">
-                                    <option value="NBBU" {% if tenant.cao_preference == 'NBBU' %}selected{% endif %}>NBBU</option>
-                                    <option value="ABU" {% if tenant.cao_preference == 'ABU' %}selected{% endif %}>ABU</option>
-                                    <option value="Hortiplan" {% if tenant.cao_preference == 'Hortiplan' %}selected{% endif %}>Hortiplan</option>
-                                    <option value="CAO_Uitzendkrachten" {% if tenant.cao_preference == 'CAO_Uitzendkrachten' %}selected{% endif %}>Uitzendkrachten</option>
-                                    <option value="Agrarisch" {% if tenant.cao_preference == 'Agrarisch' %}selected{% endif %}>Agrarisch</option>
-                                    <option value="Overig" {% if tenant.cao_preference == 'Overig' %}selected{% endif %}>Overig</option>
+                                    <option value="NBBU" {% if tenant.cao_preference == 'NBBU' %}selected{% endif %}>NBBU CAO</option>
+                                    <option value="ABU" {% if tenant.cao_preference == 'ABU' %}selected{% endif %}>ABU CAO</option>
                                 </select>
                             </form>
                         </td>

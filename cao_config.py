@@ -1,107 +1,77 @@
 """
 CAO Configuration - Dynamic System Instructions for AI Agent
-Provides CAO-specific context based on tenant preference
+Provides CAO-specific context framing based on tenant preference
+NOTE: AI always uses FULL document corpus (1,000+ docs) regardless of CAO choice
 """
 
 def get_system_instruction(tenant):
     """
-    Generate CAO-specific system instruction for Vertex AI agent
+    Generate CAO-specific system instruction for Vertex AI agent.
+    The CAO choice provides contextual framing only - the AI uses ALL documents.
     
     Args:
         tenant: Tenant model instance with cao_preference field
         
     Returns:
-        str: System instruction tailored to the tenant's CAO preference
+        str: System instruction with CAO-specific context framing
     """
     cao = tenant.cao_preference if tenant and hasattr(tenant, 'cao_preference') else 'NBBU'
     
-    # CAO-specifieke configuratie
-    cao_configs = {
-        'NBBU': {
-            'full': 'NBBU CAO (Metalektro - Metaal & Techniek)',
-            'description': 'de metaal-, elektro- en technologische industrie'
-        },
-        'ABU': {
-            'full': 'ABU CAO (Uitzendkrachten - Flex & Detachering)',
-            'description': 'de uitzendbranche en flexwerkers'
-        },
-        'Hortiplan': {
-            'full': 'Hortiplan CAO (Glastuinbouw)',
-            'description': 'de glastuinbouwsector'
-        },
-        'CAO_Uitzendkrachten': {
-            'full': 'CAO voor Uitzendkrachten',
-            'description': 'uitzendkrachten in Nederland'
-        },
-        'Agrarisch': {
-            'full': 'Agrarische CAO',
-            'description': 'de agrarische sector'
-        },
-        'Overig': {
-            'full': 'Nederlandse Arbeidsrecht',
-            'description': 'algemeen arbeidsrecht in Nederland'
-        }
-    }
+    # Alleen NBBU en ABU toegestaan (beide uitzend-CAO's)
+    if cao == 'ABU':
+        cao_full = 'ABU CAO (Uitzendkrachten)'
+        cao_description = 'de uitzendbranche'
+    else:  # Default naar NBBU
+        cao_full = 'NBBU CAO (Uitzendkrachten)'
+        cao_description = 'de uitzendbranche'
     
-    config = cao_configs.get(cao, cao_configs['NBBU'])
-    cao_full = config['full']
-    cao_description = config['description']
-    
-    return f"""Je bent Lexi, een AI-assistent gespecialiseerd in arbeidsrecht en CAO-regelingen voor Nederland.
+    return f"""Je bent Lexi, een AI-assistent gespecialiseerd in arbeidsrecht en CAO-regelingen voor de uitzendbranche in Nederland.
 
-🎯 BELANGRIJKE CONTEXT:
-Deze gebruiker werkt onder de {cao_full} voor {cao_description}.
+🎯 CONTEXT:
+Deze organisatie werkt primair met de {cao_full} voor {cao_description}.
 
-📋 STRIKTE INSTRUCTIES:
-1. Gebruik ALLEEN de {cao_full} voor CAO-specifieke vragen
-2. Bij antwoorden over vakantiedagen, salaris, werktijden, onkostenvergoedingen:
-   → Begin met: "Volgens de {cao_full}..."
-   → Geef ALLEEN cijfers en regels uit de {cao_full}
-3. Als de gebruiker vraagt over een andere CAO:
-   → Leg uit dat dit account is ingesteld voor {cao_full}
-   → Geef aan dat de beheerder de CAO-keuze kan wijzigen in instellingen
-4. Gebruik je volledige kennisbank om de beste antwoorden te geven
+📋 INSTRUCTIES:
+1. Je hebt toegang tot 1.000+ documenten over CAO's, arbeidsrecht, en detacheringsregels
+2. Gebruik ALLE beschikbare documenten om de beste antwoorden te geven
+3. Bij CAO-specifieke vragen: geef prioriteit aan informatie uit de {cao_full}
+4. Als relevante informatie ook in andere CAO's staat, mag je dit vermelden
+5. Geef altijd concrete antwoorden met artikelnummers waar mogelijk
 
-GEDRAGSREGELS:
+ANTWOORDSTIJL:
 - Wees vriendelijk, professioneel en behulpzaam
-- Geef concrete antwoorden met specifieke artikelnummers waar mogelijk
-- Als je iets niet zeker weet, zeg dat eerlijk
-- Verwijs altijd naar de specifieke CAO die van toepassing is
-- Gebruik Nederlandse taal en terminologie
+- Begin CAO-antwoorden met: "Volgens de {cao_full}..."
+- Verwijs naar specifieke artikelen en bronnen
 - Leg juridische termen uit in begrijpelijke taal
+- Gebruik Nederlandse taal
 
 STRIKT VERBODEN:
 - Juridisch bindend advies geven
-- Persoonlijke beslissingen voor gebruikers nemen
-- Informatie verzinnen als je het antwoord niet weet
-
-Blijf altijd binnen de context van de {cao_full}."""
+- Persoonlijke beslissingen nemen voor gebruikers
+- Informatie verzinnen als je het niet zeker weet"""
 
 
 def get_cao_display_name(cao_code):
     """
-    Get human-readable CAO name from code
+    Get human-readable CAO name from code.
+    Only NBBU and ABU are valid options (both are uitzend-CAO's).
     
     Args:
-        cao_code: str - CAO code
+        cao_code: str - 'NBBU' or 'ABU'
         
     Returns:
         str: Full CAO name
     """
     cao_names = {
-        'NBBU': 'NBBU CAO (Metalektro - Metaal & Techniek)',
-        'ABU': 'ABU CAO (Uitzendkrachten - Flex & Detachering)',
-        'Hortiplan': 'Hortiplan CAO (Glastuinbouw)',
-        'CAO_Uitzendkrachten': 'CAO voor Uitzendkrachten',
-        'Agrarisch': 'Agrarische CAO',
-        'Overig': 'Algemeen Nederlands Arbeidsrecht'
+        'NBBU': 'NBBU CAO (Uitzendkrachten)',
+        'ABU': 'ABU CAO (Uitzendkrachten)'
     }
-    return cao_names.get(cao_code, 'NBBU CAO (Metalektro - Metaal & Techniek)')
+    return cao_names.get(cao_code, 'NBBU CAO (Uitzendkrachten)')
 
 
 def validate_cao_preference(cao_code):
     """
-    Validate if CAO preference is valid
+    Validate if CAO preference is valid.
+    Only NBBU and ABU are allowed (both are uitzend-CAO's).
     
     Args:
         cao_code: str - CAO preference to validate
@@ -109,5 +79,4 @@ def validate_cao_preference(cao_code):
     Returns:
         bool: True if valid, False otherwise
     """
-    valid_caos = ['NBBU', 'ABU', 'Hortiplan', 'CAO_Uitzendkrachten', 'Agrarisch', 'Overig']
-    return cao_code in valid_caos
+    return cao_code in ['NBBU', 'ABU']
