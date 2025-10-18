@@ -546,7 +546,7 @@ def login():
 @app.route('/forgot-password', methods=['GET', 'POST'])
 @limiter.limit("3 per minute")
 def forgot_password():
-    """Reset password and send new password via email"""
+    """Generate password reset token and send reset link via email"""
     if request.method == 'POST':
         email = request.form.get('email', '').lower().strip()
         
@@ -558,25 +558,28 @@ def forgot_password():
             tenant = Tenant.query.get(user.tenant_id)
             
             if tenant and user.is_active:
-                # Generate new random password
-                import string
-                alphabet = string.ascii_letters + string.digits + '!@#$%'
-                new_password = ''.join(secrets.choice(alphabet) for _ in range(16))
+                # Generate secure URL-safe reset token
+                reset_token = secrets.token_urlsafe(32)
                 
-                # Update password in database
-                user.set_password(new_password)
+                # Set token expiration (1 hour from now)
+                from datetime import datetime, timedelta
+                user.reset_token = reset_token
+                user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=1)
                 db.session.commit()
                 
-                # Send email with new password
-                login_url = f"https://{tenant.subdomain}.lex-cao.replit.app/login"
-                email_service.send_password_reset_email(user, tenant, new_password, login_url)
+                # Create reset URL
+                reset_url = f"https://{tenant.subdomain}.lex-cao.replit.app/reset-password/{reset_token}"
                 
-                flash('Een email met je nieuwe wachtwoord is verzonden!', 'success')
+                # Send email with reset link (NO PASSWORD in email)
+                email_service.send_password_reset_link_email(user, tenant, reset_url)
+                
+                flash('Een email met een reset link is verzonden! Check je inbox.', 'success')
                 return redirect(url_for('login'))
             else:
                 flash('Account is gedeactiveerd of tenant niet gevonden.', 'danger')
         else:
             # Security: Don't reveal if email exists or not
+            # Still show success to prevent email enumeration
             flash('Als dit email adres bestaat, ontvang je een reset email.', 'info')
             return redirect(url_for('login'))
     
