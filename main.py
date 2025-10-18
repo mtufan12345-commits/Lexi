@@ -7,6 +7,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from models import db, SuperAdmin, Tenant, User, Chat, Message, Subscription, Template, UploadedFile, Artifact, SupportTicket, SupportReply
@@ -60,6 +61,21 @@ else:
         return {'csrf_token': lambda: ''}
 
 db.init_app(app)
+
+# Initialize compression (gzip, brotli, zstd)
+app.config['COMPRESS_ALGORITHM'] = 'gzip'
+app.config['COMPRESS_LEVEL'] = 6
+app.config['COMPRESS_MIN_SIZE'] = 500
+app.config['COMPRESS_MIMETYPES'] = [
+    'text/html',
+    'text/css',
+    'text/javascript',
+    'application/javascript',
+    'application/json',
+    'text/xml',
+    'application/xml',
+]
+compress = Compress(app)
 
 # Initialize Rate Limiter for security (no default limits - only specific endpoint limits)
 limiter = Limiter(

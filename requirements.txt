@@ -24,3 +24,5 @@ pytesseract
 docx
 Flask-Limiter
 mailersend
+flask-compress
+requests
