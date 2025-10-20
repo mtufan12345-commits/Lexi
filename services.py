@@ -1098,6 +1098,80 @@ class EmailService:
         """
         return self.send_email(tenant.contact_email, subject, html_content)
     
+    def send_ideal_payment_link_email(self, user, tenant, invoice_url, amount, due_date):
+        """Send monthly iDEAL payment link email"""
+        subject = f"💳 Maandelijkse betaling - {amount} via iDEAL"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">💳 Maandelijkse betaling via iDEAL</h2>
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">Hoi {user.first_name},</p>
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Het is tijd voor je maandelijkse betaling van <strong>{amount}</strong> voor {tenant.company_name}.
+                                    </p>
+                                    <div style="background-color: #f0f9ff; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <p style="margin: 0 0 12px 0; color: #1a2332; font-size: 16px; font-weight: 600;">Factuurdetails:</p>
+                                        <div style="color: #374151; line-height: 1.8;">
+                                            <p style="margin: 0 0 8px 0;"><strong>Bedrag:</strong> {amount}</p>
+                                            <p style="margin: 0 0 8px 0;"><strong>Vervaldatum:</strong> {due_date}</p>
+                                            <p style="margin: 0;"><strong>Betaalmethode:</strong> iDEAL</p>
+                                        </div>
+                                    </div>
+                                    <div style="background-color: #fef9f3; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                                        <p style="margin: 0 0 12px 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                                            ℹ️ <strong>Let op:</strong> Je hebt gekozen voor handmatige betaling via iDEAL. Klik op de knop hieronder om je betaling te voltooien via je bank.
+                                        </p>
+                                        <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                                            <strong>Wil je automatische incasso?</strong> Stuur een email naar <a href="mailto:support@lexiai.nl" style="color: #d4af37;">support@lexiai.nl</a> voor SEPA automatische incasso (over 30 dagen beschikbaar).
+                                        </p>
+                                    </div>
+                                    <div style="text-align: center; margin: 32px 0;">
+                                        <a href="{invoice_url}" style="background: #d4af37; color: #1a2332; padding: 16px 48px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 18px; box-shadow: 0 4px 6px rgba(212, 175, 55, 0.3);">
+                                            Betaal nu via iDEAL
+                                        </a>
+                                    </div>
+                                    <p style="margin: 24px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6; text-align: center;">
+                                        Deze betaallink is 30 dagen geldig. Betaal op tijd om toegang te behouden.
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+                                        Vragen over je factuur?
+                                    </p>
+                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                        <a href="mailto:support@lexiai.nl" style="color: #d4af37; text-decoration: none;">support@lexiai.nl</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        return self.send_email(user.email, subject, html_content)
+    
     def send_role_changed_email(self, user, tenant, new_role, changed_by):
         """Send email when user role is changed"""
         subject = f"Je rol is gewijzigd in Lexi CAO Meester"

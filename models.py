@@ -142,6 +142,7 @@ class Subscription(db.Model):
     status = db.Column(db.String(50), default='trialing')
     stripe_customer_id = db.Column(db.String(255), nullable=True)
     stripe_subscription_id = db.Column(db.String(255), nullable=True)
+    payment_method = db.Column(db.String(20), default='card', nullable=True)  # 'card', 'ideal', 'sepa_debit'
     current_period_start = db.Column(db.DateTime, nullable=True)
     current_period_end = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
