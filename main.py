@@ -46,10 +46,11 @@ app.config['WTF_CSRF_ENABLED'] = os.getenv('ENABLE_CSRF', 'true').lower() == 'tr
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 app.config['WTF_CSRF_SSL_STRICT'] = False
 
-# Session Cookie Security
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('ENVIRONMENT', 'production') == 'production'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
+# Session Cookie Security (Enhanced)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Lax for Stripe redirects compatibility
+app.config['SESSION_COOKIE_SECURE'] = True  # Always require HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # 8 hour session timeout
 
 if app.config['WTF_CSRF_ENABLED']:
     csrf = CSRFProtect(app)
@@ -109,6 +110,16 @@ def get_max_users_for_tier(tier):
         'enterprise': 999999
     }
     return tier_limits.get(tier, 5)
+
+@app.before_request
+def force_https():
+    """SECURITY: Force HTTPS in production"""
+    # Only enforce HTTPS in production environment (not in development/Replit)
+    if os.getenv('ENVIRONMENT') == 'production':
+        # Check if request is not secure and not already HTTPS via proxy
+        if not request.is_secure and request.headers.get('X-Forwarded-Proto') != 'https':
+            url = request.url.replace('http://', 'https://', 1)
+            return redirect(url, code=301)
 
 @app.before_request
 def cleanup_stale_pending_signups():
@@ -206,6 +217,9 @@ def add_security_and_cache_headers(response):
     """Add security headers, cache headers and enable gzip compression"""
     
     # ========== SECURITY HEADERS (CRITICAL) ==========
+    
+    # Hide server version information (prevent information disclosure)
+    response.headers['Server'] = 'Lexi AI'
     
     # HSTS - Force HTTPS for 1 year (preload ready)
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
@@ -2796,6 +2810,60 @@ def init_db():
         print(f"Database initialization: {e}")
 
 init_db()
+
+# ========== ERROR HANDLERS (Security - Prevent Information Disclosure) ==========
+
+@app.errorhandler(400)
+def bad_request(e):
+    """Handle bad request errors"""
+    return render_template('error.html', 
+                         error_code=400,
+                         error_title='Ongeldig Verzoek',
+                         error_message='Het verzoek kon niet worden verwerkt.'), 400
+
+@app.errorhandler(403)
+def forbidden(e):
+    """Handle forbidden errors"""
+    return render_template('error.html',
+                         error_code=403,
+                         error_title='Geen Toegang',
+                         error_message='Je hebt geen toegang tot deze pagina.'), 403
+
+@app.errorhandler(404)
+def not_found(e):
+    """Handle not found errors"""
+    return render_template('error.html',
+                         error_code=404,
+                         error_title='Pagina Niet Gevonden',
+                         error_message='De pagina die je zoekt bestaat niet.'), 404
+
+@app.errorhandler(429)
+def rate_limit_exceeded(e):
+    """Handle rate limit errors"""
+    return render_template('error.html',
+                         error_code=429,
+                         error_title='Te Veel Verzoeken',
+                         error_message='Je hebt te veel verzoeken gedaan. Probeer het later opnieuw.'), 429
+
+@app.errorhandler(500)
+def internal_error(e):
+    """Handle internal server errors - Log details but show generic message"""
+    # Log the error for debugging (but don't show to user)
+    app.logger.error(f'Server Error: {str(e)}', exc_info=True)
+    
+    # Show generic error page (no sensitive information)
+    return render_template('error.html',
+                         error_code=500,
+                         error_title='Server Fout',
+                         error_message='Er is een fout opgetreden. Probeer het later opnieuw.'), 500
+
+@app.errorhandler(503)
+def service_unavailable(e):
+    """Handle service unavailable errors"""
+    return render_template('error.html',
+                         error_code=503,
+                         error_title='Service Niet Beschikbaar',
+                         error_message='De service is tijdelijk niet beschikbaar. Probeer het later opnieuw.'), 503
 
 if __name__ == '__main__':  
     app.run(host='0.0.0.0', port=5000, debug=True)
