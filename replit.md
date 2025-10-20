@@ -27,6 +27,7 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 - **Artifact Generation:** Lexi can generate downloadable documents like contracts and letters (PDF for all tiers, DOCX for Professional/Enterprise).
 - **User & Subscription Management:** Features include user management (add/delete/deactivate), role changes, user limits, and Stripe integration for direct paid subscriptions.
 - **Payment Security:** Full Stripe Checkout integration with server-side webhook verification using direct HTTP API. Account creation occurs only after successful payment via webhook. Signup data for pending payments is stored securely server-side. Card payments are supported, with iDEAL disabled.
+- **Email Notification System:** Complete MailerSend HTTP API integration with 11 branded email templates covering all user journeys (account management, payments, subscriptions, user management, support). All emails use token-based security (no passwords in emails), Lexi AI branding (navy/gold), and responsive HTML design. Production-ready with environment-based test override.
 - **Compliance & Disclaimer Strategy:** Multiple layers of disclaimers (checkboxes, modals, sticky chat disclaimers, AI response footers) clarify that Lexi provides general information, not legal advice.
 - **Legal Documentation:** AVG-compliant Algemene Voorwaarden and Privacy & Cookiebeleid are accessible via dedicated routes.
 - **Support System:** Integrated support ticket system for customers and admin management.
@@ -45,7 +46,50 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 - **AI:** Google Vertex AI (gemini-2.5-pro)
 - **Database:** PostgreSQL
 - **Payments:** Stripe (Checkout, Webhooks, Subscriptions)
-- **Email:** MailerSend
+- **Email:** MailerSend (HTTP API, noreply@lexiai.nl)
 - **Object Storage:** S3-compatible object storage (e.g., Hetzner Object Storage)
 - **PDF/DOCX Processing:** reportlab, python-docx, MarkItDown, Tesseract (OCR)
 - **Icons:** Heroicons library (SVG icons)
+
+## Production Deployment
+**Status:** Production-Ready ✅
+
+**Deployment Configuration:**
+- **Type:** Autoscale (stateless web app)
+- **Server:** Gunicorn with --reuse-port for horizontal scaling
+- **Port:** 5000 (proxied to port 80)
+- **Environment:** Python 3.11, Node.js 20, PostgreSQL 16
+
+**Production Checklist:**
+- ✅ Multi-tenant subdomain routing configured
+- ✅ Stripe production webhooks configured
+- ✅ MailerSend domain verified (noreply@lexiai.nl)
+- ✅ Email templates production-ready (11/11)
+- ✅ Token-based security (activation, password reset)
+- ✅ S3 object storage configured
+- ✅ Database migrations via drizzle push
+- ✅ CSRF protection enabled
+- ✅ Host header validation
+- ✅ Session security (httponly, secure)
+- ✅ Environment secrets configured
+- ✅ Error handling and logging
+- ✅ Rate limiting on MailerSend (10/min free plan)
+
+**Email System:**
+11 transactional email templates covering:
+1. Payment Success
+2. User Invitation (secure activation tokens)
+3. Welcome Email
+4. Password Reset
+5. Payment Failed
+6. Trial Expiring
+7. Subscription Updated
+8. Subscription Cancelled
+9. Role Changed
+10. Account Deactivated
+11. Ticket Resolved
+
+**Testing:**
+- TEST_EMAIL_OVERRIDE environment variable for email layout testing
+- Set TEST_EMAIL_OVERRIDE=test@example.com to route all emails for preview
+- Unset for production (default behavior)
