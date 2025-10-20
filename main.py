@@ -1813,6 +1813,13 @@ def close_support_ticket(ticket_id):
     ticket.closed_at = datetime.utcnow()
     db.session.commit()
     
+    # Send ticket resolved email
+    try:
+        email_service.send_ticket_resolved_email(current_user, g.tenant, ticket)
+        print(f"✅ Ticket resolved email sent to {current_user.email}")
+    except Exception as e:
+        print(f"⚠️ Failed to send ticket resolved email: {e}")
+    
     return jsonify({'success': True})
 
 @app.route('/admin/dashboard')
@@ -1937,8 +1944,19 @@ def admin_users():
             user_id = request.form.get('user_id')
             user = User.query.filter_by(id=user_id, tenant_id=g.tenant.id).first()
             if user and user.id != current_user.id:
+                was_active = user.is_active
                 user.is_active = not user.is_active
                 db.session.commit()
+                
+                # Send deactivation email if user was deactivated
+                if was_active and not user.is_active:
+                    try:
+                        admin_name = f"{current_user.first_name} {current_user.last_name}"
+                        email_service.send_account_deactivated_email(user, g.tenant, admin_name)
+                        print(f"✅ Account deactivation email sent to {user.email}")
+                    except Exception as e:
+                        print(f"⚠️ Failed to send deactivation email: {e}")
+                
                 flash('Gebruiker status gewijzigd.', 'success')
         
         elif action == 'delete':
@@ -1954,8 +1972,19 @@ def admin_users():
             new_role = request.form.get('role')
             user = User.query.filter_by(id=user_id, tenant_id=g.tenant.id).first()
             if user and user.id != current_user.id and new_role in ['user', 'admin']:
+                old_role = user.role
                 user.role = new_role
                 db.session.commit()
+                
+                # Send role changed email
+                if old_role != new_role:
+                    try:
+                        admin_name = f"{current_user.first_name} {current_user.last_name}"
+                        email_service.send_role_changed_email(user, g.tenant, new_role, admin_name)
+                        print(f"✅ Role changed email sent to {user.email}")
+                    except Exception as e:
+                        print(f"⚠️ Failed to send role changed email: {e}")
+                
                 flash(f'Gebruiker rol gewijzigd naar {new_role}.', 'success')
     
     users = User.query.filter_by(tenant_id=g.tenant.id).all()
@@ -2063,9 +2092,19 @@ def admin_update_ticket_status(ticket_id):
     if new_status not in ['open', 'in_progress', 'answered', 'closed']:
         return jsonify({'error': 'Ongeldige status'}), 400
     
+    old_status = ticket.status
     ticket.status = new_status
     if new_status == 'closed':
         ticket.closed_at = datetime.utcnow()
+        # Send ticket resolved email when admin closes ticket
+        if old_status != 'closed':
+            try:
+                user = User.query.get(ticket.user_id)
+                if user:
+                    email_service.send_ticket_resolved_email(user, g.tenant, ticket)
+                    print(f"✅ Ticket resolved email sent to {user.email}")
+            except Exception as e:
+                print(f"⚠️ Failed to send ticket resolved email: {e}")
     else:
         ticket.closed_at = None
     
@@ -2193,6 +2232,18 @@ def stripe_webhook():
         
         if success:
             print(f"✅ Webhook: Account provisioned successfully for {user.email if user else 'existing user'}")
+            
+            # Send payment success and welcome emails
+            if user:
+                tenant = Tenant.query.get(user.tenant_id)
+                if tenant:
+                    try:
+                        email_service.send_payment_success_email(user, tenant)
+                        email_service.send_welcome_email(user, tenant)
+                        print(f"✅ Welcome emails sent to {user.email}")
+                    except Exception as e:
+                        print(f"⚠️ Failed to send welcome emails: {e}")
+            
             return jsonify({'success': True})
         else:
             print(f"❌ Webhook: Failed to provision account: {error_msg}")
@@ -2202,6 +2253,8 @@ def stripe_webhook():
         subscription_obj = event['data']['object']
         stripe_sub_id = subscription_obj.get('id')
         status = subscription_obj.get('status')
+        old_plan_id = subscription_obj.get('previous_attributes', {}).get('items', {}).get('data', [{}])[0].get('price', {}).get('id')
+        new_plan_id = subscription_obj.get('items', {}).get('data', [{}])[0].get('price', {}).get('id')
         
         subscription = Subscription.query.filter_by(stripe_subscription_id=stripe_sub_id).first()
         if subscription:
@@ -2211,6 +2264,15 @@ def stripe_webhook():
                 tenant = Tenant.query.get(subscription.tenant_id)
                 if tenant:
                     tenant.status = 'active'
+                    # Send subscription updated email if plan changed
+                    if old_plan_id and new_plan_id and old_plan_id != new_plan_id:
+                        user = User.query.filter_by(tenant_id=tenant.id, role='admin').first()
+                        if user:
+                            try:
+                                email_service.send_subscription_updated_email(user, tenant, tenant.plan)
+                                print(f"✅ Subscription updated email sent to {user.email}")
+                            except Exception as e:
+                                print(f"⚠️ Failed to send subscription updated email: {e}")
             elif status in ['past_due', 'unpaid']:
                 subscription.status = 'past_due'
             elif status in ['canceled', 'incomplete_expired']:
@@ -2218,6 +2280,14 @@ def stripe_webhook():
                 tenant = Tenant.query.get(subscription.tenant_id)
                 if tenant:
                     tenant.status = 'inactive'
+                    # Send subscription cancelled email
+                    user = User.query.filter_by(tenant_id=tenant.id, role='admin').first()
+                    if user:
+                        try:
+                            email_service.send_subscription_cancelled_email(user, tenant)
+                            print(f"✅ Subscription cancelled email sent to {user.email}")
+                        except Exception as e:
+                            print(f"⚠️ Failed to send subscription cancelled email: {e}")
             
             db.session.commit()
             print(f"Updated subscription {stripe_sub_id} to status {status}")
