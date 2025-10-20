@@ -2303,6 +2303,54 @@ def stripe_webhook():
             email_service.send_payment_failed_email(tenant)
             print(f"Payment failed email sent to {tenant.contact_email}")
     
+    elif event['type'] == 'invoice.finalized':
+        # Send iDEAL payment links for manual invoice subscriptions
+        invoice = event['data']['object']
+        customer_id = invoice.get('customer')
+        subscription_id = invoice.get('subscription')
+        
+        # Only process if this is a subscription invoice
+        if not subscription_id:
+            return jsonify({'success': True, 'message': 'Not a subscription invoice'})
+        
+        subscription = Subscription.query.filter_by(stripe_subscription_id=subscription_id).first()
+        
+        # Only send email for iDEAL payment method (manual invoices)
+        if subscription and subscription.payment_method == 'ideal':
+            tenant = Tenant.query.get(subscription.tenant_id)
+            admin_user = User.query.filter_by(tenant_id=tenant.id, role='admin').first()
+            
+            if tenant and admin_user:
+                try:
+                    # Get invoice details
+                    hosted_invoice_url = invoice.get('hosted_invoice_url')
+                    amount_due = invoice.get('amount_due', 0) / 100  # Convert cents to euros
+                    due_date_timestamp = invoice.get('due_date')
+                    
+                    # Format amount and due date
+                    amount_formatted = f"€{amount_due:.2f}"
+                    if due_date_timestamp:
+                        from datetime import datetime
+                        due_date = datetime.fromtimestamp(due_date_timestamp).strftime('%d-%m-%Y')
+                    else:
+                        from datetime import datetime, timedelta
+                        due_date = (datetime.utcnow() + timedelta(days=7)).strftime('%d-%m-%Y')
+                    
+                    # Send iDEAL payment link email
+                    if hosted_invoice_url:
+                        email_service.send_ideal_payment_link_email(
+                            admin_user, 
+                            tenant, 
+                            hosted_invoice_url, 
+                            amount_formatted, 
+                            due_date
+                        )
+                        print(f"✅ iDEAL payment link email sent to {admin_user.email}")
+                    else:
+                        print(f"⚠️ No hosted_invoice_url for invoice {invoice.get('id')}")
+                except Exception as e:
+                    print(f"⚠️ Failed to send iDEAL payment link email: {e}")
+    
     return jsonify({'success': True})
 
 @app.route('/super-admin/dashboard')

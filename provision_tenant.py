@@ -102,17 +102,32 @@ def provision_tenant_from_signup(pending_signup, stripe_session_data=None):
         # Create subscription with Stripe data if available
         stripe_customer_id = None
         stripe_subscription_id = None
+        payment_method = 'card'  # Default to card
         
         if stripe_session_data:
             stripe_customer_id = stripe_session_data.get('customer')
             stripe_subscription_id = stripe_session_data.get('subscription')
+            
+            # Detect payment method from Stripe session
+            # If subscription exists, fetch it to get the actual payment method
+            if stripe_subscription_id:
+                try:
+                    import stripe
+                    stripe_sub = stripe.Subscription.retrieve(stripe_subscription_id)
+                    if stripe_sub.default_payment_method:
+                        pm = stripe.PaymentMethod.retrieve(stripe_sub.default_payment_method)
+                        payment_method = pm.type  # 'card', 'ideal', 'sepa_debit', etc.
+                        print(f"✓ Detected payment method: {payment_method}")
+                except Exception as e:
+                    print(f"⚠ Could not detect payment method: {e}, defaulting to 'card'")
         
         subscription = Subscription(
             tenant_id=tenant.id,
             plan=tier,
             status='active',
             stripe_customer_id=stripe_customer_id,
-            stripe_subscription_id=stripe_subscription_id
+            stripe_subscription_id=stripe_subscription_id,
+            payment_method=payment_method
         )
         db.session.add(subscription)
         
