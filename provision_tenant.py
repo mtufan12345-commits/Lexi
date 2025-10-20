@@ -115,7 +115,9 @@ def provision_tenant_from_signup(pending_signup, stripe_session_data=None):
                     import stripe
                     stripe_sub = stripe.Subscription.retrieve(stripe_subscription_id)
                     if stripe_sub.default_payment_method:
-                        pm = stripe.PaymentMethod.retrieve(stripe_sub.default_payment_method)
+                        # default_payment_method can be string ID or object
+                        pm_id = stripe_sub.default_payment_method if isinstance(stripe_sub.default_payment_method, str) else stripe_sub.default_payment_method.id
+                        pm = stripe.PaymentMethod.retrieve(pm_id)
                         payment_method = pm.type  # 'card', 'ideal', 'sepa_debit', etc.
                         print(f"✓ Detected payment method: {payment_method}")
                 except Exception as e:
