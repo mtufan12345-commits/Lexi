@@ -423,48 +423,58 @@ class EmailService:
         self.from_email = os.getenv('FROM_EMAIL', 'noreply@trial-3vz9dle4n8z4kj50.mlsender.net')
         self.from_name = os.getenv('FROM_NAME', 'Lexi CAO Meester')
         self.enabled = bool(self.api_key)
+        self.api_url = "https://api.mailersend.com/v1/email"
         
-        # Initialize MailerSend SDK v2.0 client
         if self.enabled:
-            try:
-                from mailersend import MailerSendClient
-                self.client = MailerSendClient(api_key=self.api_key)
-                print(f"✓ MailerSend SDK v2.0 initialized: {self.from_name} <{self.from_email}>")
-            except Exception as e:
-                print(f"⚠ MailerSend SDK initialization failed: {e}")
-                self.enabled = False
-                self.client = None
-        else:
-            self.client = None
+            print(f"✓ MailerSend HTTP API initialized: {self.from_name} <{self.from_email}>")
     
     def send_email(self, to_email, subject, html_content):
-        """Send email via MailerSend SDK v2.0 (modern builder pattern)"""
-        if not self.enabled or not self.client:
+        """Send email via MailerSend HTTP API (stable, production-ready)"""
+        if not self.enabled:
             print(f"Email not sent (MailerSend not configured): {subject} to {to_email}")
             return False
         
         try:
-            # Import EmailBuilder for SDK v2.0
-            from mailersend import EmailBuilder
-            
             # Strip HTML tags for plain text version
             import re
             text_content = re.sub('<[^<]+?>', '', html_content)
             
-            # Build email using v2.0 builder pattern
-            email = (EmailBuilder()
-                .from_email(self.from_email, self.from_name)
-                .to_many([{"email": to_email}])
-                .subject(subject)
-                .html(html_content)
-                .text(text_content)
-                .build())
+            # Build email payload for HTTP API
+            payload = {
+                "from": {
+                    "email": self.from_email,
+                    "name": self.from_name
+                },
+                "to": [
+                    {
+                        "email": to_email
+                    }
+                ],
+                "subject": subject,
+                "text": text_content,
+                "html": html_content
+            }
             
-            # Send email via SDK
-            response = self.client.emails.send(email)
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "X-Requested-With": "XMLHttpRequest"
+            }
             
-            print(f"✓ Email sent successfully to {to_email} (subject: {subject})")
-            return True
+            # Send email via HTTP POST
+            response = requests.post(
+                self.api_url,
+                headers=headers,
+                json=payload,
+                timeout=10
+            )
+            
+            if response.status_code == 202:
+                print(f"✓ Email sent successfully to {to_email} (subject: {subject})")
+                return True
+            else:
+                print(f"MailerSend error: Status {response.status_code}, Response: {response.text}")
+                return False
                 
         except Exception as e:
             print(f"MailerSend error: {e}")
