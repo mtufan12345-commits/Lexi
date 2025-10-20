@@ -26,3 +26,4 @@ Flask-Limiter
 mailersend
 flask-compress
 requests
+mailersend
