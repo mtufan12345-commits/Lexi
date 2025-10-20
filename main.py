@@ -202,8 +202,47 @@ def super_admin_required(f):
     return decorated_function
 
 @app.after_request
-def add_cache_and_compression_headers(response):
-    """Add cache headers and gzip compression"""
+def add_security_and_cache_headers(response):
+    """Add security headers, cache headers and enable gzip compression"""
+    
+    # ========== SECURITY HEADERS (CRITICAL) ==========
+    
+    # HSTS - Force HTTPS for 1 year (preload ready)
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    
+    # Clickjacking protection - Allow same origin iframes (needed for Replit preview)
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    
+    # MIME-type sniffing prevention
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    # Content Security Policy - Strict but allows inline scripts/styles (needed for current app)
+    csp_policy = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://js.stripe.com; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self' https://api.stripe.com; "
+        "frame-src 'self' https://js.stripe.com; "
+        "form-action 'self'; "
+        "base-uri 'self'; "
+        "object-src 'none'; "
+        "upgrade-insecure-requests;"
+    )
+    response.headers['Content-Security-Policy'] = csp_policy
+    
+    # Referrer policy - Balance privacy and functionality
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    
+    # Permissions policy - Deny unnecessary browser features
+    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=(), payment=(self)'
+    
+    # XSS Protection (legacy browsers)
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # ========== CACHE & COMPRESSION HEADERS ==========
+    
     # Enable gzip compression for text-based responses
     if response.mimetype in ['text/html', 'text/css', 'text/javascript', 'application/javascript', 'application/json', 'text/xml', 'application/xml']:
         response.headers['Vary'] = 'Accept-Encoding'

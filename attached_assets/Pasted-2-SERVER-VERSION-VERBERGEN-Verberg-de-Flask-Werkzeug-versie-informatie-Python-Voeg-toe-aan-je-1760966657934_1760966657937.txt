@@ -1,0 +1,115 @@
+2. SERVER VERSION VERBERGEN
+Verberg de Flask/Werkzeug versie informatie:
+Python
+# Voeg toe aan je Flask app configuratie
+from werkzeug.serving import WSGIRequestHandler
+WSGIRequestHandler.protocol_version = "HTTP/1.1"
+
+# Als je Gunicorn gebruikt (aanbevolen voor productie):
+# Voeg toe aan gunicorn config: server_tokens = False
+3. COOKIE SECURITY VERBETEREN
+Update de session cookie configuratie naar SameSite=Strict:
+Python
+app.config.update(
+    SESSION_COOKIE_SECURE=True,      # Alleen via HTTPS
+    SESSION_COOKIE_HTTPONLY=True,    # Niet toegankelijk via JavaScript
+    SESSION_COOKIE_SAMESITE='Strict', # Strengere CSRF bescherming
+    PERMANENT_SESSION_LIFETIME=3600   # 1 uur sessie timeout
+)
+4. RATE LIMITING IMPLEMENTEREN
+Installeer en configureer Flask-Limiter om brute-force aanvallen te voorkomen:
+Python
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+
+# Specifiek voor login endpoint
+@app.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")
+def login():
+    # ... bestaande login code
+    pass
+5. INPUT VALIDATIE & SANITIZATION
+Zorg ervoor dat alle user input wordt gevalideerd:
+Python
+from markupsafe import escape
+from wtforms import validators
+
+# Voorbeeld voor login form
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[
+        validators.DataRequired(),
+        validators.Email(),
+        validators.Length(max=255)
+    ])
+    password = PasswordField('Password', validators=[
+        validators.DataRequired(),
+        validators.Length(min=8, max=128)
+    ])
+6. HTTPS REDIRECT (voor productie)
+Forceer HTTPS voor alle requests:
+Python
+@app.before_request
+def force_https( ):
+    if not request.is_secure and not request.headers.get('X-Forwarded-Proto') == 'https':
+        if app.env == 'production':  # Alleen in productie
+            url = request.url.replace('http://', 'https://', 1 )
+            return redirect(url, code=301)
+7. ENVIRONMENT VARIABLES SECURITY
+Zorg dat gevoelige data in environment variables staat (niet in code):
+Python
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['DATABASE_URL'] = os.environ.get('DATABASE_URL')
+
+# Genereer een sterke SECRET_KEY als deze niet bestaat
+if not app.config['SECRET_KEY']:
+    import secrets
+    app.config['SECRET_KEY'] = secrets.token_hex(32)
+    print("WARNING: Using generated SECRET_KEY. Set SECRET_KEY in .env for production!")
+8. ERROR HANDLING
+Voorkom information disclosure via error messages:
+Python
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    # Log de error, maar toon geen details aan gebruiker
+    app.logger.error(f'Server Error: {e}')
+    return render_template('500.html'), 500
+
+# Disable debug mode in productie
+if app.env == 'production':
+    app.config['DEBUG'] = False
+9. DEPENDENCIES UPDATEN
+Update alle dependencies naar de laatste versie:
+Bash
+pip install --upgrade flask flask-limiter flask-wtf werkzeug
+10. SECURITY CHECKLIST
+Na implementatie, test de volgende zaken:
+ Security headers aanwezig in response (test met curl -I)
+ Login rate limiting werkt (probeer 6x snel in te loggen)
+ CSRF tokens werken nog steeds
+ Session cookies hebben Secure, HttpOnly, SameSite=Strict
+ Geen server versie zichtbaar in headers
+ Error pages tonen geen gevoelige informatie
+ Alle environment variables correct ingesteld
+IMPLEMENTATIE VOLGORDE:
+Start met security headers (@app.after_request)
+Implementeer rate limiting op /login
+Update cookie configuratie
+Voeg HTTPS redirect toe (alleen voor productie)
+Test alles grondig
+Genereer de volledige code voor deze wijzigingen en zorg dat de applicatie blijft werke
