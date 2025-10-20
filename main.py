@@ -412,7 +412,8 @@ def signup_tenant():
             
             stripe_data = {
                 'payment_method_types[0]': 'card',
-                'payment_method_types[1]': 'ideal',  # iDEAL voor Nederlandse klanten
+                # TODO: Re-enable iDEAL after SEPA Direct Debit is activated in Stripe Dashboard
+                # 'payment_method_types[1]': 'ideal',  # Temporarily disabled - requires SEPA activation
                 'line_items[0][price]': price_id,
                 'line_items[0][quantity]': 1,
                 'mode': 'subscription',
