@@ -1916,15 +1916,22 @@ def admin_users():
                     last_name=last_name,
                     role=role
                 )
-                user.set_password(password)
+                # Generate secure activation token (24-hour expiry)
+                token = secrets.token_urlsafe(32)
+                user.reset_token = token
+                user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=24)
+                # Set a temporary random password (will be changed via activation)
+                user.set_password(secrets.token_urlsafe(16))
+                
                 db.session.add(user)
                 db.session.commit()
                 
-                login_url = f"https://{g.tenant.subdomain}.lex-cao.replit.app/login"
+                # Send activation email with secure token link
+                activation_url = f"https://{g.tenant.subdomain}.lex-cao.replit.app/reset-password/{token}"
                 admin_name = f"{current_user.first_name} {current_user.last_name}"
-                email_service.send_user_invitation_email(user, g.tenant, login_url, password, admin_name)
+                email_service.send_user_invitation_email(user, g.tenant, activation_url, admin_name)
                 
-                flash(f'Gebruiker toegevoegd als {role}!', 'success')
+                flash(f'Gebruiker toegevoegd! Activatie email verzonden naar {email}.', 'success')
         
         elif action == 'toggle':
             user_id = request.form.get('user_id')

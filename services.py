@@ -494,24 +494,72 @@ class EmailService:
             return False
     
     def send_welcome_email(self, user, tenant, login_url):
+        """Send welcome email after successful signup (branded template)"""
         subject = "Welkom bij Lexi CAO Meester!"
+        
         html_content = f"""
+        <!DOCTYPE html>
         <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2>Welkom bij Lexi CAO Meester! 🤖</h2>
-            <p>Hoi {user.first_name},</p>
-            <p>Je account is aangemaakt voor <strong>{tenant.company_name}</strong>.</p>
-            <p>Login hier: <a href="{login_url}">{login_url}</a></p>
-            <p>Lexi staat klaar om al je CAO vragen te beantwoorden!</p>
-            <br>
-            <p>Veel succes,<br>Het Lexi team</p>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">Welkom bij Lexi! 👋</h2>
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">Hoi {user.first_name},</p>
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Je account is aangemaakt voor <strong style="color: #1a2332;">{tenant.company_name}</strong>. Lexi staat klaar om al je CAO vragen te beantwoorden!
+                                    </p>
+                                    <div style="background-color: #d4af37; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+                                        <p style="margin: 0 0 12px 0; color: #1a2332; font-size: 18px; font-weight: 600;">Start nu met Lexi!</p>
+                                        <a href="{login_url}" style="background: #1a2332; color: #d4af37; padding: 12px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+                                            Inloggen →
+                                        </a>
+                                    </div>
+                                    <div style="background-color: #f0f9ff; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <h3 style="margin: 0 0 12px 0; color: #1a2332; font-size: 16px; font-weight: 600;">Wat kun je met Lexi?</h3>
+                                        <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8;">
+                                            <li>CAO vragen stellen en directe antwoorden krijgen</li>
+                                            <li>Documenten genereren (contracten, brieven)</li>
+                                            <li>Bestanden uploaden voor analyse</li>
+                                            <li>Chat geschiedenis doorzoeken</li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+                                        <strong style="color: #1a2332;">Lexi AI</strong> - Jouw Expert CAO Assistent
+                                    </p>
+                                    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                                        Vragen? support@lexiai.nl
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
         </body>
         </html>
         """
         return self.send_email(user.email, subject, html_content)
     
-    def send_user_invitation_email(self, user, tenant, login_url, password, admin_name):
-        """Send invitation email to new user created by admin with login credentials"""
+    def send_user_invitation_email(self, user, tenant, activation_url, admin_name):
+        """Send invitation email with secure activation link (NO PASSWORD IN EMAIL!)"""
         subject = f"Je bent uitgenodigd voor Lexi CAO Meester bij {tenant.company_name}"
         
         html_content = f"""
@@ -521,86 +569,42 @@ class EmailService:
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
                 <tr>
                     <td align="center">
                         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                            <!-- Header met Lexi branding -->
                             <tr>
                                 <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
-                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">
-                                        LEXI
-                                    </h1>
-                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">
-                                        CAO MEESTER
-                                    </p>
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
                                 </td>
                             </tr>
-                            
-                            <!-- Content -->
                             <tr>
                                 <td style="padding: 40px 30px;">
-                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">
-                                        Welkom bij Lexi CAO Meester! 👋
-                                    </h2>
-                                    
-                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                        Hoi {user.first_name},
-                                    </p>
-                                    
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">Welkom bij Lexi! 👋</h2>
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">Hoi {user.first_name},</p>
                                     <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
                                         {admin_name} heeft een account voor je aangemaakt bij <strong style="color: #1a2332;">{tenant.company_name}</strong>. 
-                                        Je hebt nu toegang tot Lexi, jouw AI-assistent voor CAO-vragen in de glastuinbouw sector.
+                                        Je hebt nu toegang tot Lexi, jouw AI-assistent voor CAO-vragen.
                                     </p>
-                                    
-                                    <!-- Login credentials box -->
-                                    <div style="background-color: #f9fafb; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
-                                        <h3 style="margin: 0 0 16px 0; color: #1a2332; font-size: 18px; font-weight: 600;">
-                                            📧 Jouw inloggegevens
-                                        </h3>
-                                        
-                                        <table width="100%" cellpadding="8" cellspacing="0">
-                                            <tr>
-                                                <td style="color: #6b7280; font-size: 14px; font-weight: 600; width: 100px;">Email:</td>
-                                                <td style="color: #1a2332; font-size: 14px; font-family: 'Courier New', monospace;">
-                                                    {user.email}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td style="color: #6b7280; font-size: 14px; font-weight: 600;">Wachtwoord:</td>
-                                                <td style="color: #1a2332; font-size: 14px; font-family: 'Courier New', monospace; background-color: #ffffff; padding: 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
-                                                    <strong>{password}</strong>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                        
-                                        <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
-                                            💡 <strong>Tip:</strong> We raden aan om je wachtwoord te wijzigen na je eerste login via je profielinstellingen.
+                                    <div style="background-color: #f0f9ff; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <h3 style="margin: 0 0 12px 0; color: #1a2332; font-size: 18px; font-weight: 600;">🔐 Account Activeren</h3>
+                                        <p style="margin: 0 0 16px 0; color: #374151; font-size: 14px; line-height: 1.6;">
+                                            Klik op de knop hieronder om je account te activeren en je wachtwoord in te stellen.
+                                        </p>
+                                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                                            <strong>Email:</strong> {user.email}
                                         </p>
                                     </div>
-                                    
-                                    <!-- CTA Button -->
-                                    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 32px 0;">
-                                        <tr>
-                                            <td align="center">
-                                                <a href="{login_url}" 
-                                                   style="display: inline-block; background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); color: #d4af37; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(26, 35, 50, 0.3);">
-                                                    Inloggen →
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    
-                                    <p style="margin: 24px 0 0 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                                        Met Lexi kun je direct antwoorden krijgen op al je CAO-vragen. Vraag gewoon wat je wilt weten!
-                                    </p>
-                                    
-                                    <!-- Features -->
+                                    <div style="background-color: #d4af37; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+                                        <p style="margin: 0 0 12px 0; color: #1a2332; font-size: 18px; font-weight: 600;">Activeer je Account</p>
+                                        <a href="{activation_url}" style="background: #1a2332; color: #d4af37; padding: 14px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
+                                            Account Activeren →
+                                        </a>
+                                    </div>
                                     <div style="margin: 32px 0; padding: 24px; background-color: #f9fafb; border-radius: 8px;">
-                                        <h3 style="margin: 0 0 16px 0; color: #1a2332; font-size: 16px; font-weight: 600;">
-                                            ✨ Wat kun je met Lexi?
-                                        </h3>
+                                        <h3 style="margin: 0 0 16px 0; color: #1a2332; font-size: 16px; font-weight: 600;">✨ Wat kun je met Lexi?</h3>
                                         <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 2;">
                                             <li>Stel CAO-vragen en krijg direct antwoorden</li>
                                             <li>Gebaseerd op 1.000+ officiële documenten</li>
@@ -608,22 +612,20 @@ class EmailService:
                                             <li>Genereer contracten en brieven</li>
                                         </ul>
                                     </div>
+                                    <div style="background-color: #fef2f2; border-left: 4px solid #DC2626; border-radius: 8px; padding: 16px; margin: 24px 0;">
+                                        <p style="margin: 0; color: #991b1b; font-size: 13px; line-height: 1.6;">
+                                            <strong>⚠️ Veiligheid:</strong> Deze activatie link is 24 uur geldig en kan maar één keer worden gebruikt.
+                                        </p>
+                                    </div>
                                 </td>
                             </tr>
-                            
-                            <!-- Footer -->
                             <tr>
                                 <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
                                     <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
-                                        Veel succes met Lexi! 🚀
+                                        <strong style="color: #1a2332;">Lexi AI</strong> - Jouw Expert CAO Assistent
                                     </p>
-                                    <p style="margin: 0; color: #9ca3af; font-size: 13px;">
-                                        Het <strong style="color: #d4af37;">Lexi AI</strong> Team
-                                    </p>
-                                    
-                                    <p style="margin: 24px 0 0 0; color: #9ca3af; font-size: 12px; line-height: 1.6;">
-                                        Deze email is verstuurd naar {user.email}<br>
-                                        omdat je bent uitgenodigd voor Lexi CAO Meester.
+                                    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                                        Vragen? support@lexiai.nl
                                     </p>
                                 </td>
                             </tr>
