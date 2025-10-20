@@ -108,20 +108,39 @@ def provision_tenant_from_signup(pending_signup, stripe_session_data=None):
             stripe_customer_id = stripe_session_data.get('customer')
             stripe_subscription_id = stripe_session_data.get('subscription')
             
-            # Detect payment method from Stripe session
-            # If subscription exists, fetch it to get the actual payment method
-            if stripe_subscription_id:
-                try:
-                    import stripe
+            # Detect payment method from checkout session
+            # iDEAL is single-use, so we must check the session's payment_intent instead of subscription
+            try:
+                import stripe
+                
+                # First try: get payment method from session's payment_intent (for single-use methods like iDEAL)
+                payment_intent_id = stripe_session_data.get('payment_intent')
+                if payment_intent_id:
+                    pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+                    if pi.charges and pi.charges.data:
+                        payment_method_id = pi.charges.data[0].payment_method
+                        if payment_method_id:
+                            pm = stripe.PaymentMethod.retrieve(payment_method_id)
+                            payment_method = pm.type  # 'card', 'ideal', 'sepa_debit', etc.
+                            print(f"✓ Detected payment method from PaymentIntent: {payment_method}")
+                
+                # Fallback: check subscription's default payment method (for reusable methods like card)
+                elif stripe_subscription_id:
                     stripe_sub = stripe.Subscription.retrieve(stripe_subscription_id)
                     if stripe_sub.default_payment_method:
                         # default_payment_method can be string ID or object
                         pm_id = stripe_sub.default_payment_method if isinstance(stripe_sub.default_payment_method, str) else stripe_sub.default_payment_method.id
                         pm = stripe.PaymentMethod.retrieve(pm_id)
-                        payment_method = pm.type  # 'card', 'ideal', 'sepa_debit', etc.
-                        print(f"✓ Detected payment method: {payment_method}")
-                except Exception as e:
-                    print(f"⚠ Could not detect payment method: {e}, defaulting to 'card'")
+                        payment_method = pm.type
+                        print(f"✓ Detected payment method from Subscription: {payment_method}")
+                    else:
+                        print(f"⚠ No default_payment_method on subscription (likely iDEAL), checking session payment status...")
+                        # Last resort: check if session was completed with iDEAL via payment_method_types
+                        if 'ideal' in stripe_session_data.get('payment_method_types', []) and stripe_session_data.get('payment_status') == 'paid':
+                            payment_method = 'ideal'
+                            print(f"✓ Inferred payment method from session payment_method_types: ideal")
+            except Exception as e:
+                print(f"⚠ Could not detect payment method: {e}, defaulting to 'card'")
         
         subscription = Subscription(
             tenant_id=tenant.id,

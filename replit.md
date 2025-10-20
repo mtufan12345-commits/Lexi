@@ -26,7 +26,7 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 - **File Management:** Users can upload PDF, DOCX, and text files for AI analysis, with text extraction and OCR fallback. Files are stored in S3.
 - **Artifact Generation:** Lexi can generate downloadable documents like contracts and letters (PDF for all tiers, DOCX for Professional/Enterprise).
 - **User & Subscription Management:** Features include user management (add/delete/deactivate), role changes, user limits, and Stripe integration for direct paid subscriptions.
-- **Payment Security:** Full Stripe Checkout integration with server-side webhook verification using direct HTTP API. Account creation occurs only after successful payment via webhook. Signup data for pending payments is stored securely server-side. Card payments are supported, with iDEAL disabled.
+- **Payment Security:** Full Stripe Checkout integration with server-side webhook verification using direct HTTP API. Account creation occurs only after successful payment via webhook. Signup data for pending payments is stored securely server-side. Dual payment methods supported: credit card (automatic recurring) and iDEAL (manual monthly invoices via email until SEPA Direct Debit is approved).
 - **Email Notification System:** Complete MailerSend HTTP API integration with 11 branded email templates covering all user journeys (account management, payments, subscriptions, user management, support). All emails use token-based security (no passwords in emails), Lexi AI branding (navy/gold), and responsive HTML design. Production-ready with environment-based test override.
 - **Compliance & Disclaimer Strategy:** Multiple layers of disclaimers (checkboxes, modals, sticky chat disclaimers, AI response footers) clarify that Lexi provides general information, not legal advice.
 - **Legal Documentation:** AVG-compliant Algemene Voorwaarden and Privacy & Cookiebeleid are accessible via dedicated routes.
@@ -76,7 +76,7 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 - ✅ Rate limiting on MailerSend (10/min free plan)
 
 **Email System:**
-11 transactional email templates covering:
+12 transactional email templates covering:
 1. Payment Success
 2. User Invitation (secure activation tokens)
 3. Welcome Email
@@ -88,6 +88,23 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 9. Role Changed
 10. Account Deactivated
 11. Ticket Resolved
+12. iDEAL Monthly Payment Link (manual invoice flow)
+
+**iDEAL Payment Integration:**
+- **Phase 1 (Current):** Manual monthly invoices via Stripe webhooks
+  - Checkout supports both 'card' and 'ideal' payment methods
+  - Payment method detection via 3-level fallback:
+    1. PaymentIntent retrieval (for single-use methods like iDEAL)
+    2. Subscription default_payment_method (for reusable methods like card)
+    3. Session payment_method_types inference (last resort)
+  - iDEAL subscriptions stored with payment_method='ideal' in database
+  - invoice.finalized webhook triggers monthly email with hosted_invoice_url
+  - No cron jobs needed - Stripe webhooks handle automation
+- **Phase 2 (Future):** SEPA Direct Debit auto-conversion
+  - After 30-day Stripe SEPA approval period
+  - Environment flag: SEPA_APPROVED to enable migration
+  - iDEAL subscriptions migrate to automatic SEPA charges
+  - Manual invoice emails automatically stop
 
 **Testing:**
 - TEST_EMAIL_OVERRIDE environment variable for email layout testing
