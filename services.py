@@ -425,14 +425,25 @@ class EmailService:
         self.enabled = bool(self.api_key)
         self.api_url = "https://api.mailersend.com/v1/email"
         
+        # TEST_EMAIL_OVERRIDE: Route all emails to this address for layout testing
+        self.test_email_override = os.getenv('TEST_EMAIL_OVERRIDE', '')
+        
         if self.enabled:
             print(f"✓ MailerSend HTTP API initialized: {self.from_name} <{self.from_email}>")
+            if self.test_email_override:
+                print(f"⚠️  TEST MODE: All emails redirected to {self.test_email_override}")
     
     def send_email(self, to_email, subject, html_content):
         """Send email via MailerSend HTTP API (stable, production-ready)"""
         if not self.enabled:
             print(f"Email not sent (MailerSend not configured): {subject} to {to_email}")
             return False
+        
+        # Override recipient for testing if TEST_EMAIL_OVERRIDE is set
+        original_to_email = to_email
+        if self.test_email_override:
+            to_email = self.test_email_override
+            print(f"📧 TEST MODE: Redirecting email from {original_to_email} to {to_email}")
         
         try:
             # Strip HTML tags for plain text version
