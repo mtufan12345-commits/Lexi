@@ -903,6 +903,359 @@ class EmailService:
         </html>
         """
         return self.send_email(tenant.contact_email, subject, html_content)
+    
+    def send_payment_success_email(self, tenant, plan, amount):
+        """Send email after successful payment/subscription activation"""
+        subject = f"✅ Welkom bij Lexi CAO Meester - {plan.title()} Plan Actief!"
+        
+        plan_details = {
+            'starter': ('Starter', '€499', '3 users'),
+            'professional': ('Professional', '€599', '5 users'),
+            'enterprise': ('Enterprise', '€1.199', 'Unlimited users')
+        }
+        
+        plan_name, plan_price, plan_users = plan_details.get(plan, ('Professional', '€599', '5 users'))
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">Betaling Succesvol! 🎉</h2>
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">Hoi {tenant.contact_name},</p>
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Bedankt voor je betaling! Je <strong>{plan_name}</strong> abonnement is nu actief voor <strong>{tenant.company_name}</strong>.
+                                    </p>
+                                    <div style="background-color: #f0f9ff; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <h3 style="margin: 0 0 16px 0; color: #1a2332; font-size: 18px; font-weight: 600;">📋 Abonnement Details</h3>
+                                        <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8;">
+                                            <li><strong>Plan:</strong> {plan_name}</li>
+                                            <li><strong>Prijs:</strong> {plan_price}/maand</li>
+                                            <li><strong>Gebruikers:</strong> {plan_users}</li>
+                                            <li><strong>Bedrijf:</strong> {tenant.company_name}</li>
+                                        </ul>
+                                    </div>
+                                    <div style="background-color: #d4af37; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+                                        <p style="margin: 0 0 12px 0; color: #1a2332; font-size: 18px; font-weight: 600;">Start nu met Lexi!</p>
+                                        <a href="https://{tenant.subdomain}.lexiai.nl/chat" style="background: #1a2332; color: #d4af37; padding: 12px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+                                            Naar Chat →
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+                                        <strong style="color: #1a2332;">Lexi AI</strong> - Jouw Expert CAO Assistent
+                                    </p>
+                                    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                                        Vragen? Neem contact op via support@lexiai.nl
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        return self.send_email(tenant.contact_email, subject, html_content)
+    
+    def send_subscription_updated_email(self, tenant, old_plan, new_plan):
+        """Send email when subscription plan changes"""
+        subject = f"✅ Je abonnement is gewijzigd naar {new_plan.title()}"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">Abonnement Gewijzigd</h2>
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">Hoi {tenant.contact_name},</p>
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Je abonnement voor <strong>{tenant.company_name}</strong> is gewijzigd.
+                                    </p>
+                                    <div style="background-color: #f0f9ff; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">Oud plan:</p>
+                                        <p style="margin: 0 0 16px 0; color: #1a2332; font-size: 18px; font-weight: 600;">{old_plan.title()}</p>
+                                        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">Nieuw plan:</p>
+                                        <p style="margin: 0; color: #d4af37; font-size: 18px; font-weight: 600;">{new_plan.title()}</p>
+                                    </div>
+                                    <p style="margin: 0; color: #6b7280; font-size: 14px; text-align: center;">
+                                        De wijziging is direct actief.
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+                                        <strong style="color: #1a2332;">Lexi AI</strong>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        return self.send_email(tenant.contact_email, subject, html_content)
+    
+    def send_subscription_cancelled_email(self, tenant):
+        """Send email when subscription is cancelled"""
+        subject = "Je abonnement is geannuleerd"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">Abonnement Geannuleerd</h2>
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">Hoi {tenant.contact_name},</p>
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Je abonnement voor <strong>{tenant.company_name}</strong> is geannuleerd.
+                                    </p>
+                                    <div style="background-color: #fef2f2; border-left: 4px solid #DC2626; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <p style="margin: 0 0 12px 0; color: #1a2332; font-size: 16px; font-weight: 600;">Wat betekent dit?</p>
+                                        <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8;">
+                                            <li>Je toegang blijft actief tot het einde van je huidige factuurperiode</li>
+                                            <li>Daarna wordt je account gedeactiveerd</li>
+                                            <li>Al je chat geschiedenis blijft bewaard</li>
+                                        </ul>
+                                    </div>
+                                    <p style="margin: 24px 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6; text-align: center;">
+                                        Mocht je van gedachten veranderen, je bent altijd welkom terug!
+                                    </p>
+                                    <div style="text-align: center;">
+                                        <a href="https://{tenant.subdomain}.lexiai.nl/admin/billing" style="background: #d4af37; color: #1a2332; padding: 12px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+                                            Heractiveer Abonnement
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                        Vragen? support@lexiai.nl
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        return self.send_email(tenant.contact_email, subject, html_content)
+    
+    def send_role_changed_email(self, user, tenant, new_role, changed_by):
+        """Send email when user role is changed"""
+        subject = f"Je rol is gewijzigd in Lexi CAO Meester"
+        
+        role_names = {
+            'USER': 'Gebruiker',
+            'TENANT_ADMIN': 'Administrator'
+        }
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">Je Rol is Gewijzigd</h2>
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">Hoi {user.first_name},</p>
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        {changed_by} heeft je rol gewijzigd in <strong>{tenant.company_name}</strong>.
+                                    </p>
+                                    <div style="background-color: #f0f9ff; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0; text-align: center;">
+                                        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">Je nieuwe rol:</p>
+                                        <p style="margin: 0; color: #1a2332; font-size: 24px; font-weight: 600;">{role_names.get(new_role, new_role)}</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                        <strong style="color: #1a2332;">Lexi AI</strong>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        return self.send_email(user.email, subject, html_content)
+    
+    def send_account_deactivated_email(self, user, tenant, deactivated_by):
+        """Send email when user account is deactivated"""
+        subject = "Je account is gedeactiveerd"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">Account Gedeactiveerd</h2>
+                                    <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">Hoi {user.first_name},</p>
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        {deactivated_by} heeft je account gedeactiveerd bij <strong>{tenant.company_name}</strong>.
+                                    </p>
+                                    <div style="background-color: #fef2f2; border-left: 4px solid #DC2626; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <p style="margin: 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                            Je hebt geen toegang meer tot Lexi CAO Meester. Neem contact op met je administrator voor meer informatie.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                        <strong style="color: #1a2332;">Lexi AI</strong>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        return self.send_email(user.email, subject, html_content)
+    
+    def send_ticket_resolved_email(self, ticket, tenant):
+        """Send email when support ticket is resolved"""
+        subject = f"Support ticket #{ticket.id} opgelost"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f3f4f6;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #1a2332 0%, #2a3f5f 100%); padding: 40px 30px; text-align: center;">
+                                    <h1 style="margin: 0; color: #d4af37; font-size: 32px; font-weight: 700; letter-spacing: 2px;">LEXI</h1>
+                                    <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px; letter-spacing: 1px;">CAO MEESTER</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="margin: 0 0 20px 0; color: #1a2332; font-size: 24px; font-weight: 600;">✅ Ticket Opgelost</h2>
+                                    <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                        Je support ticket is opgelost.
+                                    </p>
+                                    <div style="background-color: #f0f9ff; border-left: 4px solid #d4af37; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                                        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">Ticket:</p>
+                                        <p style="margin: 0 0 16px 0; color: #1a2332; font-size: 18px; font-weight: 600;">#{ticket.id} - {ticket.subject}</p>
+                                    </div>
+                                    <p style="margin: 0; color: #374151; font-size: 14px; text-align: center;">
+                                        Heb je nog vragen? Open een nieuw ticket via het support menu.
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                        <strong style="color: #1a2332;">Lexi AI Support</strong>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        return self.send_email(ticket.email, subject, html_content)
 
 vertex_ai_service = VertexAIService()
 s3_service = S3Service()
