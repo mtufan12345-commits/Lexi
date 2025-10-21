@@ -25,7 +25,7 @@ jobs:
         run: |
           # The IP/Domain of your server. Add this as a GitHub Secret if needed.
           SSH_USER="root"
-          SSH_HOST="88.198.191.193"
+          SSH_HOST="188.34.158.27"
           #SSH_HOST="65.21.148.97"
           DEPLOY_PATH="/var/www/"
           sudo apt update && sudo apt install -y zip 
