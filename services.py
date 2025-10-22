@@ -16,31 +16,32 @@ stripe.api_key = os.getenv('STRIPE_SECRET_KEY_PROD') or os.getenv('STRIPE_SECRET
 class VertexAIService:
     def __init__(self):
         credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-        
+        self.client = None  # Initialize to None to prevent __del__ errors
+
         try:
             from google import genai
             from google.genai import types
             import tempfile
-            
+
             self.genai = genai
             self.types = types
-            
+
             if isinstance(credentials_json, str):
                 credentials_dict = json.loads(credentials_json)
                 temp_cred_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
                 json.dump(credentials_dict, temp_cred_file)
                 temp_cred_file.close()
                 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_cred_file.name
-            
+
             self.client = genai.Client(
                 vertexai=True,
                 project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
                 location=os.environ.get("VERTEX_AI_LOCATION"),
             )
-            
+
             self.model = "gemini-2.5-pro"
             self.rag_corpus = os.environ.get("VERTEX_AI_AGENT_ID")
-            
+
             # Generieke fallback system instruction (wordt overschreven door cao_config.py)
             self.system_instruction = """Je bent Lexi - Expert Loonadministrateur voor uitzendbureaus.
 
@@ -93,10 +94,23 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
             print(f"Vertex AI initialization failed: {e}")
             self.enabled = False
 
+    def __del__(self):
+        """Cleanup method to prevent _api_client AttributeError"""
+        try:
+            if hasattr(self, 'client') and self.client is not None:
+                # Try to close the client properly if it has a close method
+                if hasattr(self.client, 'close'):
+                    self.client.close()
+                # Clear the reference
+                self.client = None
+        except Exception:
+            # Silently ignore any errors during cleanup
+            pass
+
     def chat(self, message, conversation_history=None, system_instruction=None):
-        if not self.enabled:
+        if not self.enabled or not self.client:
             return "Lexi is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om Lexi te activeren."
-        
+
         try:
             contents = []
             
