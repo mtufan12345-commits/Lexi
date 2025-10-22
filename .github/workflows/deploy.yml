@@ -21,4 +21,3 @@ jobs:
             npm run build:css
             systemctl restart lexi
             echo "✅ Deployment successful!"
-```
