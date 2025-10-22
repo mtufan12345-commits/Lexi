@@ -1,4 +1,4 @@
- name: Deploy to Production
+yamlname: Deploy to Production
 
 on:
   push:
@@ -21,3 +21,4 @@ jobs:
             npm run build:css
             systemctl restart lexi
             echo "✅ Deployment successful!"
+```
