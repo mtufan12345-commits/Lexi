@@ -138,9 +138,9 @@
                     const newContent = doc.getElementById('page-content');
                     
                     if (newContent) {
-                        // Extract and save scripts before updating content
-                        const scripts = Array.from(newContent.querySelectorAll('script'));
-                        const scriptContents = scripts.map(script => script.textContent);
+                        // Extract scripts from ENTIRE body (including {% block extra_js %} outside #page-content)
+                        const allBodyScripts = Array.from(doc.body.querySelectorAll('script'));
+                        const scriptContents = allBodyScripts.map(script => script.textContent);
 
                         // Update content
                         content.innerHTML = newContent.innerHTML;
@@ -154,11 +154,16 @@
                         // Update URL
                         window.history.pushState({}, '', url);
 
-                        // Re-execute scripts (they don't auto-execute via innerHTML)
+                        // Re-execute ALL scripts from body (including extra_js block)
                         scriptContents.forEach(scriptText => {
                             if (scriptText.trim()) {
+                                // Skip the base navigation script (already loaded)
+                                if (scriptText.includes('function navigateTo') ||
+                                    scriptText.includes('function initNavLinks')) {
+                                    return;
+                                }
                                 try {
-                                    // Use Function constructor instead of eval for better scoping
+                                    // Use Function constructor for script execution
                                     const fn = new Function(scriptText);
                                     fn();
                                 } catch (error) {
