@@ -241,7 +241,7 @@ def add_security_and_cache_headers(response):
     # Content Security Policy - Strict but allows inline scripts/styles (needed for current app)
     csp_policy = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://js.stripe.com; "
+        "script-src 'self' 'unsafe-inline' https://js.stripe.com https://cdn.jsdelivr.net; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: https:; "
         "font-src 'self' data:; "
