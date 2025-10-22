@@ -110,3 +110,11 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 - TEST_EMAIL_OVERRIDE environment variable for email layout testing
 - Set TEST_EMAIL_OVERRIDE=test@example.com to route all emails for preview
 - Unset for production (default behavior)
+
+**Cache Busting & Deployment:**
+- BUILD_VERSION environment variable for asset versioning
+- Automatically uses Git commit hash in production
+- Falls back to timestamp in development
+- Available in all templates via {{ build_version }}
+- Prevents browser caching issues with JavaScript updates
+- See DEPLOYMENT_GUIDE.md for complete Hetzner deployment instructions
