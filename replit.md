@@ -75,6 +75,11 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 - ✅ Error handling and logging
 - ✅ Rate limiting on MailerSend (10/min free plan)
 
+**Super Admin Credentials (Neon Production Database):**
+- Email: admin@lexiai.nl
+- Password: Adem2017.
+- Login URL: /super-admin/login
+
 **Email System:**
 12 transactional email templates covering:
 1. Payment Success
