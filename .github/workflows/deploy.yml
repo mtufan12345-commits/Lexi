@@ -1,86 +1,23 @@
-name: Deploy to Hetzner Production
+ name: Deploy to Production
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch: # Allow manual triggers
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up SSH Key
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Deploy to Hetzner server
+        uses: appleboy/ssh-action@master
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add SSH Host to Known Hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy via Docker Compose
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        run: |
-          ssh $SSH_USER@$SSH_HOST << 'ENDSSH'
-            set -e  # Exit on any error
-
-            # Navigate to deployment directory
-            cd ${{ secrets.DEPLOY_PATH }}
-
-            # Pull latest code from GitHub
-            echo "📥 Pulling latest code from GitHub..."
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/lexi
             git pull origin main
-
-            # Verify .env file exists
-            if [ ! -f .env ]; then
-              echo "❌ ERROR: .env file not found!"
-              echo "Please create .env file with required environment variables"
-              exit 1
-            fi
-
-            # Build and deploy with Docker Compose
-            echo "🐳 Building Docker image..."
-            docker-compose build --no-cache
-
-            echo "🔄 Stopping old containers..."
-            docker-compose down
-
-            echo "🚀 Starting new containers..."
-            docker-compose up -d
-
-            # Wait for health check
-            echo "⏳ Waiting for application to be healthy..."
-            sleep 10
-
-            # Check health endpoint
-            if curl -f http://localhost:5000/health > /dev/null 2>&1; then
-              echo "✅ Deployment successful! Application is healthy."
-            else
-              echo "❌ WARNING: Health check failed. Check logs with: docker-compose logs"
-              exit 1
-            fi
-
-            # Show running containers
-            docker-compose ps
-
-            echo "🎉 Deployment completed successfully!"
-          ENDSSH
-
-      - name: Deployment Status
-        if: always()
-        run: |
-          if [ $? -eq 0 ]; then
-            echo "✅ Deployment completed successfully"
-          else
-            echo "❌ Deployment failed - check logs above"
-            exit 1
-          fi
+            npm run build:css
+            systemctl restart lexi
+            echo "✅ Deployment successful!"
