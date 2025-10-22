@@ -6,7 +6,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex justify-between items-center">
                 <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition">
-                    <img src="/static/images/lexi-logo.png?v=3" alt="Lexi" class="h-12">
+                    <img src="{{ url_for('static', filename='images/lexi-logo.png') }}?v={{ build_version }}" alt="Lexi" class="h-12">
                 </a>
                 
                 <div class="hidden md:flex items-center space-x-8">

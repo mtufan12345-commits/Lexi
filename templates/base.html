@@ -31,7 +31,7 @@
     <meta name="twitter:description" content="{% block twitter_description %}AI-assistent voor CAO-vragen in de glastuinbouw. 1.000+ juridische documenten, 24/7 beschikbaar. Bespaar €18.000/jaar.{% endblock %}">
     <meta name="twitter:image" content="{% block twitter_image %}https://lexiai.nl/static/images/lexi-logo.png{% endblock %}">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}?v={{ build_version }}">
     <style>
         .lexi-animation {
             font-family: monospace;
@@ -138,26 +138,40 @@
                     const newContent = doc.getElementById('page-content');
                     
                     if (newContent) {
+                        // Extract and save scripts before updating content
+                        const scripts = Array.from(newContent.querySelectorAll('script'));
+                        const scriptContents = scripts.map(script => script.textContent);
+
                         // Update content
                         content.innerHTML = newContent.innerHTML;
-                        
+
                         // Update title
                         const newTitle = doc.querySelector('title');
                         if (newTitle) {
                             document.title = newTitle.textContent;
                         }
-                        
+
                         // Update URL
                         window.history.pushState({}, '', url);
-                        
+
+                        // Re-execute scripts (they don't auto-execute via innerHTML)
+                        scriptContents.forEach(scriptText => {
+                            if (scriptText.trim()) {
+                                try {
+                                    // Use Function constructor instead of eval for better scoping
+                                    const fn = new Function(scriptText);
+                                    fn();
+                                } catch (error) {
+                                    console.error('Script execution error:', error);
+                                }
+                            }
+                        });
+
                         // Fade in
                         content.classList.remove('hiding');
-                        
+
                         // Reinitialize nav links
                         initNavLinks();
-                        
-                        // SECURITY: Do NOT use eval() - it creates XSS vulnerabilities
-                        // Scripts are automatically executed when inserted into DOM via innerHTML
                     }
                 })
                 .catch(error => {
