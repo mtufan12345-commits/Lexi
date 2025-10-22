@@ -5,7 +5,8 @@
       "Bash(curl:*)",
       "Bash(python3:*)",
       "Bash(cat:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []
