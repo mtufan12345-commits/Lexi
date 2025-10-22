@@ -32,6 +32,10 @@
     <meta name="twitter:image" content="{% block twitter_image %}https://lexiai.nl/static/images/lexi-logo.png{% endblock %}">
     
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}?v={{ build_version }}">
+    
+    <!-- Load common.js in head to initialize dark mode before first paint (prevents flash) -->
+    <script src="{{ url_for('static', filename='js/common.js') }}?v={{ build_version }}"></script>
+    
     <style>
         .lexi-animation {
             font-family: monospace;
@@ -91,11 +95,6 @@
             scrollbar-color: #3f3f46 #18181b;
         }
     </style>
-    <script>
-        if (localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-gray-50 dark:bg-black transition-colors duration-200 h-full">
@@ -114,9 +113,6 @@
     
     {% block content %}{% endblock %}
     </div>
-    
-    <!-- External JavaScript files - CSP compliant -->
-    <script src="{{ url_for('static', filename='js/common.js') }}?v={{ build_version }}"></script>
     
     {% block extra_js %}{% endblock %}
 </body>

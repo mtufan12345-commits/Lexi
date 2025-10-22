@@ -1,5 +1,12 @@
 // Common JavaScript functions used across all pages - For CSP compliance
 
+// Initialize dark mode IMMEDIATELY (before DOM loads) to prevent flash
+(function() {
+    if (localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    }
+})();
+
 // Dark mode toggle
 window.toggleDarkMode = function() {
     const html = document.documentElement;
