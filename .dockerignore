@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+venv
+env
+.venv
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Replit specific
+.replit
+replit.nix
+.cache
+.config
+.local
+.pythonlibs
+
+# Documentation
+*.md
+!README.md
+
+# Misc
+attached_assets
+scripts
+.dockerignore
+Dockerfile
+docker-compose.yml

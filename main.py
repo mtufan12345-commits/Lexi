@@ -26,6 +26,9 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # SECURITY: Enable Jinja2 autoescape to prevent XSS attacks
 app.jinja_env.autoescape = True
 
+# Build version for cache busting (use git commit hash in production, timestamp in dev)
+BUILD_VERSION = os.environ.get('BUILD_VERSION', datetime.now().strftime('%Y%m%d%H%M%S'))
+
 # SECURITY: REQUIRE session secret - NEVER use hardcoded fallback (prevents session forgery)
 app.secret_key = os.environ.get("SESSION_SECRET") or os.environ.get("SECRET_KEY")
 if not app.secret_key:
@@ -60,6 +63,11 @@ else:
     @app.context_processor
     def csrf_token_processor():
         return {'csrf_token': lambda: ''}
+
+# Make BUILD_VERSION available in all templates for cache busting
+@app.context_processor
+def inject_build_version():
+    return {'build_version': BUILD_VERSION}
 
 db.init_app(app)
 
@@ -2947,6 +2955,26 @@ def bad_request(e):
                          error_code=400,
                          error_title='Ongeldig Verzoek',
                          error_message='Het verzoek kon niet worden verwerkt.'), 400
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Docker/monitoring"""
+    try:
+        # Check database connectivity
+        db.session.execute(text('SELECT 1'))
+        db_status = 'healthy'
+    except Exception as e:
+        app.logger.error(f"Database health check failed: {e}")
+        db_status = 'unhealthy'
+        return jsonify({
+            'status': 'unhealthy',
+            'database': db_status
+        }), 503
+
+    return jsonify({
+        'status': 'healthy',
+        'database': db_status
+    }), 200
 
 @app.errorhandler(403)
 def forbidden(e):

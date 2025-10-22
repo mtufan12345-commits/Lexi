@@ -1,56 +1,86 @@
-name: Deploy to Production Server
+name: Deploy to Hetzner Production
 
 on:
   push:
-    # Trigger this workflow only on pushes to the 'main' branch
     branches:
       - main
+  workflow_dispatch: # Allow manual triggers
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # 1. Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Add the private SSH key to the agent
       - name: Set up SSH Key
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 3. Deploy using SSH
-      - name: Deploy Application
+      - name: Add SSH Host to Known Hosts
         run: |
-          # The IP/Domain of your server. Add this as a GitHub Secret if needed.
-          SSH_USER="root"
-          SSH_HOST="88.198.191.193"
-          #SSH_HOST="65.21.148.97"
-          DEPLOY_PATH="/var/www/"
-          sudo apt update && sudo apt install -y zip 
-          zip -r Lexi-pipe.zip ../Lexi
-          # 3a. Ensure host key is known to avoid SSH prompt (security measure)
-          ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
-          scp  Lexi-pipe.zip  $SSH_USER@$SSH_HOST:$DEPLOY_PATH
-          # 3b. Execute commands on the remote server
-          ssh $SSH_USER@$SSH_HOST "
-            # Navigate to the deployment directory
-            cd $DEPLOY_PATH
-            rm -r Lexi
-            unzip Lexi-pipe.zip
-            rm Lexi/.env
-            cp .env Lexi/.env
-            cd Lexi-pipe
-            export $(grep -v '^#' .env | xargs)
-            
-            export PATH=/root/.nvm/versions/node/v22.20.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
-            node -v
-            npm install
-            npm run build
-            pm2 delete 0
-            pm2 start --name "Lexi" main.py --interpreter python3
-            #pm2 restart 0 #|| true # Use your specific restart command (PM2, systemd, etc.)
-            rm ../Casemeister-pipe.zip
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-          "
+      - name: Deploy via Docker Compose
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST << 'ENDSSH'
+            set -e  # Exit on any error
+
+            # Navigate to deployment directory
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            # Pull latest code from GitHub
+            echo "📥 Pulling latest code from GitHub..."
+            git pull origin main
+
+            # Verify .env file exists
+            if [ ! -f .env ]; then
+              echo "❌ ERROR: .env file not found!"
+              echo "Please create .env file with required environment variables"
+              exit 1
+            fi
+
+            # Build and deploy with Docker Compose
+            echo "🐳 Building Docker image..."
+            docker-compose build --no-cache
+
+            echo "🔄 Stopping old containers..."
+            docker-compose down
+
+            echo "🚀 Starting new containers..."
+            docker-compose up -d
+
+            # Wait for health check
+            echo "⏳ Waiting for application to be healthy..."
+            sleep 10
+
+            # Check health endpoint
+            if curl -f http://localhost:5000/health > /dev/null 2>&1; then
+              echo "✅ Deployment successful! Application is healthy."
+            else
+              echo "❌ WARNING: Health check failed. Check logs with: docker-compose logs"
+              exit 1
+            fi
+
+            # Show running containers
+            docker-compose ps
+
+            echo "🎉 Deployment completed successfully!"
+          ENDSSH
+
+      - name: Deployment Status
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ Deployment completed successfully"
+          else
+            echo "❌ Deployment failed - check logs above"
+            exit 1
+          fi
