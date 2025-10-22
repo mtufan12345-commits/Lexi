@@ -138,7 +138,7 @@
                     const newContent = doc.getElementById('page-content');
                     
                     if (newContent) {
-                        // Extract scripts from ENTIRE body (including {% block extra_js %} outside #page-content)
+                        // Extract scripts from ENTIRE body (including extra_js block outside #page-content)
                         const allBodyScripts = Array.from(doc.body.querySelectorAll('script'));
                         const scriptContents = allBodyScripts.map(script => script.textContent);
 
