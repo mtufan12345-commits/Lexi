@@ -9,12 +9,38 @@ import uuid
 import io
 from PyPDF2 import PdfReader
 from docx import Document
+import threading
 
 # Productie Stripe key heeft voorrang over test key
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY_PROD') or os.getenv('STRIPE_SECRET_KEY', '')
 
 class VertexAIService:
+    """
+    Singleton Vertex AI Service
+    
+    CRITICAL for production deployment:
+    - Uses thread-safe singleton pattern to prevent client recreation
+    - Prevents AttributeError crashes in gunicorn workers
+    - Ensures single client instance across all requests
+    """
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        """Thread-safe singleton implementation"""
+        if cls._instance is None:
+            with cls._lock:
+                # Double-check locking pattern
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
     def __init__(self):
+        """Initialize only once per process (singleton pattern)"""
+        # Skip if already initialized
+        if self._initialized:
+            return
+            
         credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         self.client = None  # Initialize to None to prevent __del__ errors
 
@@ -89,22 +115,41 @@ Dit creëert automatisch een downloadbaar document voor de gebruiker.
 Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw op je analyse."""
             
             self.enabled = True
-            print("Vertex AI with google-genai SDK initialized successfully")
+            self._initialized = True  # Mark as initialized (singleton)
+            print("Vertex AI with google-genai SDK initialized successfully (singleton)")
         except Exception as e:
             print(f"Vertex AI initialization failed: {e}")
             self.enabled = False
+            self._initialized = True  # Mark as initialized even on failure to prevent retry loops
 
     def __del__(self):
-        """Cleanup method to prevent _api_client AttributeError"""
+        """Cleanup method to prevent _api_client AttributeError
+        
+        CRITICAL FIX for production deployment:
+        google-genai Client.__del__ tries to access self._api_client which may not exist.
+        This causes worker crashes in gunicorn. We suppress ALL cleanup errors.
+        """
         try:
-            if hasattr(self, 'client') and self.client is not None:
-                # Try to close the client properly if it has a close method
-                if hasattr(self.client, 'close'):
+            # Only attempt cleanup if client was successfully initialized
+            if not hasattr(self, 'client'):
+                return
+            
+            if self.client is None:
+                return
+                
+            # Defensive check: only close if close method exists AND _api_client exists
+            if hasattr(self.client, 'close') and hasattr(self.client, '_api_client'):
+                try:
                     self.client.close()
-                # Clear the reference
-                self.client = None
+                except (AttributeError, RuntimeError):
+                    # Suppress google-genai internal errors during cleanup
+                    pass
+                    
+            # Always clear reference to prevent dangling pointer
+            self.client = None
         except Exception:
-            # Silently ignore any errors during cleanup
+            # Silently ignore ALL errors during cleanup
+            # This prevents gunicorn worker crashes on shutdown
             pass
 
     def chat(self, message, conversation_history=None, system_instruction=None):
