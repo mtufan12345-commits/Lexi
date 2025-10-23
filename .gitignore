@@ -37,3 +37,11 @@ package-lock.json
 # Generated CSS
 static/css/output.css
 /.claude/
+
+# Security: Never commit credentials or sensitive data
+attached_assets/*.txt
+*.json.credentials
+*credentials*.json
+*service-account*.json
+.gcloud/
+google-credentials.json
