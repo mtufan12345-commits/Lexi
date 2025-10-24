@@ -213,7 +213,33 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
             return f"Er ging iets mis bij het verwerken van je vraag: {str(e)}"
 
 class S3Service:
+    """
+    Singleton S3 Service
+    
+    CRITICAL for production deployment:
+    - Uses thread-safe singleton pattern to prevent client recreation
+    - Prevents boto3 client creation crashes in gunicorn workers
+    - Ensures single S3 client instance across all requests
+    """
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        """Thread-safe singleton implementation"""
+        if cls._instance is None:
+            with cls._lock:
+                # Double-check locking pattern
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+    
     def __init__(self):
+        """Initialize only once per process (singleton pattern)"""
+        # Skip if already initialized
+        if self._initialized:
+            return
+            
         self.endpoint = os.getenv('S3_ENDPOINT_URL')
         self.bucket = os.getenv('S3_BUCKET_NAME')
         self.access_key = os.getenv('S3_ACCESS_KEY')
@@ -228,11 +254,16 @@ class S3Service:
                     aws_secret_access_key=self.secret_key
                 )
                 self.enabled = True
+                self._initialized = True
+                print("✓ S3 Service initialized successfully (singleton)")
             except Exception as e:
                 print(f"S3 initialization failed: {e}")
                 self.enabled = False
+                self._initialized = True
         else:
             self.enabled = False
+            self._initialized = True
+            print("S3 Service disabled (missing credentials)")
     
     def upload_file(self, file, tenant_id, folder='uploads'):
         if not self.enabled:
@@ -477,7 +508,33 @@ class StripeService:
             return None
 
 class EmailService:
+    """
+    Singleton Email Service
+    
+    CRITICAL for production deployment:
+    - Uses thread-safe singleton pattern for consistency
+    - Prevents multiple MailerSend API initializations
+    - Ensures single email service instance across all requests
+    """
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        """Thread-safe singleton implementation"""
+        if cls._instance is None:
+            with cls._lock:
+                # Double-check locking pattern
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+    
     def __init__(self):
+        """Initialize only once per process (singleton pattern)"""
+        # Skip if already initialized
+        if self._initialized:
+            return
+            
         self.api_key = os.getenv('MAILERSEND_API_KEY')
         self.from_email = os.getenv('FROM_EMAIL', 'noreply@trial-3vz9dle4n8z4kj50.mlsender.net')
         self.from_name = os.getenv('FROM_NAME', 'Lexi CAO Meester')
@@ -487,8 +544,10 @@ class EmailService:
         # TEST_EMAIL_OVERRIDE: Route all emails to this address for layout testing
         self.test_email_override = os.getenv('TEST_EMAIL_OVERRIDE', '')
         
+        self._initialized = True
+        
         if self.enabled:
-            print(f"✓ MailerSend HTTP API initialized: {self.from_name} <{self.from_email}>")
+            print(f"✓ MailerSend HTTP API initialized: {self.from_name} <{self.from_email}> (singleton)")
             if self.test_email_override:
                 print(f"⚠️  TEST MODE: All emails redirected to {self.test_email_override}")
     
