@@ -128,6 +128,10 @@ def get_max_users_for_tier(tier):
 @app.before_request
 def force_https():
     """SECURITY: Force HTTPS in production"""
+    # Skip HTTPS redirect for health check endpoint (monitoring tools)
+    if request.path == '/health':
+        return None
+
     # Only enforce HTTPS in production environment (not in development/Replit)
     if os.getenv('ENVIRONMENT') == 'production':
         # Check if request is not secure and not already HTTPS via proxy
@@ -3050,22 +3054,34 @@ def bad_request(e):
 @app.route('/health')
 def health_check():
     """Health check endpoint for Docker/monitoring"""
+    health = {
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {}
+    }
+
+    # Check database connectivity
     try:
-        # Check database connectivity
-        db.session.execute(text('SELECT 1'))
-        db_status = 'healthy'
+        db.session.execute(db.text('SELECT 1'))
+        health['services']['database'] = 'healthy'
     except Exception as e:
         app.logger.error(f"Database health check failed: {e}")
-        db_status = 'unhealthy'
-        return jsonify({
-            'status': 'unhealthy',
-            'database': db_status
-        }), 503
+        health['services']['database'] = 'unhealthy'
+        health['status'] = 'unhealthy'
 
-    return jsonify({
-        'status': 'healthy',
-        'database': db_status
-    }), 200
+    # Check S3 service
+    health['services']['s3'] = 'healthy' if s3_service.enabled else 'disabled'
+
+    # Check Vertex AI service
+    health['services']['vertex_ai'] = 'healthy' if vertex_ai_service.enabled else 'disabled'
+
+    # Check Email service
+    health['services']['email'] = 'healthy' if email_service.enabled else 'disabled'
+
+    # Overall status
+    status_code = 200 if health['status'] == 'healthy' else 503
+
+    return jsonify(health), status_code
 
 @app.errorhandler(403)
 def forbidden(e):
