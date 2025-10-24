@@ -179,61 +179,86 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
         if not self.enabled or not self.client:
             return "Lexi is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om Lexi te activeren."
 
-        try:
-            contents = []
-            
-            if conversation_history:
-                for msg in conversation_history:
-                    contents.append(self.types.Content(
-                        role=msg.get('role', 'user'),
-                        parts=[self.types.Part.from_text(text=msg.get('content', ''))]
-                    ))
-            
-            contents.append(self.types.Content(
-                role="user",
-                parts=[self.types.Part.from_text(text=message)]
-            ))
-            
-            tools = [
-                self.types.Tool(
-                    retrieval=self.types.Retrieval(
-                        vertex_rag_store=self.types.VertexRagStore(
-                            rag_resources=[
-                                self.types.VertexRagStoreRagResource(
-                                    rag_corpus=self.rag_corpus
-                                )
-                            ],
-                            similarity_top_k=20,
+        import time
+        max_retries = 3
+        base_delay = 2  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                contents = []
+
+                if conversation_history:
+                    for msg in conversation_history:
+                        contents.append(self.types.Content(
+                            role=msg.get('role', 'user'),
+                            parts=[self.types.Part.from_text(text=msg.get('content', ''))]
+                        ))
+
+                contents.append(self.types.Content(
+                    role="user",
+                    parts=[self.types.Part.from_text(text=message)]
+                ))
+
+                tools = [
+                    self.types.Tool(
+                        retrieval=self.types.Retrieval(
+                            vertex_rag_store=self.types.VertexRagStore(
+                                rag_resources=[
+                                    self.types.VertexRagStoreRagResource(
+                                        rag_corpus=self.rag_corpus
+                                    )
+                                ],
+                                similarity_top_k=10,  # Reduced from 20 to 10 to save quota
+                            )
                         )
                     )
+                ]
+
+                instruction_text = system_instruction if system_instruction else self.system_instruction
+
+                # Optimized config to reduce quota usage
+                config = self.types.GenerateContentConfig(
+                    temperature=1,
+                    top_p=0.95,
+                    max_output_tokens=8192,  # Reduced from 65535 to 8192 (still very large)
+                    tools=tools,
+                    system_instruction=[self.types.Part.from_text(text=instruction_text)],
+                    thinking_config=self.types.ThinkingConfig(thinking_budget=8192),  # Limited thinking budget
                 )
-            ]
-            
-            instruction_text = system_instruction if system_instruction else self.system_instruction
-            
-            config = self.types.GenerateContentConfig(
-                temperature=1,
-                top_p=0.95,
-                max_output_tokens=65535,
-                tools=tools,
-                system_instruction=[self.types.Part.from_text(text=instruction_text)],
-                thinking_config=self.types.ThinkingConfig(thinking_budget=-1),
-            )
-            
-            response_text = ""
-            for chunk in self.client.models.generate_content_stream(
-                model=self.model,
-                contents=contents,
-                config=config,
-            ):
-                if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
-                    if chunk.text:
-                        response_text += chunk.text
-            
-            return response_text
-        except Exception as e:
-            print(f"Vertex AI chat error: {e}")
-            return f"Er ging iets mis bij het verwerken van je vraag: {str(e)}"
+
+                response_text = ""
+                for chunk in self.client.models.generate_content_stream(
+                    model=self.model,
+                    contents=contents,
+                    config=config,
+                ):
+                    if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
+                        if chunk.text:
+                            response_text += chunk.text
+
+                return response_text
+
+            except Exception as e:
+                error_str = str(e)
+
+                # Check if it's a 429 rate limit error
+                if '429' in error_str or 'RESOURCE_EXHAUSTED' in error_str:
+                    if attempt < max_retries - 1:
+                        # Exponential backoff: 2s, 4s, 8s
+                        delay = base_delay * (2 ** attempt)
+                        print(f"⚠️ Rate limit hit (attempt {attempt + 1}/{max_retries}), waiting {delay}s before retry...")
+                        time.sleep(delay)
+                        continue
+                    else:
+                        print(f"❌ Rate limit persists after {max_retries} attempts: {e}")
+                        return "Lexi is momenteel overbelast. Probeer het over een paar minuten opnieuw, of neem contact op met support als dit probleem aanhoudt."
+                else:
+                    # Non-rate-limit error, don't retry
+                    print(f"Vertex AI chat error: {e}")
+                    return f"Er ging iets mis bij het verwerken van je vraag: {error_str}"
+
+        # Should not reach here, but just in case
+        return "Er ging iets mis bij het verwerken van je vraag. Probeer het later opnieuw."
 
 class S3Service:
     """
