@@ -881,6 +881,133 @@ def upload_avatar():
     
     return jsonify({'success': True, 'avatar_url': avatar_url})
 
+@app.route('/api/gdpr/export-data', methods=['GET'])
+@login_required
+@tenant_required
+def gdpr_export_data():
+    """
+    GDPR Article 15 - Right of Access
+    Export all personal data for the current user
+    """
+    try:
+        # Collect all user data
+        user_data = {
+            'personal_info': {
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'created_at': current_user.created_at.isoformat() if current_user.created_at else None,
+            },
+            'tenant_info': {
+                'company_name': g.tenant.company_name,
+                'subdomain': g.tenant.subdomain,
+            },
+            'chats': [],
+            'uploaded_files': [],
+        }
+
+        # Get all chats
+        chats = Chat.query.filter_by(tenant_id=g.tenant.id, user_id=current_user.id).all()
+        for chat in chats:
+            chat_data = {
+                'title': chat.title,
+                'created_at': chat.created_at.isoformat() if chat.created_at else None,
+                'updated_at': chat.updated_at.isoformat() if chat.updated_at else None,
+                'messages': []
+            }
+
+            # Get messages from S3
+            if chat.s3_messages_key:
+                messages = s3_service.get_chat_messages(chat.s3_messages_key)
+                if messages:
+                    chat_data['messages'] = messages
+
+            user_data['chats'].append(chat_data)
+
+        # Get all uploaded files
+        files = UploadedFile.query.filter_by(tenant_id=g.tenant.id, user_id=current_user.id).all()
+        for file in files:
+            user_data['uploaded_files'].append({
+                'filename': file.filename,
+                'uploaded_at': file.uploaded_at.isoformat() if file.uploaded_at else None,
+                'file_size': file.file_size,
+                'mime_type': file.mime_type,
+            })
+
+        # Return as JSON download
+        response = Response(
+            json.dumps(user_data, indent=2, ensure_ascii=False),
+            mimetype='application/json',
+            headers={
+                'Content-Disposition': f'attachment; filename=lexi_data_export_{current_user.id}_{datetime.utcnow().strftime("%Y%m%d")}.json'
+            }
+        )
+        return response
+
+    except Exception as e:
+        app.logger.error(f"GDPR export error: {e}")
+        return jsonify({'error': 'Data export failed'}), 500
+
+@app.route('/api/gdpr/delete-account', methods=['POST'])
+@login_required
+@tenant_required
+def gdpr_delete_account():
+    """
+    GDPR Article 17 - Right to Erasure
+    Delete user account and all associated data
+    """
+    try:
+        # Verify password for security
+        password = request.json.get('password')
+        if not password or not current_user.check_password(password):
+            return jsonify({'error': 'Incorrect password'}), 401
+
+        user_id = current_user.id
+        tenant_id = g.tenant.id
+
+        # Get all user's chats
+        chats = Chat.query.filter_by(tenant_id=tenant_id, user_id=user_id).all()
+
+        # Delete chat messages from S3
+        for chat in chats:
+            if chat.s3_messages_key:
+                s3_service.delete_file(chat.s3_messages_key)
+            db.session.delete(chat)
+
+        # Delete uploaded files from S3
+        files = UploadedFile.query.filter_by(tenant_id=tenant_id, user_id=user_id).all()
+        for file in files:
+            if file.s3_key:
+                s3_service.delete_file(file.s3_key)
+            db.session.delete(file)
+
+        # Delete artifacts from S3
+        artifacts = Artifact.query.filter_by(tenant_id=tenant_id, user_id=user_id).all()
+        for artifact in artifacts:
+            if artifact.s3_key:
+                s3_service.delete_file(artifact.s3_key)
+            db.session.delete(artifact)
+
+        # Logout user
+        logout_user()
+        session.clear()
+
+        # Delete user account
+        db.session.delete(current_user)
+        db.session.commit()
+
+        app.logger.info(f"GDPR: User {user_id} account deleted")
+
+        return jsonify({
+            'success': True,
+            'message': 'Your account and all data have been permanently deleted'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"GDPR delete error: {e}")
+        return jsonify({'error': 'Account deletion failed'}), 500
+
 @app.route('/chat')
 @login_required
 @tenant_required
