@@ -2,6 +2,11 @@ import os
 import re
 import tempfile
 import json
+from dotenv import load_dotenv
+
+# Load environment variables from .env file FIRST
+load_dotenv()
+
 from flask import Flask, render_template, request, redirect, url_for, jsonify, g, session, flash, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
