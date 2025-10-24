@@ -2,6 +2,8 @@
 
 Last updated: 2025-10-24
 
+⚠️ **IMPORTANT:** Site is behind Cloudflare CDN/proxy
+
 ## Applied Security Hardening
 
 ### 1. Hide Server Version ✓
@@ -48,6 +50,44 @@ resolver_timeout 5s;
 ```
 
 **Note:** Certificate has no OCSP responder URL (normal for Let's Encrypt)
+
+## 5. Cloudflare Integration ✓
+
+### Real IP Detection
+Site is behind Cloudflare CDN. Configured to get real client IP from CF-Connecting-IP header:
+
+```nginx
+# /etc/nginx/nginx.conf
+set_real_ip_from 103.21.244.0/22;
+set_real_ip_from 104.16.0.0/13;
+# ... (all Cloudflare IP ranges)
+real_ip_header CF-Connecting-IP;
+```
+
+### Impact on Security:
+
+**Server Header:**
+- Nginx shows: `Server: nginx`
+- Cloudflare overwrites to: `Server: cloudflare` ✓
+- **Result:** Even better - Cloudflare brand instead of nginx version
+
+**Security Headers:**
+- Nginx adds headers
+- Cloudflare may add/modify headers
+- **Result:** Double protection ✓
+
+**Rate Limiting:**
+- Uses real client IP from CF-Connecting-IP
+- Works correctly per actual visitor
+- **Result:** Effective DDoS protection ✓
+
+**Benefits of Cloudflare:**
+- ✓ Global CDN (faster)
+- ✓ DDoS protection (L3/L4/L7)
+- ✓ Bot protection
+- ✓ SSL/TLS (can use Cloudflare's cert)
+- ✓ Web Application Firewall (WAF)
+- ✓ Analytics
 
 ## Testing
 
