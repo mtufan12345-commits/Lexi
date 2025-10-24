@@ -979,59 +979,97 @@ def send_message(chat_id):
     data = request.json
     user_message = data.get('message', '')
     print(f"[DEBUG] User message: {user_message}")
-    
+
     # Get uploaded files for this chat
-    uploaded_files = UploadedFile.query.filter_by(
-        chat_id=chat.id,
-        tenant_id=g.tenant.id,
-        user_id=current_user.id
-    ).all()
-    
+    print(f"[DEBUG] 1. Starting file query for chat_id={chat.id}, tenant={g.tenant.id}, user={current_user.id}")
+    try:
+        uploaded_files = UploadedFile.query.filter_by(
+            chat_id=chat.id,
+            tenant_id=g.tenant.id,
+            user_id=current_user.id
+        ).all()
+        print(f"[DEBUG] 2. Found {len(uploaded_files)} uploaded files")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in file query: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+
     # Create user message dict for S3 with file attachments
+    print(f"[DEBUG] 3. Creating user_msg_dict")
     user_msg_dict = {
         'role': 'user',
         'content': user_message,
         'created_at': datetime.utcnow().isoformat()
     }
-    
+    print(f"[DEBUG] 4. user_msg_dict created successfully")
+
     # Add file attachments to message ONLY for newly uploaded files
     # Files uploaded AFTER the last message should be shown as attachments
     # For subsequent messages, old files are still used for AI context but not shown as attachments
     if uploaded_files:
+        print(f"[DEBUG] 5. Processing {len(uploaded_files)} uploaded files for attachments")
         # Get files uploaded after the last message (new uploads since last message)
         # Guard against None updated_at (legacy/migrated chats) - show all files if None
         if chat.message_count > 0 and chat.updated_at is not None:
             newly_uploaded = [f for f in uploaded_files if f.created_at > chat.updated_at]
         else:
             newly_uploaded = uploaded_files
-        
+
         if newly_uploaded:
             user_msg_dict['attachments'] = [{
                 'id': f.id,
                 'filename': f.original_filename,
                 'mime_type': f.mime_type
             } for f in newly_uploaded]
-    
+            print(f"[DEBUG] 6. Added {len(newly_uploaded)} attachments to message")
+
     # Append to S3
-    s3_key = s3_service.append_chat_message(
-        chat.s3_messages_key,
-        chat.id,
-        g.tenant.id,
-        user_msg_dict
-    )
-    
+    print(f"[DEBUG] 7. About to call S3 service append_chat_message")
+    print(f"[DEBUG]    - chat.s3_messages_key: {chat.s3_messages_key}")
+    print(f"[DEBUG]    - chat.id: {chat.id}")
+    print(f"[DEBUG]    - tenant_id: {g.tenant.id}")
+    print(f"[DEBUG]    - S3 service enabled: {s3_service.enabled}")
+    try:
+        s3_key = s3_service.append_chat_message(
+            chat.s3_messages_key,
+            chat.id,
+            g.tenant.id,
+            user_msg_dict
+        )
+        print(f"[DEBUG] 8. S3 service returned s3_key: {s3_key}")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in S3 service call: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+
     if not s3_key:
+        print(f"[DEBUG] 9. S3 returned None/False - returning error to user")
         return jsonify({'error': 'Kon bericht niet opslaan. Probeer het opnieuw.'}), 500
-    
+
+    print(f"[DEBUG] 10. Updating chat object in database")
     chat.s3_messages_key = s3_key
     chat.message_count = (chat.message_count or 0) + 1
-    
+    print(f"[DEBUG]     - Updated message_count to: {chat.message_count}")
+
     if chat.message_count <= 1:
         chat.title = user_message[:50] + ('...' if len(user_message) > 50 else '')
-    
+        print(f"[DEBUG]     - Set chat title: {chat.title}")
+
     chat.updated_at = datetime.utcnow()
-    db.session.commit()
-    
+    print(f"[DEBUG] 11. About to commit database changes...")
+    try:
+        db.session.commit()
+        print(f"[DEBUG] 12. Database commit successful!")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in database commit: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        raise
+
+    print(f"[DEBUG] 13. Building ai_message for Vertex AI...")
     ai_message = user_message
     file_errors = []
     
@@ -1077,44 +1115,79 @@ def send_message(chat_id):
         if file_errors and not file_contents:
             error_msg = "\n".join(file_errors)
             return jsonify({'response': f"⚠️ Kon geen bestanden lezen:\n{error_msg}\n\nProbeer andere bestanden.", 'has_errors': True})
-    
-    print("[DEBUG] Calling Vertex AI service...")
-    from cao_config import get_system_instruction
-    cao_instruction = get_system_instruction(g.tenant)
-    lex_response = vertex_ai_service.chat(ai_message, system_instruction=cao_instruction)
-    print(f"[DEBUG] Lexi response ({g.tenant.cao_preference} CAO): {lex_response[:100]}...")
+
+    print("[DEBUG] 14. About to call Vertex AI service...")
+    print(f"[DEBUG]     - ai_message length: {len(ai_message)} chars")
+    print(f"[DEBUG]     - Vertex AI enabled: {vertex_ai_service.enabled}")
+    try:
+        from cao_config import get_system_instruction
+        print("[DEBUG] 15. Imported cao_config successfully")
+        cao_instruction = get_system_instruction(g.tenant)
+        print(f"[DEBUG] 16. Got system instruction (length: {len(cao_instruction)} chars)")
+        print(f"[DEBUG] 17. Calling vertex_ai_service.chat()...")
+        lex_response = vertex_ai_service.chat(ai_message, system_instruction=cao_instruction)
+        print(f"[DEBUG] 18. Vertex AI response received (length: {len(lex_response)} chars)")
+        print(f"[DEBUG]     - First 100 chars: {lex_response[:100]}...")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in Vertex AI call: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
     
     # Create assistant message dict for S3
+    print("[DEBUG] 19. Creating assistant message dict for S3")
     assistant_msg_dict = {
         'role': 'assistant',
         'content': lex_response,
         'created_at': datetime.utcnow().isoformat()
     }
-    
+    print("[DEBUG] 20. Assistant message dict created")
+
     # Append to S3
-    s3_key = s3_service.append_chat_message(
-        chat.s3_messages_key,
-        chat.id,
-        g.tenant.id,
-        assistant_msg_dict
-    )
-    
+    print("[DEBUG] 21. Appending assistant response to S3...")
+    try:
+        s3_key = s3_service.append_chat_message(
+            chat.s3_messages_key,
+            chat.id,
+            g.tenant.id,
+            assistant_msg_dict
+        )
+        print(f"[DEBUG] 22. S3 append returned: {s3_key}")
+    except Exception as e:
+        print(f"[DEBUG] ERROR appending assistant message to S3: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+
     if not s3_key:
+        print("[DEBUG] 23. S3 returned None - returning error")
         return jsonify({'error': 'Kon AI response niet opslaan. Probeer het opnieuw.'}), 500
-    
+
+    print("[DEBUG] 24. Updating chat with assistant message...")
     chat.s3_messages_key = s3_key
     chat.message_count = (chat.message_count or 0) + 1
     chat.updated_at = datetime.utcnow()
-    db.session.commit()
+    print(f"[DEBUG] 25. Committing final database update (message_count={chat.message_count})")
+    try:
+        db.session.commit()
+        print("[DEBUG] 26. Final database commit successful!")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in final database commit: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        raise
     
     # Store last message ID for artifacts (use message_count as ID)
     assistant_message_id = chat.message_count
-    
+    print(f"[DEBUG] 27. Processing artifacts (message_id={assistant_message_id})")
+
     artifacts_created = []
     artifact_pattern = r'```artifact:(\w+)\s+title:([^\n]+)\n(.*?)```'
     matches = re.finditer(artifact_pattern, lex_response, re.DOTALL)
-    
+
     artifacts_to_commit = []
+    print("[DEBUG] 28. Searching for artifact patterns in response...")
     for match in matches:
         artifact_type = match.group(1).strip()
         title = match.group(2).strip()
@@ -1141,23 +1214,35 @@ def send_message(chat_id):
             artifacts_to_commit.append(artifact)
     
     if artifacts_to_commit:
-        db.session.commit()
-        for artifact in artifacts_to_commit:
-            artifacts_created.append({
-                'id': artifact.id,
-                'title': artifact.title,
-                'type': artifact.artifact_type,
-                'content': artifact.content
-            })
-        print(f"[DEBUG] Created {len(artifacts_created)} artifacts")
-    
-    print("[DEBUG] Response sent successfully")
-    return jsonify({
+        print(f"[DEBUG] 29. Committing {len(artifacts_to_commit)} artifacts to database...")
+        try:
+            db.session.commit()
+            print("[DEBUG] 30. Artifacts committed successfully")
+            for artifact in artifacts_to_commit:
+                artifacts_created.append({
+                    'id': artifact.id,
+                    'title': artifact.title,
+                    'type': artifact.artifact_type,
+                    'content': artifact.content
+                })
+            print(f"[DEBUG] 31. Created {len(artifacts_created)} artifacts")
+        except Exception as e:
+            print(f"[DEBUG] ERROR committing artifacts: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            # Don't raise - artifacts are optional
+    else:
+        print("[DEBUG] 29. No artifacts found in response")
+
+    print("[DEBUG] 32. Preparing final response JSON...")
+    response_json = {
         'response': lex_response,
         'artifacts': artifacts_created,
         'message_id': assistant_message_id,
         'feedback_rating': None
-    })
+    }
+    print(f"[DEBUG] 33. Sending successful response (response length: {len(lex_response)} chars, {len(artifacts_created)} artifacts)")
+    return jsonify(response_json)
 
 @app.route('/api/chat/<int:chat_id>/rename', methods=['POST'])
 @login_required
