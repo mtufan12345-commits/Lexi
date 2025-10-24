@@ -27,7 +27,8 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.jinja_env.autoescape = True
 
 # Build version for cache busting (use git commit hash in production, timestamp in dev)
-BUILD_VERSION = os.environ.get('BUILD_VERSION', datetime.now().strftime('%Y%m%d%H%M%S'))
+# Force new version after Vertex AI rate limit fixes (2025-10-24)
+BUILD_VERSION = os.environ.get('BUILD_VERSION', '20251024134500')
 
 # SECURITY: REQUIRE session secret - NEVER use hardcoded fallback (prevents session forgery)
 app.secret_key = os.environ.get("SESSION_SECRET") or os.environ.get("SECRET_KEY")
