@@ -52,12 +52,35 @@ class VertexAIService:
             self.genai = genai
             self.types = types
 
+            # Enhanced credentials validation and error handling
+            if not credentials_json:
+                raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable is not set")
+            
             if isinstance(credentials_json, str):
-                credentials_dict = json.loads(credentials_json)
-                temp_cred_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
-                json.dump(credentials_dict, temp_cred_file)
-                temp_cred_file.close()
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_cred_file.name
+                # Defensive check: is it already a file path or JSON string?
+                if credentials_json.strip().startswith('{'):
+                    # It's a JSON string - parse it
+                    try:
+                        credentials_dict = json.loads(credentials_json)
+                    except json.JSONDecodeError as e:
+                        raise ValueError(f"Invalid JSON in GOOGLE_APPLICATION_CREDENTIALS: {e}. "
+                                       f"First 100 chars: {credentials_json[:100]}")
+                    
+                    # Validate required fields
+                    required_fields = ['type', 'project_id', 'private_key', 'client_email']
+                    missing_fields = [f for f in required_fields if f not in credentials_dict]
+                    if missing_fields:
+                        raise ValueError(f"Missing required fields in credentials: {missing_fields}")
+                    
+                    # Create temp file with credentials
+                    temp_cred_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
+                    json.dump(credentials_dict, temp_cred_file)
+                    temp_cred_file.close()
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_cred_file.name
+                    print(f"✓ Google credentials loaded from JSON string (project: {credentials_dict.get('project_id')})")
+                else:
+                    # It's already a file path
+                    print(f"✓ Google credentials file path: {credentials_json}")
 
             self.client = genai.Client(
                 vertexai=True,
