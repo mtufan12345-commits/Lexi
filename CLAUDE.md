@@ -1,6 +1,197 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # LEXI CAO MEESTER - Architecture Overview
 
 **Build Context**: This is a comprehensive B2B SaaS platform for Dutch staffing agencies, providing AI-powered support for labor law (CAO/collective agreement) questions. Last updated: October 2025.
+
+---
+
+## DEVELOPMENT COMMANDS
+
+### Running the Application
+
+**Development (Replit):**
+```bash
+# Run with Flask dev server
+python main.py
+
+# Run with Gunicorn (production-like)
+gunicorn --config gunicorn.conf.py main:app
+```
+
+**Production (Systemd):**
+```bash
+# Check status
+systemctl status lexi
+lexi-status              # Quick health check
+lexi-status full         # Comprehensive status
+
+# Manage service
+systemctl restart lexi
+systemctl stop lexi
+systemctl start lexi
+
+# View logs
+journalctl -u lexi -f                      # Live logs
+journalctl -u lexi -n 100                  # Last 100 lines
+journalctl -u lexi --since "1 hour ago"    # Recent logs
+```
+
+### Database Operations
+
+```bash
+# Initialize database (creates all tables)
+python -c "from main import app, init_db; init_db()"
+
+# Test database connection
+python3.11 -c "from dotenv import load_dotenv; load_dotenv(); from main import app; from models import db; app.app_context().__enter__(); db.session.execute(db.text('SELECT 1')); print('DB OK')"
+
+# Database is PostgreSQL (Neon.tech in production)
+# Connection string in DATABASE_URL env var
+```
+
+### Testing Key Services
+
+```bash
+# Test S3 service
+python3.11 << 'EOF'
+from dotenv import load_dotenv; load_dotenv()
+from services import s3_service
+print('S3 Enabled:', s3_service.enabled)
+EOF
+
+# Test Vertex AI service
+python3.11 << 'EOF'
+from dotenv import load_dotenv; load_dotenv()
+from services import vertex_ai_service
+print('Vertex AI Enabled:', vertex_ai_service.enabled)
+EOF
+
+# Test health endpoint
+curl http://localhost:5000/health | python3.11 -m json.tool
+```
+
+### Deployment
+
+```bash
+# Pull latest code and deploy
+cd /var/www/lexi
+git pull origin main
+
+# Install/update dependencies
+pip install -r requirements.txt
+npm install                    # If package.json changed
+npm run build:css             # Rebuild Tailwind CSS
+
+# Restart service
+systemctl restart lexi
+
+# Use automated deploy script (production)
+./deploy.sh
+```
+
+### Frontend Development
+
+```bash
+# Install dependencies
+npm install
+
+# Build Tailwind CSS
+npm run build:css
+
+# Watch mode (auto-rebuild on changes)
+npm run watch:css
+```
+
+### Troubleshooting
+
+```bash
+# Check if port 5000 is in use
+lsof -i :5000
+
+# Check gunicorn workers
+ps aux | grep gunicorn
+
+# Check memory usage
+free -h
+
+# Check disk usage
+df -h
+du -h /var/www/lexi | sort -rh | head -20
+
+# Clean journal logs if disk full
+journalctl --vacuum-size=100M
+```
+
+---
+
+## CRITICAL PATTERNS FOR DEVELOPMENT
+
+### Multi-Tenancy: ALL queries MUST filter by tenant_id
+```python
+# ❌ WRONG - Security vulnerability, leaks data between tenants
+user = User.query.filter_by(id=user_id).first()
+
+# ✅ CORRECT - Always include tenant_id
+user = User.query.filter_by(id=user_id, tenant_id=g.tenant.id).first()
+```
+
+### Vertex AI Service: MUST use Singleton Pattern
+- **Never** create new `genai.Client()` instances directly
+- Use `vertex_ai_service` singleton from `services.py`
+- Worker crashes occur from multiple client initializations
+- `preload_app=True` in gunicorn.conf.py is critical
+
+### Message Storage: Hybrid S3 + Database
+- Messages stored in S3 at: `chats/tenant_{id}/chat_{id}_messages.json`
+- Chat.s3_messages_key points to S3 JSON file
+- Legacy Message table exists but deprecated
+- Always update Chat.message_count when adding messages
+
+### CAO-Aware System Instructions
+- System instruction MUST be generated per-request based on `tenant.cao_preference`
+- Use `cao_config.get_system_instruction(tenant.cao_preference)`
+- Never hardcode system instructions
+- NBBU vs ABU CAOs cannot be mixed (conflicting Dutch labor law rules)
+
+### File Uploads: OCR Fallback Pattern
+```python
+# 1. Try MarkItDown for PDFs
+# 2. If empty/scanned PDF, fallback to pytesseract OCR (lang='nld+eng')
+# 3. Cache extracted_text in UploadedFile.extracted_text (database)
+# 4. Upload original file to S3 with UUID prefix
+```
+
+### Decorator Stack Order (Always use in this order)
+```python
+@app.route('/path')
+@login_required        # 1. Check authentication
+@tenant_required       # 2. Load tenant (g.tenant)
+@admin_required        # 3. Check role (if needed)
+def handler():
+    # Now safe to access: current_user, g.tenant, role
+    pass
+```
+
+### Environment Variables Hierarchy
+```python
+# Production keys take precedence:
+STRIPE_SECRET_KEY_PROD > STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET_PROD > STRIPE_WEBHOOK_SECRET
+
+# Critical required vars (app won't start without these):
+SESSION_SECRET         # Must be 32+ chars
+DATABASE_URL          # PostgreSQL connection
+GOOGLE_APPLICATION_CREDENTIALS  # Vertex AI auth
+```
+
+### Cache Busting
+- BUILD_VERSION is appended to all static files (CSS/JS)
+- In production: BUILD_VERSION = git commit hash
+- In development: BUILD_VERSION = timestamp
+- Always use `{{ url_for('static', filename='...')}}?v={{ build_version }}` in templates
 
 ---
 
