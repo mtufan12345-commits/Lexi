@@ -450,7 +450,21 @@ def signup_tenant():
                 import stripe as stripe_sdk
                 stripe_sdk.api_key = stripe_api_key
 
-                # Create customer first
+                # Create PendingSignup FIRST
+                pending_signup = PendingSignup(
+                    checkout_session_id='temp',  # Will be updated after subscription creation
+                    email=contact_email,
+                    company_name=company_name,
+                    contact_name=contact_name,
+                    tier=tier,
+                    billing=billing,
+                    cao_preference=cao_preference
+                )
+                pending_signup.set_password(password)  # Hash the password
+                db.session.add(pending_signup)
+                db.session.flush()  # Get the ID without committing
+
+                # Create customer
                 customer = stripe_sdk.Customer.create(
                     email=contact_email,
                     name=contact_name,
@@ -473,6 +487,9 @@ def signup_tenant():
                     }
                 )
 
+                # Update pending signup with real subscription ID
+                pending_signup.checkout_session_id = f"manual_sub_{subscription.id}"
+
                 # Finalize the first invoice immediately so customer can pay
                 invoices = stripe_sdk.Invoice.list(customer=customer.id, subscription=subscription.id, limit=1)
                 if invoices.data:
@@ -481,8 +498,6 @@ def signup_tenant():
                         stripe_sdk.Invoice.finalize_invoice(first_invoice.id)
                         print(f"✅ First invoice finalized: {first_invoice.id}")
 
-                # Store manual payment info in pending signup for provisioning
-                pending_signup.checkout_session_id = f"manual_sub_{subscription.id}"
                 db.session.commit()
 
                 # Immediately provision tenant (no checkout needed)
@@ -515,34 +530,34 @@ def signup_tenant():
                 # Automatic recurring payment via card (normal checkout flow)
                 stripe_data['payment_method_types[0]'] = 'card'
                 # Note: iDEAL will be added here when SEPA Direct Debit is activated in Stripe
-            
-            response = requests.post(
-                'https://api.stripe.com/v1/checkout/sessions',
-                headers=stripe_headers,
-                data=stripe_data
-            )
-            
-            if response.status_code != 200:
-                raise Exception(f"Stripe API error: {response.text}")
-            
-            checkout_session = response.json()
-            
-            # Store signup data in database (server-side) with checkout session ID
-            pending_signup = PendingSignup(
-                checkout_session_id=checkout_session['id'],
-                email=contact_email,
-                company_name=company_name,
-                contact_name=contact_name,
-                tier=tier,
-                billing=billing,
-                cao_preference=cao_preference
-            )
-            pending_signup.set_password(password)  # Hash the password
-            db.session.add(pending_signup)
-            db.session.commit()
-            
-            # Use iframe-safe redirect to escape Replit preview and load Stripe Checkout in top window
-            return render_template('stripe_redirect.html', checkout_url=checkout_session['url'])
+
+                response = requests.post(
+                    'https://api.stripe.com/v1/checkout/sessions',
+                    headers=stripe_headers,
+                    data=stripe_data
+                )
+
+                if response.status_code != 200:
+                    raise Exception(f"Stripe API error: {response.text}")
+
+                checkout_session = response.json()
+
+                # Store signup data in database (server-side) with checkout session ID
+                pending_signup = PendingSignup(
+                    checkout_session_id=checkout_session['id'],
+                    email=contact_email,
+                    company_name=company_name,
+                    contact_name=contact_name,
+                    tier=tier,
+                    billing=billing,
+                    cao_preference=cao_preference
+                )
+                pending_signup.set_password(password)  # Hash the password
+                db.session.add(pending_signup)
+                db.session.commit()
+
+                # Use iframe-safe redirect to escape Replit preview and load Stripe Checkout in top window
+                return render_template('stripe_redirect.html', checkout_url=checkout_session['url'])
             
         except Exception as e:
             app.logger.exception(f"Stripe checkout error for tier={tier}, billing={billing}, price_id={price_id}: {str(e)}")
