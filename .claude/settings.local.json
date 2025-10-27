@@ -11,7 +11,10 @@
       "Bash(git commit:*)",
       "Bash(ssh root@188.34.158.27 \"cd /var/www/lexi && grep -E ''S3_|AWS_'' .env 2>/dev/null || echo ''No .env file or no S3 variables''\")",
       "Bash(env)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git push:*)",
+      "Bash(journalctl:*)",
+      "Bash(python3.11 -m json.tool:*)"
     ],
     "deny": [],
     "ask": []
