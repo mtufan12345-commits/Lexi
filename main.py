@@ -430,7 +430,8 @@ def signup_tenant():
             
             stripe_data = {
                 'payment_method_types[0]': 'card',
-                'payment_method_types[1]': 'ideal',
+                # Note: iDEAL doesn't work with subscriptions - use SEPA Direct Debit instead
+                # 'payment_method_types[1]': 'sepa_debit',  # Uncomment when SEPA is enabled in Stripe
                 'line_items[0][price]': price_id,
                 'line_items[0][quantity]': 1,
                 'mode': 'subscription',
