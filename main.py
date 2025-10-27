@@ -16,7 +16,7 @@ from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from models import db, SuperAdmin, Tenant, User, Chat, Message, Subscription, Template, UploadedFile, Artifact, SupportTicket, SupportReply
-from services import vertex_ai_service, s3_service, email_service, StripeService
+from services import rag_service, s3_service, email_service, StripeService
 import stripe
 from datetime import datetime, timedelta
 import secrets
@@ -412,7 +412,7 @@ def signup_tenant():
             flash('Ongeldige pricing optie. Neem contact op met support.', 'danger')
             return render_template('signup_tenant.html', tier=tier, billing=billing)
         
-        # Create Stripe Checkout Session FIRST to get session ID
+        # Create Stripe Checkout Session with both card AND iDEAL support
         try:
             from models import PendingSignup
             import requests
@@ -428,10 +428,11 @@ def signup_tenant():
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
             
-            # Get payment preference (automatic via card or manual via invoice/iDEAL)
-            payment_preference = request.form.get('payment_preference', 'card')
-
+            # ALL payments go through Stripe Checkout
+            # NOTE: iDEAL disabled until SEPA Direct Debit is activated in Stripe Dashboard
             stripe_data = {
+                'payment_method_types[0]': 'card',
+                # 'payment_method_types[1]': 'ideal',  # Requires SEPA activation (30 days approval)
                 'line_items[0][price]': price_id,
                 'line_items[0][quantity]': 1,
                 'mode': 'subscription',
@@ -441,123 +442,36 @@ def signup_tenant():
                 'metadata[signup_email]': contact_email,
                 'metadata[tier]': tier,
                 'metadata[billing]': billing,
-                'metadata[cao_preference]': cao_preference,
+                'metadata[cao_preference]': cao_preference
             }
-
-            # Configure payment method based on user preference
-            if payment_preference == 'manual':
-                # Manual invoicing: Use Stripe SDK for proper subscription configuration
-                import stripe as stripe_sdk
-                stripe_sdk.api_key = stripe_api_key
-
-                # Create PendingSignup FIRST
-                pending_signup = PendingSignup(
-                    checkout_session_id='temp',  # Will be updated after subscription creation
-                    email=contact_email,
-                    company_name=company_name,
-                    contact_name=contact_name,
-                    tier=tier,
-                    billing=billing,
-                    cao_preference=cao_preference
-                )
-                pending_signup.set_password(password)  # Hash the password
-                db.session.add(pending_signup)
-                db.session.flush()  # Get the ID without committing
-
-                # Create customer
-                customer = stripe_sdk.Customer.create(
-                    email=contact_email,
-                    name=contact_name,
-                    metadata={'company': company_name, 'tier': tier}
-                )
-
-                # Create subscription with manual collection (send_invoice)
-                subscription = stripe_sdk.Subscription.create(
-                    customer=customer.id,
-                    items=[{'price': price_id}],
-                    collection_method='send_invoice',
-                    days_until_due=7,  # Invoice due 7 days after sending
-                    automatic_tax={'enabled': False},  # Disable tax calculation for faster setup
-                    metadata={
-                        'signup_email': contact_email,
-                        'tier': tier,
-                        'billing': billing,
-                        'cao_preference': cao_preference,
-                        'payment_preference': 'manual_ideal'
-                    }
-                )
-
-                # Update pending signup with real subscription ID
-                pending_signup.checkout_session_id = f"manual_sub_{subscription.id}"
-
-                # Finalize the first invoice immediately so customer can pay
-                invoices = stripe_sdk.Invoice.list(customer=customer.id, subscription=subscription.id, limit=1)
-                if invoices.data:
-                    first_invoice = invoices.data[0]
-                    if first_invoice.status == 'draft':
-                        stripe_sdk.Invoice.finalize_invoice(first_invoice.id)
-                        print(f"✅ First invoice finalized: {first_invoice.id}")
-
-                db.session.commit()
-
-                # Immediately provision tenant (no checkout needed)
-                from provision_tenant import provision_tenant_from_signup
-                stripe_session_data = {
-                    'customer': customer.id,
-                    'subscription': subscription.id,
-                    'payment_status': 'unpaid',  # Will be paid via invoice
-                    'payment_method_types': ['ideal']  # Indicate preference for invoice emails
-                }
-
-                success, user, error_msg = provision_tenant_from_signup(
-                    pending_signup=pending_signup,
-                    stripe_session_data=stripe_session_data
-                )
-
-                if success and user:
-                    # Auto-login the user
-                    from flask_login import login_user
-                    login_user(user)
-                    tenant = Tenant.query.get(user.tenant_id)
-                    session['tenant_id'] = tenant.id
-
-                    flash('Account aangemaakt! Je ontvangt een email met de betaalinstructies.', 'success')
-                    return redirect(url_for('chat_view'))
-                else:
-                    raise Exception(error_msg or 'Account provisioning failed')
-
-            else:
-                # Automatic recurring payment via card (normal checkout flow)
-                stripe_data['payment_method_types[0]'] = 'card'
-                # Note: iDEAL will be added here when SEPA Direct Debit is activated in Stripe
-
-                response = requests.post(
-                    'https://api.stripe.com/v1/checkout/sessions',
-                    headers=stripe_headers,
-                    data=stripe_data
-                )
-
-                if response.status_code != 200:
-                    raise Exception(f"Stripe API error: {response.text}")
-
-                checkout_session = response.json()
-
-                # Store signup data in database (server-side) with checkout session ID
-                pending_signup = PendingSignup(
-                    checkout_session_id=checkout_session['id'],
-                    email=contact_email,
-                    company_name=company_name,
-                    contact_name=contact_name,
-                    tier=tier,
-                    billing=billing,
-                    cao_preference=cao_preference
-                )
-                pending_signup.set_password(password)  # Hash the password
-                db.session.add(pending_signup)
-                db.session.commit()
-
-                # Use iframe-safe redirect to escape Replit preview and load Stripe Checkout in top window
-                return render_template('stripe_redirect.html', checkout_url=checkout_session['url'])
+            
+            response = requests.post(
+                'https://api.stripe.com/v1/checkout/sessions',
+                headers=stripe_headers,
+                data=stripe_data
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"Stripe API error: {response.text}")
+            
+            checkout_session = response.json()
+            
+            # Store signup data in database (server-side) with checkout session ID
+            pending_signup = PendingSignup(
+                checkout_session_id=checkout_session['id'],
+                email=contact_email,
+                company_name=company_name,
+                contact_name=contact_name,
+                tier=tier,
+                billing=billing,
+                cao_preference=cao_preference
+            )
+            pending_signup.set_password(password)  # Hash the password
+            db.session.add(pending_signup)
+            db.session.commit()
+            
+            # Use iframe-safe redirect to escape Replit preview and load Stripe Checkout in top window
+            return render_template('stripe_redirect.html', checkout_url=checkout_session['url'])
             
         except Exception as e:
             app.logger.exception(f"Stripe checkout error for tier={tier}, billing={billing}, price_id={price_id}: {str(e)}")
@@ -1340,20 +1254,20 @@ def send_message(chat_id):
             error_msg = "\n".join(file_errors)
             return jsonify({'response': f"⚠️ Kon geen bestanden lezen:\n{error_msg}\n\nProbeer andere bestanden.", 'has_errors': True})
 
-    print("[DEBUG] 14. About to call Vertex AI service...")
+    print("[DEBUG] 14. About to call RAG service (Memgraph + DeepSeek)...")
     print(f"[DEBUG]     - ai_message length: {len(ai_message)} chars")
-    print(f"[DEBUG]     - Vertex AI enabled: {vertex_ai_service.enabled}")
+    print(f"[DEBUG]     - RAG service enabled: {rag_service.enabled}")
     try:
         from cao_config import get_system_instruction
         print("[DEBUG] 15. Imported cao_config successfully")
         cao_instruction = get_system_instruction(g.tenant)
         print(f"[DEBUG] 16. Got system instruction (length: {len(cao_instruction)} chars)")
-        print(f"[DEBUG] 17. Calling vertex_ai_service.chat()...")
-        lex_response = vertex_ai_service.chat(ai_message, system_instruction=cao_instruction)
-        print(f"[DEBUG] 18. Vertex AI response received (length: {len(lex_response)} chars)")
+        print(f"[DEBUG] 17. Calling rag_service.chat() (Memgraph + DeepSeek)...")
+        lex_response = rag_service.chat(ai_message, system_instruction=cao_instruction)
+        print(f"[DEBUG] 18. RAG service response received (length: {len(lex_response)} chars)")
         print(f"[DEBUG]     - First 100 chars: {lex_response[:100]}...")
     except Exception as e:
-        print(f"[DEBUG] ERROR in Vertex AI call: {str(e)}")
+        print(f"[DEBUG] ERROR in RAG service call: {str(e)}")
         import traceback
         traceback.print_exc()
         raise
@@ -2622,14 +2536,21 @@ def stripe_webhook():
             print(f"Payment failed email sent to {tenant.contact_email}")
     
     elif event['type'] == 'invoice.finalized':
-        # Send iDEAL payment links for manual invoice subscriptions
+        # Send iDEAL payment links for recurring invoices (NOT first invoice)
         invoice = event['data']['object']
         customer_id = invoice.get('customer')
         subscription_id = invoice.get('subscription')
+        billing_reason = invoice.get('billing_reason')
         
         # Only process if this is a subscription invoice
         if not subscription_id:
             return jsonify({'success': True, 'message': 'Not a subscription invoice'})
+        
+        # CRITICAL: Skip first invoice (already paid via Stripe Checkout)
+        # Only send emails for recurring invoices (month 2, 3, 4, etc.)
+        if billing_reason == 'subscription_create':
+            print(f"ℹ️  Skipping email for first invoice (already paid via Checkout)")
+            return jsonify({'success': True, 'message': 'First invoice - no email needed'})
         
         subscription = Subscription.query.filter_by(stripe_subscription_id=subscription_id).first()
         
@@ -2654,7 +2575,7 @@ def stripe_webhook():
                         from datetime import datetime, timedelta
                         due_date = (datetime.utcnow() + timedelta(days=7)).strftime('%d-%m-%Y')
                     
-                    # Send iDEAL payment link email
+                    # Send iDEAL payment link email (only for month 2+)
                     if hosted_invoice_url:
                         email_service.send_ideal_payment_link_email(
                             admin_user, 
@@ -2663,7 +2584,7 @@ def stripe_webhook():
                             amount_formatted, 
                             due_date
                         )
-                        print(f"✅ iDEAL payment link email sent to {admin_user.email}")
+                        print(f"✅ iDEAL monthly payment email sent to {admin_user.email} (recurring invoice)")
                     else:
                         print(f"⚠️ No hosted_invoice_url for invoice {invoice.get('id')}")
                 except Exception as e:
@@ -3286,8 +3207,8 @@ def health_check():
     # Check S3 service
     health['services']['s3'] = 'healthy' if s3_service.enabled else 'disabled'
 
-    # Check Vertex AI service
-    health['services']['vertex_ai'] = 'healthy' if vertex_ai_service.enabled else 'disabled'
+    # Check RAG service (Memgraph + DeepSeek)
+    health['services']['rag'] = 'healthy' if rag_service.enabled else 'disabled'
 
     # Check Email service
     health['services']['email'] = 'healthy' if email_service.enabled else 'disabled'

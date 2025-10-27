@@ -14,23 +14,18 @@ import threading
 # Productie Stripe key heeft voorrang over test key
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY_PROD') or os.getenv('STRIPE_SECRET_KEY', '')
 
-class MemgraphDeepSeekService:
+class VertexAIService:
     """
-    Singleton Memgraph + DeepSeek V3 RAG Service
-
-    Open Source Stack:
-    - Knowledge Graph: Memgraph (for relationship-aware retrieval)
-    - LLM: DeepSeek V3 (cost-effective, high-quality)
-    - Embeddings: sentence-transformers (self-hosted)
-
+    Singleton Vertex AI Service
+    
     CRITICAL for production deployment:
-    - Uses thread-safe singleton pattern
-    - Graph-based context retrieval (better than vector-only)
-    - 37x cheaper than GPT-4 for comparable quality
+    - Uses thread-safe singleton pattern to prevent client recreation
+    - Prevents AttributeError crashes in gunicorn workers
+    - Ensures single client instance across all requests
     """
     _instance = None
     _lock = threading.Lock()
-
+    
     def __new__(cls):
         """Thread-safe singleton implementation"""
         if cls._instance is None:
@@ -40,76 +35,84 @@ class MemgraphDeepSeekService:
                     cls._instance = super().__new__(cls)
                     cls._instance._initialized = False
         return cls._instance
-
     def __init__(self):
         """Initialize only once per process (singleton pattern)"""
         # Skip if already initialized
         if self._initialized:
             return
-
-        self.memgraph = None
-        self.embedding_model = None
+            
+        credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        self.client = None  # Initialize to None to prevent __del__ errors
 
         try:
-            # Import dependencies
-            try:
-                from gqlalchemy import Memgraph
-                from sentence_transformers import SentenceTransformer
-            except ImportError as e:
-                print(f"❌ Missing dependencies: {e}")
-                print("Install with: pip install gqlalchemy sentence-transformers torch")
-                raise
+            from google import genai
+            from google.genai import types
+            import tempfile
 
-            # Memgraph connection
-            memgraph_host = os.getenv('MEMGRAPH_HOST', 'localhost')
-            memgraph_port = int(os.getenv('MEMGRAPH_PORT', 7687))
-            memgraph_username = os.getenv('MEMGRAPH_USERNAME', '')
-            memgraph_password = os.getenv('MEMGRAPH_PASSWORD', '')
+            self.genai = genai
+            self.types = types
 
-            self.memgraph = Memgraph(
-                host=memgraph_host,
-                port=memgraph_port,
-                username=memgraph_username if memgraph_username else None,
-                password=memgraph_password if memgraph_password else None
+            # Enhanced credentials validation and error handling
+            if not credentials_json:
+                raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable is not set")
+            
+            if isinstance(credentials_json, str):
+                # Defensive check: is it already a file path or JSON string?
+                if credentials_json.strip().startswith('{'):
+                    # It's a JSON string - parse it
+                    try:
+                        credentials_dict = json.loads(credentials_json)
+                    except json.JSONDecodeError as e:
+                        raise ValueError(f"Invalid JSON in GOOGLE_APPLICATION_CREDENTIALS: {e}. "
+                                       f"First 100 chars: {credentials_json[:100]}")
+                    
+                    # Validate required fields
+                    required_fields = ['type', 'project_id', 'private_key', 'client_email']
+                    missing_fields = [f for f in required_fields if f not in credentials_dict]
+                    if missing_fields:
+                        raise ValueError(f"Missing required fields in credentials: {missing_fields}")
+                    
+                    # Create temp file with credentials
+                    temp_cred_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
+                    json.dump(credentials_dict, temp_cred_file)
+                    temp_cred_file.close()
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_cred_file.name
+                    print(f"✓ Google credentials loaded from JSON string (project: {credentials_dict.get('project_id')})")
+                else:
+                    # It's already a file path
+                    print(f"✓ Google credentials file path: {credentials_json}")
+
+            self.client = genai.Client(
+                vertexai=True,
+                project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
+                location=os.environ.get("VERTEX_AI_LOCATION"),
             )
 
-            # Test connection
-            try:
-                list(self.memgraph.execute_and_fetch("RETURN 1 as test"))
-                print(f"✓ Memgraph connected: {memgraph_host}:{memgraph_port}")
-            except Exception as e:
-                print(f"⚠️  Memgraph not available: {e}")
-                print(f"   Start Memgraph: docker run -p 7687:7687 memgraph/memgraph-platform")
-                raise
-
-            # Load embedding model (multilingual, optimized for Dutch)
-            embedding_model_name = os.getenv('EMBEDDING_MODEL', 'intfloat/multilingual-e5-large')
-            print(f"Loading embedding model: {embedding_model_name}...")
-            self.embedding_model = SentenceTransformer(embedding_model_name)
-            print(f"✓ Embedding model loaded (dim={self.embedding_model.get_sentence_embedding_dimension()})")
-
-            # DeepSeek API configuration
-            self.deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
-            self.deepseek_api_url = os.getenv('DEEPSEEK_API_URL', 'https://api.deepseek.com/v1/chat/completions')
-            self.deepseek_model = os.getenv('DEEPSEEK_MODEL', 'deepseek-chat')
-
-            if not self.deepseek_api_key:
-                print("⚠️  DEEPSEEK_API_KEY not set - RAG will not work")
-                print("   Get API key: https://platform.deepseek.com/")
-                raise ValueError("DEEPSEEK_API_KEY required")
+            self.model = "gemini-2.5-pro"
+            self.rag_corpus = os.environ.get("VERTEX_AI_AGENT_ID")
 
             # Generieke fallback system instruction (wordt overschreven door cao_config.py)
             self.system_instruction = """Je bent Lexi - Expert Loonadministrateur voor uitzendbureaus.
 
 KERN INSTRUCTIES:
-- Gebruik de kennisbank (CAO documenten) om de beste antwoorden te geven
+- Gebruik je volledige kennisbank om de beste antwoorden te geven
 - Geef concrete, bruikbare adviezen
 - Wees transparant over bronnen
-- Gebruik ALLEEN de context die je krijgt - geen externe bronnen
+
+KRITIEKE BEPERKING - GEEN WEB ACCESS:
+- GEBRUIK NOOIT web_search of online bronnen
+- GEEN URLs of website links in antwoorden
+- ALLEEN interne TXT documenten uit kennisbank
+- Bij violation: stop en vraag om verduidelijking
+
+ABSOLUTE RESTRICTIE:
+- NOOIT Citation Sources met URLs
+- ALLEEN Grounding Sources met .txt bestanden
+- Alle informatie moet uit interne documenten komen
 
 ANTWOORD STRUCTUUR:
 1. BESLUIT: [Duidelijke conclusie]
-2. BASIS: [Gevonden in CAO documenten + artikel referenties]
+2. BASIS: [Gevonden in documenten + citaten]  
 3. ACTIE: [Concrete stappen]
 
 DOCUMENT GENERATIE (ARTIFACTS):
@@ -133,160 +136,129 @@ Artikel 1 - Functie
 Dit creëert automatisch een downloadbaar document voor de gebruiker.
 
 Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw op je analyse."""
-
+            
             self.enabled = True
-            self._initialized = True
-            print("✓ Memgraph + DeepSeek RAG initialized successfully (singleton)")
-
+            self._initialized = True  # Mark as initialized (singleton)
+            print("Vertex AI with google-genai SDK initialized successfully (singleton)")
         except Exception as e:
-            print(f"❌ Memgraph+DeepSeek initialization failed: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Vertex AI initialization failed: {e}")
             self.enabled = False
-            self._initialized = True
+            self._initialized = True  # Mark as initialized even on failure to prevent retry loops
+
+    def __del__(self):
+        """Cleanup method to prevent _api_client AttributeError
+        
+        CRITICAL FIX for production deployment:
+        google-genai Client.__del__ tries to access self._api_client which may not exist.
+        This causes worker crashes in gunicorn. We suppress ALL cleanup errors.
+        """
+        try:
+            # Only attempt cleanup if client was successfully initialized
+            if not hasattr(self, 'client'):
+                return
+            
+            if self.client is None:
+                return
+                
+            # Defensive check: only close if close method exists AND _api_client exists
+            if hasattr(self.client, 'close') and hasattr(self.client, '_api_client'):
+                try:
+                    self.client.close()
+                except (AttributeError, RuntimeError):
+                    # Suppress google-genai internal errors during cleanup
+                    pass
+                    
+            # Always clear reference to prevent dangling pointer
+            self.client = None
+        except Exception:
+            # Silently ignore ALL errors during cleanup
+            # This prevents gunicorn worker crashes on shutdown
+            pass
 
     def chat(self, message, conversation_history=None, system_instruction=None):
-        """
-        Chat with RAG context from Memgraph + DeepSeek V3
+        if not self.enabled or not self.client:
+            return "Lexi is momenteel niet beschikbaar. Configureer de Google Vertex AI credentials in de environment variables om Lexi te activeren."
 
-        Args:
-            message: User's question
-            conversation_history: List of previous messages
-            system_instruction: Custom system instruction (overrides default)
+        import time
+        max_retries = 3
+        base_delay = 2  # seconds
 
-        Returns:
-            str: AI response
-        """
-        if not self.enabled:
-            return "Lexi is momenteel niet beschikbaar. Controleer de Memgraph en DeepSeek configuratie."
-
-        try:
-            # 1. Generate embedding for user query
-            embedding = self.embedding_model.encode(message, convert_to_tensor=False).tolist()
-
-            # 2. Query Memgraph for relevant context (vector + graph traversal)
-            cypher = """
-            CALL vector.search('cao_embeddings', $embedding, 10)
-            YIELD node, similarity
-            WHERE similarity > 0.65
-            WITH node, similarity
-            ORDER BY similarity DESC
-            LIMIT 5
-
-            OPTIONAL MATCH (node)-[:REFERENCES|APPLIES_TO|EXCEPTION]-(related:Article)
-            WHERE related.cao = node.cao OR related.cao IS NULL
-
-            RETURN
-                node.text AS text,
-                node.article_number AS article,
-                node.cao AS cao,
-                similarity,
-                collect(DISTINCT related.text)[0..2] AS related_articles
-            """
-
+        for attempt in range(max_retries):
             try:
-                results = list(self.memgraph.execute_and_fetch(
-                    cypher,
-                    {'embedding': embedding}
+                contents = []
+
+                if conversation_history:
+                    for msg in conversation_history:
+                        contents.append(self.types.Content(
+                            role=msg.get('role', 'user'),
+                            parts=[self.types.Part.from_text(text=msg.get('content', ''))]
+                        ))
+
+                contents.append(self.types.Content(
+                    role="user",
+                    parts=[self.types.Part.from_text(text=message)]
                 ))
+
+                tools = [
+                    self.types.Tool(
+                        retrieval=self.types.Retrieval(
+                            vertex_rag_store=self.types.VertexRagStore(
+                                rag_resources=[
+                                    self.types.VertexRagStoreRagResource(
+                                        rag_corpus=self.rag_corpus
+                                    )
+                                ],
+                                similarity_top_k=10,  # Reduced from 20 to 10 to save quota
+                            )
+                        )
+                    )
+                ]
+
+                instruction_text = system_instruction if system_instruction else self.system_instruction
+
+                # Optimized config to reduce quota usage
+                config = self.types.GenerateContentConfig(
+                    temperature=1,
+                    top_p=0.95,
+                    max_output_tokens=8192,  # Reduced from 65535 to 8192 (still very large)
+                    tools=tools,
+                    system_instruction=[self.types.Part.from_text(text=instruction_text)],
+                    thinking_config=self.types.ThinkingConfig(thinking_budget=8192),  # Limited thinking budget
+                )
+
+                response_text = ""
+                for chunk in self.client.models.generate_content_stream(
+                    model=self.model,
+                    contents=contents,
+                    config=config,
+                ):
+                    if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
+                        if chunk.text:
+                            response_text += chunk.text
+
+                return response_text
+
             except Exception as e:
-                # Fallback: als vector search niet werkt, gebruik simpele text match
-                print(f"⚠️  Vector search failed: {e}, using fallback")
-                results = []
+                error_str = str(e)
 
-            # 3. Build context from results
-            context_parts = []
-            if results:
-                for r in results:
-                    article_ref = f"[{r['cao']} Artikel {r['article']}]" if r.get('article') else ""
-                    context_parts.append(f"{article_ref} {r['text']}")
-
-                    # Add related articles for richer context
-                    if r.get('related_articles'):
-                        for related in r['related_articles']:
-                            if related and len(related) > 50:
-                                context_parts.append(f"  → Gerelateerd: {related[:300]}...")
-
-            context = "\n\n".join(context_parts) if context_parts else "Geen relevante documenten gevonden."
-
-            # 4. Build messages for DeepSeek
-            instruction_text = system_instruction if system_instruction else self.system_instruction
-
-            messages = [
-                {
-                    "role": "system",
-                    "content": f"{instruction_text}\n\n---\n\nRELEVANTE CAO CONTEXT:\n{context}"
-                }
-            ]
-
-            # Add conversation history
-            if conversation_history:
-                for msg in conversation_history:
-                    messages.append({
-                        "role": msg.get('role', 'user'),
-                        "content": msg.get('content', '')
-                    })
-
-            # Add current message
-            messages.append({
-                "role": "user",
-                "content": message
-            })
-
-            # 5. Call DeepSeek API with streaming
-            import httpx
-
-            full_response = ""
-
-            with httpx.stream(
-                'POST',
-                self.deepseek_api_url,
-                headers={
-                    'Authorization': f'Bearer {self.deepseek_api_key}',
-                    'Content-Type': 'application/json'
-                },
-                json={
-                    'model': self.deepseek_model,
-                    'messages': messages,
-                    'stream': True,
-                    'temperature': 1.0,
-                    'max_tokens': 4096
-                },
-                timeout=120
-            ) as response:
-                response.raise_for_status()
-
-                for line in response.iter_lines():
-                    if not line:
+                # Check if it's a 429 rate limit error
+                if '429' in error_str or 'RESOURCE_EXHAUSTED' in error_str:
+                    if attempt < max_retries - 1:
+                        # Exponential backoff: 2s, 4s, 8s
+                        delay = base_delay * (2 ** attempt)
+                        print(f"⚠️ Rate limit hit (attempt {attempt + 1}/{max_retries}), waiting {delay}s before retry...")
+                        time.sleep(delay)
                         continue
+                    else:
+                        print(f"❌ Rate limit persists after {max_retries} attempts: {e}")
+                        return "Lexi is momenteel overbelast. Probeer het over een paar minuten opnieuw, of neem contact op met support als dit probleem aanhoudt."
+                else:
+                    # Non-rate-limit error, don't retry
+                    print(f"Vertex AI chat error: {e}")
+                    return f"Er ging iets mis bij het verwerken van je vraag: {error_str}"
 
-                    if line.startswith('data: '):
-                        data_str = line[6:]  # Remove 'data: ' prefix
-
-                        if data_str.strip() == '[DONE]':
-                            break
-
-                        try:
-                            chunk = json.loads(data_str)
-                            if chunk.get('choices') and len(chunk['choices']) > 0:
-                                delta = chunk['choices'][0].get('delta', {})
-                                content = delta.get('content')
-                                if content:
-                                    full_response += content
-                        except json.JSONDecodeError:
-                            continue
-
-            return full_response if full_response else "Geen response ontvangen van AI."
-
-        except httpx.HTTPStatusError as e:
-            print(f"❌ DeepSeek API error: {e.response.status_code} - {e.response.text}")
-            return f"Er ging iets mis bij het verwerken van je vraag (API error: {e.response.status_code})."
-
-        except Exception as e:
-            print(f"❌ Chat error: {e}")
-            import traceback
-            traceback.print_exc()
-            return "Er ging iets mis bij het verwerken van je vraag. Probeer het opnieuw."
+        # Should not reach here, but just in case
+        return "Er ging iets mis bij het verwerken van je vraag. Probeer het later opnieuw."
 
 class S3Service:
     """
@@ -1527,7 +1499,6 @@ class EmailService:
         """
         return self.send_email(ticket.email, subject, html_content)
 
-# Initialize RAG service (Memgraph + DeepSeek V3)
-rag_service = MemgraphDeepSeekService()
+vertex_ai_service = VertexAIService()
 s3_service = S3Service()
 email_service = EmailService()

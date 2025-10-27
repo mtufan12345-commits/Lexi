@@ -1,8 +1,8 @@
 # ==============================================================================
 # Lexi AI - Production Gunicorn Configuration
 # ==============================================================================
-# Optimized for google-genai and Vertex AI deployment
-# Prevents AttributeError crashes and worker failures
+# Optimized for Memgraph + DeepSeek RAG deployment
+# Prevents worker failures and ensures proper singleton initialization
 # ==============================================================================
 
 import multiprocessing
@@ -13,7 +13,7 @@ import os
 # ==============================================================================
 
 # CRITICAL: Use 'sync' worker class (NOT gevent/eventlet)
-# google-genai client is not async-safe and crashes with async workers
+# Memgraph connections and DeepSeek API work best with sync workers
 worker_class = 'sync'
 
 # Worker count: 2-4 workers recommended for most deployments
@@ -21,8 +21,8 @@ worker_class = 'sync'
 # Override with GUNICORN_WORKERS env variable
 workers = int(os.getenv('GUNICORN_WORKERS', multiprocessing.cpu_count() * 2 + 1))
 
-# CRITICAL: Enable preload_app to initialize VertexAI client ONCE
-# This prevents multiple client initializations and reduces crashes
+# CRITICAL: Enable preload_app to initialize RAG service ONCE
+# This prevents multiple service initializations and reduces startup time
 # The singleton pattern in services.py works best with preload_app=True
 preload_app = True
 
@@ -30,11 +30,11 @@ preload_app = True
 # TIMEOUT CONFIGURATION
 # ==============================================================================
 
-# Request timeout: 120 seconds (Vertex AI can be slow for complex queries)
+# Request timeout: 120 seconds (DeepSeek + Memgraph graph traversal can take time)
 timeout = 120
 
 # Graceful timeout: Give workers time to finish current requests
-# CRITICAL: Prevents AttributeError during shutdown
+# CRITICAL: Ensures Memgraph connections close cleanly during shutdown
 graceful_timeout = 120
 
 # Keep-alive: Close idle connections after 5 seconds
@@ -125,15 +125,15 @@ def worker_exit(server, worker):
     print(f"👷 Worker {worker.pid} exited")
 
 # ==============================================================================
-# GOOGLE-GENAI SPECIFIC SETTINGS
+# MEMGRAPH + DEEPSEEK SPECIFIC SETTINGS
 # ==============================================================================
 
 # IMPORTANT NOTES:
-# 1. The singleton pattern in services.py prevents multiple client initializations
-# 2. preload_app=True ensures VertexAI client is initialized once in master process
-# 3. Workers inherit the initialized client (no re-initialization = no crashes)
-# 4. The improved __del__ method in services.py prevents AttributeError on shutdown
-# 5. graceful_timeout gives workers time to clean up properly
+# 1. The singleton pattern in services.py prevents multiple service initializations
+# 2. preload_app=True ensures RAG service (Memgraph + DeepSeek) is initialized once
+# 3. Workers inherit the initialized service (efficient resource usage)
+# 4. The __del__ method in services.py ensures clean Memgraph connection shutdown
+# 5. graceful_timeout gives workers time to close Memgraph connections properly
 
 # ==============================================================================
 # DEPLOYMENT INSTRUCTIONS
@@ -156,7 +156,8 @@ def worker_exit(server, worker):
 #    WorkingDirectory=/var/www/lexiai
 #    Environment="PATH=/var/www/lexiai/venv/bin"
 #    Environment="DATABASE_URL=..."
-#    Environment="GOOGLE_APPLICATION_CREDENTIALS=..."
+#    Environment="MEMGRAPH_HOST=localhost"
+#    Environment="DEEPSEEK_API_KEY=..."
 #    ExecStart=/var/www/lexiai/venv/bin/gunicorn --config gunicorn.conf.py main:app
 #    Restart=always
 #    RestartSec=10

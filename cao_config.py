@@ -8,7 +8,7 @@ CRITICAL: AI uses chosen CAO + all remaining documents (NEVER both ABU and NBBU)
 
 def get_system_instruction(tenant):
     """
-    Generate CAO-specific system instruction for Vertex AI agent.
+    Generate CAO-specific system instruction for RAG agent (Memgraph + DeepSeek).
     The CAO choice provides contextual framing only - the AI uses ALL documents.
     
     Args:
