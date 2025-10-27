@@ -428,10 +428,10 @@ def signup_tenant():
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
             
+            # Get payment preference (automatic via card or manual via invoice/iDEAL)
+            payment_preference = request.form.get('payment_preference', 'card')
+
             stripe_data = {
-                'payment_method_types[0]': 'card',
-                # Note: iDEAL doesn't work with subscriptions - use SEPA Direct Debit instead
-                # 'payment_method_types[1]': 'sepa_debit',  # Uncomment when SEPA is enabled in Stripe
                 'line_items[0][price]': price_id,
                 'line_items[0][quantity]': 1,
                 'mode': 'subscription',
@@ -441,8 +441,80 @@ def signup_tenant():
                 'metadata[signup_email]': contact_email,
                 'metadata[tier]': tier,
                 'metadata[billing]': billing,
-                'metadata[cao_preference]': cao_preference
+                'metadata[cao_preference]': cao_preference,
             }
+
+            # Configure payment method based on user preference
+            if payment_preference == 'manual':
+                # Manual invoicing: Use Stripe SDK for proper subscription configuration
+                import stripe as stripe_sdk
+                stripe_sdk.api_key = stripe_api_key
+
+                # Create customer first
+                customer = stripe_sdk.Customer.create(
+                    email=contact_email,
+                    name=contact_name,
+                    metadata={'company': company_name, 'tier': tier}
+                )
+
+                # Create subscription with manual collection (send_invoice)
+                subscription = stripe_sdk.Subscription.create(
+                    customer=customer.id,
+                    items=[{'price': price_id}],
+                    collection_method='send_invoice',
+                    days_until_due=7,  # Invoice due 7 days after sending
+                    automatic_tax={'enabled': False},  # Disable tax calculation for faster setup
+                    metadata={
+                        'signup_email': contact_email,
+                        'tier': tier,
+                        'billing': billing,
+                        'cao_preference': cao_preference,
+                        'payment_preference': 'manual_ideal'
+                    }
+                )
+
+                # Finalize the first invoice immediately so customer can pay
+                invoices = stripe_sdk.Invoice.list(customer=customer.id, subscription=subscription.id, limit=1)
+                if invoices.data:
+                    first_invoice = invoices.data[0]
+                    if first_invoice.status == 'draft':
+                        stripe_sdk.Invoice.finalize_invoice(first_invoice.id)
+                        print(f"✅ First invoice finalized: {first_invoice.id}")
+
+                # Store manual payment info in pending signup for provisioning
+                pending_signup.checkout_session_id = f"manual_sub_{subscription.id}"
+                db.session.commit()
+
+                # Immediately provision tenant (no checkout needed)
+                from provision_tenant import provision_tenant_from_signup
+                stripe_session_data = {
+                    'customer': customer.id,
+                    'subscription': subscription.id,
+                    'payment_status': 'unpaid',  # Will be paid via invoice
+                    'payment_method_types': ['ideal']  # Indicate preference for invoice emails
+                }
+
+                success, user, error_msg = provision_tenant_from_signup(
+                    pending_signup=pending_signup,
+                    stripe_session_data=stripe_session_data
+                )
+
+                if success and user:
+                    # Auto-login the user
+                    from flask_login import login_user
+                    login_user(user)
+                    tenant = Tenant.query.get(user.tenant_id)
+                    session['tenant_id'] = tenant.id
+
+                    flash('Account aangemaakt! Je ontvangt een email met de betaalinstructies.', 'success')
+                    return redirect(url_for('chat_view'))
+                else:
+                    raise Exception(error_msg or 'Account provisioning failed')
+
+            else:
+                # Automatic recurring payment via card (normal checkout flow)
+                stripe_data['payment_method_types[0]'] = 'card'
+                # Note: iDEAL will be added here when SEPA Direct Debit is activated in Stripe
             
             response = requests.post(
                 'https://api.stripe.com/v1/checkout/sessions',

@@ -134,9 +134,13 @@ def provision_tenant_from_signup(pending_signup, stripe_session_data=None):
                         payment_method = pm.type
                         print(f"✓ Detected payment method from Subscription: {payment_method}")
                     else:
-                        print(f"⚠ No default_payment_method on subscription (likely iDEAL), checking session payment status...")
+                        print(f"⚠ No default_payment_method on subscription (likely iDEAL or manual invoice), checking session payment status...")
+                        # Check if this is manual invoice subscription (payment_status='unpaid' means send_invoice)
+                        if stripe_session_data.get('payment_status') == 'unpaid' and 'ideal' in stripe_session_data.get('payment_method_types', []):
+                            payment_method = 'ideal'  # Manual invoicing with iDEAL preference
+                            print(f"✓ Manual invoice subscription detected - will use iDEAL for invoices")
                         # Last resort: check if session was completed with iDEAL via payment_method_types
-                        if 'ideal' in stripe_session_data.get('payment_method_types', []) and stripe_session_data.get('payment_status') == 'paid':
+                        elif 'ideal' in stripe_session_data.get('payment_method_types', []) and stripe_session_data.get('payment_status') == 'paid':
                             payment_method = 'ideal'
                             print(f"✓ Inferred payment method from session payment_method_types: ideal")
             except Exception as e:
