@@ -818,14 +818,32 @@ def super_admin_login():
     if request.method == 'POST':
         email = request.form.get('email') or ''
         password = request.form.get('password') or ''
+        
+        print(f"[DEBUG] Super Admin Login Attempt:")
+        print(f"  Email: '{email}'")
+        print(f"  Password length: {len(password)}")
+        print(f"  Password repr: {repr(password)}")
 
         admin = SuperAdmin.query.filter_by(email=email).first()
-        if admin and admin.check_password(password):
-            login_user(admin)
-            session['super_admin_id'] = admin.id
-            session['is_super_admin'] = True
-            session.modified = True  # Force session to be saved
-            return redirect(url_for('super_admin_dashboard'))
+        print(f"  Admin found: {admin is not None}")
+        
+        if admin:
+            print(f"  Admin email: '{admin.email}'")
+            print(f"  Admin ID: {admin.id}")
+            password_valid = admin.check_password(password)
+            print(f"  Password valid: {password_valid}")
+            
+            if password_valid:
+                login_user(admin)
+                session['super_admin_id'] = admin.id
+                session['is_super_admin'] = True
+                session.modified = True
+                print(f"  ✅ Login successful for {email}")
+                return redirect(url_for('super_admin_dashboard'))
+            else:
+                print(f"  ❌ Password INCORRECT for {email}")
+        else:
+            print(f"  ❌ NO admin found with email: '{email}'")
 
         flash('Ongeldige credentials.', 'danger')
 
