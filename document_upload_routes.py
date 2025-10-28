@@ -141,6 +141,59 @@ def get_documents():
         return jsonify({'error': str(e)}), 500
 
 
+@upload_bp.route('/api/documents/list', methods=['GET'])
+def get_documents_list():
+    """Get list of indexed documents for Super Admin dashboard"""
+    try:
+        from gqlalchemy import Memgraph
+        from datetime import datetime
+        import sys
+        print(f"DEBUG: Starting get_documents_list()", file=sys.stderr, flush=True)
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+        print(f"DEBUG: Memgraph connected", file=sys.stderr, flush=True)
+
+        # Query all CAO documents with their article counts
+        results = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            WITH cao.name as cao_name, cao
+            OPTIONAL MATCH (cao)-[:CONTAINS_ARTICLE]->(article:Article)
+            RETURN cao_name, COUNT(article) as article_count
+            ORDER BY cao_name
+        """))
+        print(f"DEBUG: Query returned {len(results)} results", file=sys.stderr, flush=True)
+
+        documents = []
+        total_articles = 0
+
+        for idx, r in enumerate(results):
+            article_count = r['article_count'] if r['article_count'] else 0
+            total_articles += article_count
+            documents.append({
+                'id': f'doc_{idx+1}',
+                'cao_name': r['cao_name'],
+                'status': 'indexed',
+                'article_count': article_count,
+                'upload_date': datetime.now().isoformat()
+            })
+            print(f"DEBUG: Added document {idx+1}: {r['cao_name']}", file=sys.stderr, flush=True)
+
+        print(f"DEBUG: Returning {len(documents)} documents", file=sys.stderr, flush=True)
+        return jsonify({
+            'documents': documents,
+            'total': len(documents),
+            'total_articles': total_articles
+        })
+    except Exception as e:
+        print(f"DEBUG: Error in get_documents_list: {str(e)}", file=sys.stderr, flush=True)
+        import traceback
+        print(traceback.format_exc(), file=sys.stderr, flush=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @upload_bp.route('/api/documents/<old_cao_name>/rename', methods=['PUT'])
 def rename_document(old_cao_name):
     """Rename a CAO document in Memgraph"""
@@ -178,6 +231,55 @@ def rename_document(old_cao_name):
         return jsonify({'error': str(e)}), 500
 
 
+@upload_bp.route('/api/documents/<doc_id>', methods=['DELETE'])
+def delete_document(doc_id):
+    """Delete a CAO document from Memgraph"""
+    try:
+        from gqlalchemy import Memgraph
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Get the CAO name from doc_id (format: doc_1, doc_2, etc.)
+        # We need to query first to get the actual CAO name to delete
+        all_caos = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            OPTIONAL MATCH (cao)-[:CONTAINS_ARTICLE]->(article:Article)
+            RETURN cao.name as cao_name
+            ORDER BY cao.name
+        """))
+
+        # The doc_id is a sequential number (1, 2, 3...)
+        doc_index = int(doc_id.replace('doc_', '')) - 1
+
+        if doc_index < 0 or doc_index >= len(all_caos):
+            return jsonify({'error': 'Document not found'}), 404
+
+        cao_to_delete = all_caos[doc_index]['cao_name']
+
+        # Delete the CAO node and all its related articles
+        result = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO {name: $cao_name})
+            DETACH DELETE cao
+            RETURN 1
+        """, {'cao_name': cao_to_delete}))
+
+        if not result:
+            return jsonify({'error': 'Document not found in database'}), 404
+
+        return jsonify({
+            'status': 'success',
+            'message': f'Document "{cao_to_delete}" deleted successfully'
+        }), 200
+
+    except ValueError:
+        return jsonify({'error': 'Invalid document ID format'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # Background processing
 def _process_documents_async(file_paths):
     """Process documents in background"""
@@ -186,7 +288,7 @@ def _process_documents_async(file_paths):
     try:
         # Import document importer
         import sys
-        sys.path.insert(0, '/tmp')
+        sys.path.insert(0, '/var/www/lexi')
         from document_importer import parse_document, generate_embeddings, import_to_memgraph
 
         from gqlalchemy import Memgraph

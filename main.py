@@ -132,6 +132,10 @@ def force_https():
     if request.path == '/health':
         return None
 
+    # Skip HTTPS redirect for upload endpoints (multipart form data)
+    if request.path.startswith('/upload/'):
+        return None
+
     # Only enforce HTTPS in production environment (not in development/Replit)
     if os.getenv('ENVIRONMENT') == 'production':
         # Check if request is not secure and not already HTTPS via proxy
@@ -2928,25 +2932,56 @@ def get_indexed_documents():
 
 @app.route('/upload/api/documents/list', methods=['GET'])
 def get_uploaded_documents():
-    """Get list of uploaded documents with details (Super Admin)"""
+    """Get list of uploaded documents with details from Memgraph (Super Admin)"""
     import sys
-    sys.path.insert(0, '/tmp')
+    sys.path.insert(0, '/var/www/lexi')
     try:
-        from document_tracker import get_all_documents
+        from gqlalchemy import Memgraph
+        from datetime import datetime
+        import os
 
-        documents = get_all_documents()
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Query all CAO documents with their article counts
+        results = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            WITH cao.name as cao_name, cao
+            OPTIONAL MATCH (cao)-[:CONTAINS_ARTICLE]->(article:Article)
+            RETURN cao_name, COUNT(article) as article_count
+            ORDER BY cao_name
+        """))
+
+        documents = []
+        total_articles = 0
+
+        for idx, r in enumerate(results):
+            article_count = r['article_count'] if r['article_count'] else 0
+            total_articles += article_count
+            documents.append({
+                'id': f'doc_{idx+1}',
+                'cao_name': r['cao_name'],
+                'status': 'indexed',
+                'article_count': article_count,
+                'upload_date': datetime.now().isoformat()
+            })
+
         return jsonify({
             'documents': documents,
             'total': len(documents),
-            'total_articles': sum([d.get('article_count', 0) for d in documents])
+            'total_articles': total_articles
         })
 
     except Exception as e:
+        import traceback
+        error_msg = f"{str(e)}: {traceback.format_exc()}"
         return jsonify({
             'documents': [],
             'total': 0,
-            'error': str(e)[:100]
-        }), 200
+            'error': error_msg[:200]
+        }), 500
 
 
 @app.route('/upload/api/documents/<doc_id>', methods=['DELETE'])
@@ -2954,7 +2989,7 @@ def get_uploaded_documents():
 def delete_document(doc_id):
     """Delete a document from tracking"""
     import sys
-    sys.path.insert(0, '/tmp')
+    sys.path.insert(0, '/var/www/lexi')
     try:
         from document_tracker import delete_document as delete_tracked_doc
 
