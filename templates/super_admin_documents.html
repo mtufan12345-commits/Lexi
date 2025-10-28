@@ -209,7 +209,7 @@
     async function monitorProgress() {
         const statusCheckInterval = setInterval(async () => {
             try {
-                const response = await fetch('/upload/api/status');
+                const response = await fetch('/super-admin/api/documents/status');
                 const status = await response.json();
 
                 document.getElementById('progressBar').style.width = status.progress + '%';

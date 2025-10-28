@@ -31,6 +31,18 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # SECURITY: Enable Jinja2 autoescape to prevent XSS attacks
 app.jinja_env.autoescape = True
 
+# Global upload status tracker for Super Admin document uploads
+super_admin_upload_status = {
+    'status': 'idle',  # idle, uploading, processing, complete, error
+    'progress': 0,
+    'current_file': '',
+    'total_files': 0,
+    'processed_files': 0,
+    'messages': [],
+    'imported_count': 0,
+    'error': None
+}
+
 # Build version for cache busting (use git commit hash in production, timestamp in dev)
 # Force new version after Vertex AI rate limit fixes (2025-10-24)
 BUILD_VERSION = os.environ.get('BUILD_VERSION', '20251024134500')
@@ -3045,6 +3057,7 @@ def super_admin_get_documents():
 @super_admin_required
 def super_admin_upload_documents():
     """Upload documents via Super Admin and import to Memgraph"""
+    global super_admin_upload_status
     import sys
     import os
     sys.path.insert(0, '/var/www/lexi')
@@ -3074,6 +3087,18 @@ def super_admin_upload_documents():
         if not valid_files:
             return jsonify({'error': 'No valid PDF/TXT/DOCX files'}), 400
 
+        # Reset status
+        super_admin_upload_status = {
+            'status': 'uploading',
+            'progress': 0,
+            'current_file': '',
+            'total_files': len(valid_files),
+            'processed_files': 0,
+            'messages': [f"📁 {len(valid_files)} files uploaded successfully"],
+            'imported_count': 0,
+            'error': None
+        }
+
         # Start background processing
         import threading
         thread = threading.Thread(
@@ -3090,11 +3115,14 @@ def super_admin_upload_documents():
         })
 
     except Exception as e:
+        super_admin_upload_status['error'] = str(e)[:200]
+        super_admin_upload_status['status'] = 'error'
         return jsonify({'error': str(e)[:200]}), 400
 
 
 def _process_documents_to_memgraph(file_paths):
     """Process files and import to Memgraph"""
+    global super_admin_upload_status
     import sys
     import os
     sys.path.insert(0, '/var/www/lexi')
@@ -3108,33 +3136,63 @@ def _process_documents_to_memgraph(file_paths):
             port=int(os.getenv('MEMGRAPH_PORT', 7687))
         )
 
+        super_admin_upload_status['status'] = 'processing'
         total_imported = 0
 
-        for file_path in file_paths:
+        for idx, file_path in enumerate(file_paths):
             try:
+                filename = os.path.basename(file_path)
+                super_admin_upload_status['current_file'] = filename
+                super_admin_upload_status['progress'] = int((idx / len(file_paths)) * 50)
+                super_admin_upload_status['messages'].append(f"📄 Processing: {filename}")
+
                 # Parse document
                 cao_name, chunks = parse_document(file_path)
+                super_admin_upload_status['messages'].append(f"   ✓ Parsed into {len(chunks)} chunks")
 
                 if not chunks:
-                    print(f"No content extracted from {os.path.basename(file_path)}")
+                    super_admin_upload_status['messages'].append(f"   ⚠️ No content extracted")
                     continue
 
                 # Generate embeddings
+                super_admin_upload_status['progress'] = int((idx / len(file_paths)) * 75)
+                super_admin_upload_status['messages'].append(f"   ⏳ Generating embeddings...")
+
                 embeddings_data = generate_embeddings(chunks)
+                super_admin_upload_status['messages'].append(f"   ✓ Generated {len(embeddings_data)} embeddings")
 
                 # Import to Memgraph
+                super_admin_upload_status['progress'] = int((idx / len(file_paths)) * 90)
+                super_admin_upload_status['messages'].append(f"   ⏳ Importing to Memgraph...")
+
                 imported = import_to_memgraph(memgraph, cao_name, embeddings_data)
                 total_imported += imported
 
-                print(f"✅ Imported {imported} articles from {cao_name}")
+                super_admin_upload_status['messages'].append(f"   ✅ Imported {imported} articles as '{cao_name}'")
+                super_admin_upload_status['processed_files'] += 1
 
             except Exception as e:
-                print(f"❌ Error processing {os.path.basename(file_path)}: {str(e)}")
+                error_msg = f"❌ Error processing {filename}: {str(e)[:100]}"
+                super_admin_upload_status['messages'].append(error_msg)
+                super_admin_upload_status['error'] = str(e)[:200]
 
-        print(f"✨ COMPLETE: {total_imported} articles indexed to Memgraph")
+        # Complete
+        super_admin_upload_status['status'] = 'complete'
+        super_admin_upload_status['progress'] = 100
+        super_admin_upload_status['imported_count'] = total_imported
+        super_admin_upload_status['messages'].append(f"✨ COMPLETE! {total_imported} articles imported")
 
     except Exception as e:
-        print(f"❌ Fatal error: {str(e)}")
+        super_admin_upload_status['status'] = 'error'
+        super_admin_upload_status['error'] = str(e)[:200]
+        super_admin_upload_status['messages'].append(f"❌ Fatal error: {str(e)[:100]}")
+
+
+@app.route('/super-admin/api/documents/status', methods=['GET'])
+@super_admin_required
+def super_admin_upload_status_endpoint():
+    """Get current upload status"""
+    return jsonify(super_admin_upload_status)
 
 
 @app.route('/super-admin/api/documents/<doc_id>', methods=['DELETE'])
