@@ -87,7 +87,10 @@ app.config['WTF_CSRF_SSL_STRICT'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Lax for Stripe redirects compatibility
 app.config['SESSION_COOKIE_SECURE'] = True  # Always require HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
-app.config['SESSION_COOKIE_DOMAIN'] = os.getenv('SESSION_COOKIE_DOMAIN', None)  # Allow multi-domain support (e.g., .lexiai.nl)
+# Don't set SESSION_COOKIE_DOMAIN - let Flask use the request host
+# This prevents issues with apex domains (lexiai.nl) vs subdomains (company.lexiai.nl)
+# Cookies will be set for the exact domain accessed
+app.config['SESSION_COOKIE_DOMAIN'] = None
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # 8 hour session timeout
 
 if app.config['WTF_CSRF_ENABLED']:
@@ -837,8 +840,11 @@ def super_admin_login():
                 login_user(admin)
                 session['super_admin_id'] = admin.id
                 session['is_super_admin'] = True
+                session.permanent = True
                 session.modified = True
                 print(f"  ✅ Login successful for {email}")
+                print(f"  Session after login: is_super_admin={session.get('is_super_admin')}")
+                print(f"  Request host: {request.host}")
                 return redirect(url_for('super_admin_dashboard'))
             else:
                 print(f"  ❌ Password INCORRECT for {email}")
@@ -2653,6 +2659,12 @@ def stripe_webhook():
 @app.route('/super-admin/dashboard')
 @super_admin_required
 def super_admin_dashboard():
+    print(f"[DEBUG] Super Admin Dashboard accessed")
+    print(f"  Session is_super_admin: {session.get('is_super_admin')}")
+    print(f"  g.is_super_admin: {g.is_super_admin}")
+    print(f"  current_user: {current_user}")
+    print(f"  Request host: {request.host}")
+
     sort_by = request.args.get('sort_by', 'created_at')
     sort_order = request.args.get('sort_order', 'desc')
     
