@@ -251,7 +251,7 @@
 
     async function loadDocuments() {
         try {
-            const response = await fetch('/upload/api/documents/list');
+            const response = await fetch('/super-admin/api/documents/list');
             const data = await response.json();
 
             const documentsList = document.getElementById('documentsList');
