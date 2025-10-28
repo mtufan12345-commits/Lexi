@@ -2777,7 +2777,10 @@ def _process_files_background(file_paths):
 
                 try:
                     from gqlalchemy import Memgraph
-                    memgraph = Memgraph(host="localhost", port=7687)
+                    memgraph = Memgraph(
+                        host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+                        port=int(os.getenv('MEMGRAPH_PORT', 7687))
+                    )
                     imported = import_to_memgraph(memgraph, cao_name, embeddings_data)
                     total_imported += imported
                     upload_status['messages'].append(f"   ✅ Imported {imported} articles to Memgraph")
@@ -2833,7 +2836,10 @@ def _process_files_background(file_paths):
             documents_list = []
             try:
                 from gqlalchemy import Memgraph
-                memgraph = Memgraph(host="localhost", port=7687)
+                memgraph = Memgraph(
+                    host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+                    port=int(os.getenv('MEMGRAPH_PORT', 7687))
+                )
 
                 cao_results = list(memgraph.execute_and_fetch("""
                     MATCH (cao:CAO)

@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-900 text-white">
+    <nav class="bg-gray-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold">📚 Document Management</h1>
+                <div class="flex gap-4">
+                    <a href="{{ url_for('super_admin_dashboard') }}" class="text-gray-400 hover:text-white flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Dashboard
+                    </a>
+                    <a href="/logout" class="text-gray-400 hover:text-white">Uitloggen</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Upload Section -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-xl font-semibold mb-6">📤 Upload CAO Documenten</h2>
+
+            <div id="uploadArea" class="border-2 border-dashed border-navy-500 rounded-lg p-8 text-center cursor-pointer hover:border-navy-400 hover:bg-gray-700/50 transition">
+                <svg class="w-12 h-12 mx-auto mb-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3v-7"/>
+                </svg>
+                <h3 class="text-lg font-semibold mb-2">Sleep bestanden hier of klik om te selecteren</h3>
+                <p class="text-gray-400 mb-4">Ondersteund: PDF, TXT, DOCX (max 100MB per bestand)</p>
+                <button class="bg-navy-600 text-white px-6 py-2 rounded-lg hover:bg-navy-700" onclick="document.getElementById('fileInput').click()">
+                    📁 Selecteer Bestanden
+                </button>
+                <input type="file" id="fileInput" multiple accept=".pdf,.txt,.docx" style="display: none;">
+            </div>
+
+            <!-- Selected Files -->
+            <div id="fileList" style="display: none;" class="mt-6">
+                <h3 class="font-semibold mb-3">Geselecteerde bestanden:</h3>
+                <div id="selectedFiles" class="space-y-2"></div>
+                <div class="flex gap-3 mt-4">
+                    <button class="bg-navy-600 text-white px-6 py-2 rounded-lg hover:bg-navy-700" onclick="uploadFiles()">
+                        📤 Upload & Indexeer
+                    </button>
+                    <button class="bg-gray-700 text-gray-300 px-6 py-2 rounded-lg hover:bg-gray-600" onclick="clearFiles()">
+                        🗑️ Wissen
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div id="progressSection" style="display: none;" class="mt-6">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="spinner"></div>
+                    <span id="currentFile" class="text-navy-400 font-semibold"></span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2 mb-2">
+                    <div id="progressBar" class="bg-navy-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                </div>
+                <div class="text-center text-sm text-gray-400 mb-4">
+                    <span id="progressText">0%</span>
+                </div>
+                <div id="messagesLog" class="bg-gray-900 rounded p-3 max-h-64 overflow-y-auto text-sm font-mono text-gray-300 space-y-1"></div>
+            </div>
+
+            <!-- Completion Message -->
+            <div id="completionMessage" style="display: none;" class="mt-6 p-4 bg-green-900/30 border border-green-700 rounded-lg">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-green-400 font-semibold">Upload Voltooid!</span>
+                </div>
+                <p class="text-green-300 text-sm">
+                    <span id="importedCount">0</span> artikelen succesvol in Memgraph geïmporteerd.
+                </p>
+            </div>
+        </div>
+
+        <!-- Documents List -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-8">
+            <h2 class="text-xl font-semibold mb-6">📖 Geïndexeerde Documenten</h2>
+
+            <div id="documentsList" class="space-y-3">
+                <p class="text-gray-400">Laden...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #8b5cf6;
+        border-radius: 50%;
+        border-top: 2px solid transparent;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const progressSection = document.getElementById('progressSection');
+    const completionMessage = document.getElementById('completionMessage');
+    const messagesLog = document.getElementById('messagesLog');
+
+    let selectedFiles = [];
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('border-navy-300', 'bg-gray-700/50');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('border-navy-300', 'bg-gray-700/50');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('border-navy-300', 'bg-gray-700/50');
+        const files = Array.from(e.dataTransfer.files);
+        fileInput.files = e.dataTransfer.files;
+        displayFiles(files);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        displayFiles(files);
+    });
+
+    function displayFiles(files) {
+        selectedFiles = files;
+        const selectedFilesDiv = document.getElementById('selectedFiles');
+        selectedFilesDiv.innerHTML = '';
+
+        files.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'flex justify-between items-center bg-gray-700 p-3 rounded';
+            fileItem.innerHTML = `
+                <span>📄 ${file.name} <span class="text-gray-500 text-sm">(${(file.size / 1024 / 1024).toFixed(1)} MB)</span></span>
+                <button onclick="removeFile(${index})" class="text-red-400 hover:text-red-300">✕</button>
+            `;
+            selectedFilesDiv.appendChild(fileItem);
+        });
+
+        fileList.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        displayFiles(selectedFiles);
+    }
+
+    function clearFiles() {
+        selectedFiles = [];
+        fileInput.value = '';
+        displayFiles([]);
+    }
+
+    async function uploadFiles() {
+        if (selectedFiles.length === 0) {
+            alert('Selecteer eerst bestanden');
+            return;
+        }
+
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        try {
+            uploadArea.style.display = 'none';
+            fileList.style.display = 'none';
+            progressSection.style.display = 'block';
+            completionMessage.style.display = 'none';
+            messagesLog.innerHTML = '<div>📤 Uploading files...</div>';
+
+            const response = await fetch('/upload/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`Upload failed: ${response.statusText}`);
+            }
+
+            monitorProgress();
+
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+            progressSection.style.display = 'none';
+            uploadArea.style.display = 'block';
+        }
+    }
+
+    async function monitorProgress() {
+        const statusCheckInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/upload/api/status');
+                const status = await response.json();
+
+                document.getElementById('progressBar').style.width = status.progress + '%';
+                document.getElementById('progressText').textContent = status.progress + '%';
+                document.getElementById('currentFile').textContent = status.current_file;
+
+                messagesLog.innerHTML = status.messages
+                    .map(msg => {
+                        let color = 'text-gray-300';
+                        if (msg.includes('❌')) color = 'text-red-400';
+                        else if (msg.includes('✅')) color = 'text-green-400';
+                        else if (msg.includes('⏳')) color = 'text-blue-400';
+                        return `<div class="${color}">${msg}</div>`;
+                    })
+                    .join('');
+                messagesLog.scrollTop = messagesLog.scrollHeight;
+
+                if (status.status === 'complete') {
+                    clearInterval(statusCheckInterval);
+                    progressSection.style.display = 'none';
+                    completionMessage.style.display = 'block';
+                    document.getElementById('importedCount').textContent = status.imported_count;
+                    loadDocuments();
+                    setTimeout(() => {
+                        uploadArea.style.display = 'block';
+                        selectedFiles = [];
+                        fileInput.value = '';
+                        displayFiles([]);
+                    }, 3000);
+                } else if (status.status === 'error') {
+                    clearInterval(statusCheckInterval);
+                }
+
+            } catch (error) {
+                console.error('Status check failed:', error);
+            }
+        }, 1000);
+    }
+
+    async function loadDocuments() {
+        try {
+            const response = await fetch('/upload/api/documents/list');
+            const data = await response.json();
+
+            const documentsList = document.getElementById('documentsList');
+            if (data.documents && data.documents.length > 0) {
+                documentsList.innerHTML = data.documents
+                    .map(doc => `
+                        <div class="flex justify-between items-center bg-gray-700/50 p-4 rounded hover:bg-gray-700 transition">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-navy-400">📄 ${doc.filename}</h4>
+                                <div class="grid grid-cols-3 gap-2 mt-2 text-sm text-gray-400">
+                                    <div><span class="text-gray-500">CAO:</span> ${doc.cao_name}</div>
+                                    <div><span class="text-gray-500">Artikelen:</span> ${doc.article_count}</div>
+                                    <div><span class="text-gray-500">Upload:</span> ${new Date(doc.upload_date).toLocaleDateString('nl-NL')}</div>
+                                </div>
+                            </div>
+                            <div class="ml-4 flex gap-2">
+                                <button onclick="renameDocument('${doc.cao_name}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
+                                    ✏️ Hernoem
+                                </button>
+                                <button onclick="deleteDocument('${doc.id}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition">
+                                    🗑️ Verwijderen
+                                </button>
+                            </div>
+                        </div>
+                    `)
+                    .join('');
+            } else {
+                documentsList.innerHTML = '<p class="text-gray-400">Geen documenten geïndexeerd</p>';
+            }
+        } catch (error) {
+            console.error('Error loading documents:', error);
+        }
+    }
+
+    async function renameDocument(oldCaoName) {
+        const newName = prompt('Voer de nieuwe CAO naam in:', oldCaoName);
+
+        if (!newName || newName === oldCaoName) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/upload/api/documents/${encodeURIComponent(oldCaoName)}/rename`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ new_name: newName })
+            });
+
+            if (response.ok) {
+                alert('CAO naam succesvol gewijzigd');
+                loadDocuments();
+            } else {
+                const error = await response.json();
+                alert('Fout bij wijzigen: ' + (error.error || 'onbekende fout'));
+            }
+        } catch (error) {
+            console.error('Error renaming document:', error);
+            alert('Fout bij wijzigen van CAO naam');
+        }
+    }
+
+    async function deleteDocument(docId) {
+        if (!confirm('Weet u zeker dat u dit document wilt verwijderen?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/upload/api/documents/${docId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert('Document succesvol verwijderd');
+                loadDocuments();
+            } else {
+                alert('Fout bij verwijderen van document');
+            }
+        } catch (error) {
+            console.error('Error deleting document:', error);
+            alert('Fout bij verwijderen van document');
+        }
+    }
+
+    // Load documents on page load
+    loadDocuments();
+</script>
+{% endblock %}

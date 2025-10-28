@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Document Upload - Lexi AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8e9ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .upload-area h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .upload-area p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item.selected {
+            background: #e3f2fd;
+            border-left: 4px solid #667eea;
+        }
+
+        .file-name {
+            flex: 1;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .file-size {
+            color: #999;
+            font-size: 0.9em;
+            margin-right: 15px;
+        }
+
+        .remove-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .remove-btn:hover {
+            background: #ff3838;
+        }
+
+        .progress-section {
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-header {
+            margin-bottom: 20px;
+        }
+
+        .progress-header h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .current-file {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .messages-log {
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .message {
+            padding: 4px 0;
+            color: #333;
+        }
+
+        .message.success {
+            color: #4caf50;
+        }
+
+        .message.error {
+            color: #ff4757;
+        }
+
+        .message.info {
+            color: #667eea;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .status-badge.processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.complete {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .documents-list {
+            margin-top: 40px;
+        }
+
+        .documents-list h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .document-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .document-info h4 {
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .document-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                padding: 20px;
+            }
+
+            .upload-area {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            border-top: 2px solid transparent;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 CAO Document Upload</h1>
+            <p>Upload PDF, TXT of DOCX bestanden naar je Lexi AI kennisbank</p>
+        </div>
+
+        <div class="card">
+            <!-- Upload Area -->
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h2>Sleep bestanden hier of klik om te selecteren</h2>
+                <p>Ondersteund: PDF, TXT, DOCX (max 100MB per bestand)</p>
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    Selecteer Bestanden
+                </button>
+                <input type="file" id="fileInput" multiple accept=".pdf,.txt,.docx">
+            </div>
+
+            <!-- Selected Files -->
+            <div class="file-list" id="fileList" style="display: none;">
+                <h3>Geselecteerde bestanden:</h3>
+                <div id="selectedFiles"></div>
+            </div>
+
+            <!-- Upload Button -->
+            <div class="button-group" id="buttonGroup" style="display: none;">
+                <button class="btn" onclick="uploadFiles()">
+                    📤 Upload & Indexeer
+                </button>
+                <button class="btn btn-secondary" onclick="clearFiles()">
+                    🗑️ Wissen
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-section" id="progressSection">
+                <div class="progress-header">
+                    <h3>
+                        <span class="spinner"></span>
+                        Verwerken in voortgang...
+                    </h3>
+                    <div class="current-file" id="currentFile"></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+
+                <div class="messages-log" id="messagesLog"></div>
+
+                <div class="stats" id="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Verwerkte bestanden</div>
+                        <div class="stat-value" id="processedCount">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Geïndexeerde artikelen</div>
+                        <div class="stat-value" id="importedCount">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Status</div>
+                        <div id="statusBadge" class="status-badge processing">Bezig...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completion Message -->
+            <div id="completionMessage" style="display: none;">
+                <div class="status-badge complete">
+                    ✅ Upload compleet!
+                </div>
+                <p style="margin-top: 15px; color: #666;">
+                    Alle documenten zijn succesvol in je kennisbank geïmporteerd.
+                </p>
+                <button class="btn" onclick="location.reload()" style="margin-top: 20px;">
+                    Nieuwe Upload
+                </button>
+            </div>
+        </div>
+
+        <!-- Documents List -->
+        <div class="card documents-list">
+            <h2>📖 Geïndexeerde Documenten</h2>
+            <div id="documentsList">
+                <p style="color: #999;">Laden...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const buttonGroup = document.getElementById('buttonGroup');
+        const progressSection = document.getElementById('progressSection');
+        const completionMessage = document.getElementById('completionMessage');
+        const messagesLog = document.getElementById('messagesLog');
+
+        let selectedFiles = [];
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            fileInput.files = e.dataTransfer.files;
+            displayFiles(files);
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            displayFiles(files);
+        });
+
+        function displayFiles(files) {
+            selectedFiles = files;
+            const selectedFilesDiv = document.getElementById('selectedFiles');
+            selectedFilesDiv.innerHTML = '';
+
+            files.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item selected';
+                fileItem.innerHTML = `
+                    <span class="file-name">📄 ${file.name}</span>
+                    <span class="file-size">${(file.size / 1024 / 1024).toFixed(1)} MB</span>
+                    <button class="remove-btn" onclick="removeFile(${index})">Remove</button>
+                `;
+                selectedFilesDiv.appendChild(fileItem);
+            });
+
+            fileList.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+            buttonGroup.style.display = selectedFiles.length > 0 ? 'flex' : 'none';
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFiles(selectedFiles);
+        }
+
+        function clearFiles() {
+            selectedFiles = [];
+            fileInput.value = '';
+            displayFiles([]);
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                alert('Selecteer eerst bestanden');
+                return;
+            }
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                // Hide upload area, show progress
+                uploadArea.style.display = 'none';
+                fileList.style.display = 'none';
+                buttonGroup.style.display = 'none';
+                progressSection.classList.add('active');
+                messagesLog.innerHTML = '<div class="message info">📤 Uploading files...</div>';
+
+                const response = await fetch('/upload/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Upload failed: ${response.statusText}`);
+                }
+
+                // Start monitoring progress
+                monitorProgress();
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                progressSection.classList.remove('active');
+                uploadArea.style.display = 'block';
+            }
+        }
+
+        async function monitorProgress() {
+            const statusCheckInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/upload/api/status');
+                    const status = await response.json();
+
+                    // Update UI
+                    document.getElementById('progressFill').style.width = status.progress + '%';
+                    document.getElementById('progressText').textContent = status.progress + '%';
+                    document.getElementById('currentFile').textContent = status.current_file;
+                    document.getElementById('processedCount').textContent = status.processed_files;
+                    document.getElementById('importedCount').textContent = status.imported_count;
+
+                    // Update messages
+                    messagesLog.innerHTML = status.messages
+                        .map(msg => {
+                            let className = 'message';
+                            if (msg.includes('❌')) className += ' error';
+                            else if (msg.includes('✅')) className += ' success';
+                            else if (msg.includes('⏳') || msg.includes('📖')) className += ' info';
+                            return `<div class="${className}">${msg}</div>`;
+                        })
+                        .join('');
+                    messagesLog.scrollTop = messagesLog.scrollHeight;
+
+                    // Check if complete
+                    if (status.status === 'complete') {
+                        clearInterval(statusCheckInterval);
+                        progressSection.classList.remove('active');
+                        completionMessage.style.display = 'block';
+                        document.getElementById('statusBadge').innerHTML = '✅ Compleet';
+                        document.getElementById('statusBadge').className = 'status-badge complete';
+                        loadDocuments();
+                    } else if (status.status === 'error') {
+                        clearInterval(statusCheckInterval);
+                        document.getElementById('statusBadge').innerHTML = '❌ Error';
+                        document.getElementById('statusBadge').className = 'status-badge error';
+                    }
+
+                } catch (error) {
+                    console.error('Status check failed:', error);
+                }
+            }, 1000);
+        }
+
+        async function loadDocuments() {
+            try {
+                const response = await fetch('/upload/api/documents');
+                const data = await response.json();
+
+                const documentsList = document.getElementById('documentsList');
+                if (data.documents && data.documents.length > 0) {
+                    documentsList.innerHTML = data.documents
+                        .map(doc => `
+                            <div class="document-item">
+                                <div class="document-info">
+                                    <h4>${doc.cao}</h4>
+                                    <small>${doc.status}</small>
+                                </div>
+                                <span class="document-count">${doc.article_count} artikelen</span>
+                            </div>
+                        `)
+                        .join('');
+                } else {
+                    documentsList.innerHTML = '<p style="color: #999;">Geen documenten geïndexeerd</p>';
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+            }
+        }
+
+        // Load documents on page load
+        loadDocuments();
+    </script>
+</body>
+</html>

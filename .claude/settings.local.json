@@ -14,7 +14,9 @@
       "Bash(echo:*)",
       "Bash(git push:*)",
       "Bash(journalctl:*)",
-      "Bash(python3.11 -m json.tool:*)"
+      "Bash(python3.11 -m json.tool:*)",
+      "Read(//home/runner/**)",
+      "Bash(ssh-keygen:*)"
     ],
     "deny": [],
     "ask": []
