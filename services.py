@@ -66,15 +66,17 @@ class MemgraphDeepSeekService:
             # Memgraph connection
             memgraph_host = os.getenv('MEMGRAPH_HOST', 'localhost')
             memgraph_port = int(os.getenv('MEMGRAPH_PORT', 7687))
-            memgraph_username = os.getenv('MEMGRAPH_USERNAME', '')
-            memgraph_password = os.getenv('MEMGRAPH_PASSWORD', '')
+            memgraph_username = os.getenv('MEMGRAPH_USERNAME', None)
+            memgraph_password = os.getenv('MEMGRAPH_PASSWORD', None)
 
-            self.memgraph = Memgraph(
-                host=memgraph_host,
-                port=memgraph_port,
-                username=memgraph_username if memgraph_username else None,
-                password=memgraph_password if memgraph_password else None
-            )
+            # Build connection kwargs - only include username/password if explicitly set
+            mg_kwargs = {'host': memgraph_host, 'port': memgraph_port}
+            if memgraph_username:
+                mg_kwargs['username'] = memgraph_username
+            if memgraph_password:
+                mg_kwargs['password'] = memgraph_password
+
+            self.memgraph = Memgraph(**mg_kwargs)
 
             # Test connection
             try:
