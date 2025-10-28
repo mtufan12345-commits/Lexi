@@ -58,7 +58,10 @@ class MemgraphDeepSeekService:
             except ImportError as e:
                 print(f"❌ Missing dependencies: {e}")
                 print("Install with: pip install gqlalchemy sentence-transformers torch")
-                raise
+                print("⚠️  Memgraph+DeepSeek RAG will be DISABLED until dependencies are installed")
+                # Don't raise - allow app to start without RAG
+                self._initialized = True
+                return
 
             # Memgraph connection
             memgraph_host = os.getenv('MEMGRAPH_HOST', 'localhost')

@@ -44,7 +44,7 @@ externalPort = 3000
 
 [nix]
 channel = "stable-25_05"
-packages = ["cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "poppler", "poppler_utils", "rustc", "stripe-cli", "tcl", "tesseract", "tk", "zlib", "u-root-cmds"]
+packages = ["cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "poppler", "poppler_utils", "rustc", "stripe-cli", "tcl", "tesseract", "tk", "u-root-cmds", "zlib"]
 
 [deployment]
 deploymentTarget = "autoscale"
