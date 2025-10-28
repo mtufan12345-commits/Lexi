@@ -125,8 +125,10 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    if session.get('is_super_admin'):
-        return SuperAdmin.query.get(int(user_id))
+    # Try to load as SuperAdmin first, then fall back to regular User
+    super_admin = SuperAdmin.query.get(int(user_id))
+    if super_admin:
+        return super_admin
     return User.query.get(int(user_id))
 
 def get_max_users_for_tier(tier):
@@ -794,21 +796,23 @@ def reset_password(token):
     return redirect(url_for('login'))
 
 @app.route('/super-admin/login', methods=['GET', 'POST'])
+@csrf.exempt
 @limiter.limit("5 per minute")
 def super_admin_login():
     if request.method == 'POST':
         email = request.form.get('email') or ''
         password = request.form.get('password') or ''
-        
+
         admin = SuperAdmin.query.filter_by(email=email).first()
         if admin and admin.check_password(password):
             login_user(admin)
             session['super_admin_id'] = admin.id
             session['is_super_admin'] = True
+            session.modified = True  # Force session to be saved
             return redirect(url_for('super_admin_dashboard'))
-        
+
         flash('Ongeldige credentials.', 'danger')
-    
+
     return render_template('super_admin_login.html')
 
 @app.route('/select-tenant', methods=['GET', 'POST'])
