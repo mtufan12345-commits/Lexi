@@ -16,7 +16,18 @@
       "Bash(journalctl:*)",
       "Bash(python3.11 -m json.tool:*)",
       "Read(//home/runner/**)",
-      "Bash(ssh-keygen:*)"
+      "Bash(ssh-keygen:*)",
+      "Bash(pip install:*)",
+      "Bash(python3.11 -m pip install:*)",
+      "Bash(python3.11:*)",
+      "Bash(uv pip install:*)",
+      "Read(//nix/store/**)",
+      "Bash(upm add:*)",
+      "Bash(upm -l python add:*)",
+      "Bash(poetry add:*)",
+      "Bash(poetry init:*)",
+      "Bash(poetry install:*)",
+      "Bash(ssh:*)"
     ],
     "deny": [],
     "ask": []

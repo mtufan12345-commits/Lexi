@@ -21,9 +21,25 @@ import stripe
 from datetime import datetime, timedelta
 import secrets
 from functools import wraps
-from markitdown import MarkItDown
-import pytesseract
-from pdf2image import convert_from_path
+
+# Optional imports - may not be available in all environments
+try:
+    from markitdown import MarkItDown
+    MARKITDOWN_AVAILABLE = True
+except (ImportError, AttributeError) as e:
+    print(f"⚠️  MarkItDown not available: {e}")
+    MarkItDown = None
+    MARKITDOWN_AVAILABLE = False
+
+try:
+    import pytesseract
+    from pdf2image import convert_from_path
+    OCR_AVAILABLE = True
+except (ImportError, AttributeError) as e:
+    print(f"⚠️  OCR tools not available: {e}")
+    pytesseract = None
+    convert_from_path = None
+    OCR_AVAILABLE = False
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
