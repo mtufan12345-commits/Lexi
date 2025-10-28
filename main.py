@@ -71,6 +71,7 @@ app.config['WTF_CSRF_SSL_STRICT'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Lax for Stripe redirects compatibility
 app.config['SESSION_COOKIE_SECURE'] = True  # Always require HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
+app.config['SESSION_COOKIE_DOMAIN'] = os.getenv('SESSION_COOKIE_DOMAIN', None)  # Allow multi-domain support (e.g., .lexiai.nl)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # 8 hour session timeout
 
 if app.config['WTF_CSRF_ENABLED']:
@@ -176,20 +177,23 @@ def validate_host_header():
     """SECURITY: Global Host header validation - prevents Host header injection attacks"""
     # SECURITY: Validate Host header against allowed domains (GLOBAL protection)
     request_host = request.host.split(':')[0]  # Remove port
-    
+
     # Get allowed hosts from environment (default includes localhost + Replit domains)
     allowed_hosts_env = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,replit.dev,replit.app')
     allowed_hosts = [h.strip() for h in allowed_hosts_env.split(',')]
-    
+
     # Check if host is allowed (exact match or subdomain of allowed domain)
     is_allowed = request_host in allowed_hosts or any(
-        request_host.endswith(f'.{allowed}') or request_host == allowed 
+        request_host.endswith(f'.{allowed}') or request_host == allowed
         for allowed in allowed_hosts
     )
-    
+
     if not is_allowed:
-        app.logger.warning(f"🚨 SECURITY: Rejected Host header: {request_host}")
+        app.logger.warning(f"🚨 SECURITY: Rejected Host header: {request_host} | Allowed: {allowed_hosts}")
+        print(f"[DEBUG] validate_host_header: request_host={request_host}, allowed_hosts={allowed_hosts}, is_allowed={is_allowed}")
         return "Invalid Host header", 400
+    else:
+        print(f"[DEBUG] validate_host_header: request_host={request_host} is allowed")
 
 @app.before_request
 def load_tenant():
@@ -3125,18 +3129,39 @@ def _process_documents_to_memgraph(file_paths):
     global super_admin_upload_status
     import sys
     import os
+    import importlib
+
     sys.path.insert(0, '/var/www/lexi')
 
+    super_admin_upload_status['status'] = 'processing'
+    super_admin_upload_status['messages'].append("⏳ Initializing document processor...")
+
     try:
-        from document_importer import parse_document, generate_embeddings, import_to_memgraph
-        from gqlalchemy import Memgraph
+        # Import with verbose error handling
+        try:
+            from document_importer import parse_document, generate_embeddings, import_to_memgraph
+            super_admin_upload_status['messages'].append("   ✓ Document importer loaded")
+        except ImportError as ie:
+            super_admin_upload_status['messages'].append(f"   ❌ Failed to load document_importer: {str(ie)}")
+            super_admin_upload_status['error'] = f"Import error: {str(ie)}"
+            super_admin_upload_status['status'] = 'error'
+            return
+
+        try:
+            from gqlalchemy import Memgraph
+            super_admin_upload_status['messages'].append("   ✓ Memgraph client loaded")
+        except ImportError as ie:
+            super_admin_upload_status['messages'].append(f"   ❌ Failed to load Memgraph: {str(ie)}")
+            super_admin_upload_status['error'] = f"Memgraph import error: {str(ie)}"
+            super_admin_upload_status['status'] = 'error'
+            return
 
         memgraph = Memgraph(
             host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
             port=int(os.getenv('MEMGRAPH_PORT', 7687))
         )
+        super_admin_upload_status['messages'].append("   ✓ Connected to Memgraph")
 
-        super_admin_upload_status['status'] = 'processing'
         total_imported = 0
 
         for idx, file_path in enumerate(file_paths):
@@ -3175,6 +3200,8 @@ def _process_documents_to_memgraph(file_paths):
                 error_msg = f"❌ Error processing {filename}: {str(e)[:100]}"
                 super_admin_upload_status['messages'].append(error_msg)
                 super_admin_upload_status['error'] = str(e)[:200]
+                import traceback
+                print(f"[DOCUMENT UPLOAD ERROR] {filename}: {traceback.format_exc()}", file=sys.stderr)
 
         # Complete
         super_admin_upload_status['status'] = 'complete'
@@ -3186,6 +3213,8 @@ def _process_documents_to_memgraph(file_paths):
         super_admin_upload_status['status'] = 'error'
         super_admin_upload_status['error'] = str(e)[:200]
         super_admin_upload_status['messages'].append(f"❌ Fatal error: {str(e)[:100]}")
+        import traceback
+        print(f"[FATAL UPLOAD ERROR] {traceback.format_exc()}", file=sys.stderr)
 
 
 @app.route('/super-admin/api/documents/status', methods=['GET'])
