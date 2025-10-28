@@ -27,7 +27,8 @@
       "Bash(poetry add:*)",
       "Bash(poetry init:*)",
       "Bash(poetry install:*)",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch:*)"
     ],
     "deny": [],
     "ask": []
