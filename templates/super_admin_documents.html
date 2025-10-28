@@ -188,7 +188,7 @@
             completionMessage.style.display = 'none';
             messagesLog.innerHTML = '<div>📤 Uploading files...</div>';
 
-            const response = await fetch('/upload/api/upload', {
+            const response = await fetch('/super-admin/api/documents/upload', {
                 method: 'POST',
                 body: formData
             });
@@ -256,22 +256,28 @@
 
             const documentsList = document.getElementById('documentsList');
             if (data.documents && data.documents.length > 0) {
-                documentsList.innerHTML = data.documents
+                documentsList.innerHTML = `
+                    <div class="bg-gray-700/30 p-4 rounded mb-4 border border-gray-700">
+                        <div class="text-sm text-gray-400">
+                            <span class="text-navy-400 font-semibold">${data.total}</span> documenten |
+                            <span class="text-navy-400 font-semibold">${data.total_articles}</span> artikelen geïndexeerd
+                        </div>
+                    </div>
+                ` + data.documents
                     .map(doc => `
                         <div class="flex justify-between items-center bg-gray-700/50 p-4 rounded hover:bg-gray-700 transition">
                             <div class="flex-1">
-                                <h4 class="font-semibold text-navy-400">📄 ${doc.filename}</h4>
-                                <div class="grid grid-cols-3 gap-2 mt-2 text-sm text-gray-400">
-                                    <div><span class="text-gray-500">CAO:</span> ${doc.cao_name}</div>
-                                    <div><span class="text-gray-500">Artikelen:</span> ${doc.article_count}</div>
-                                    <div><span class="text-gray-500">Upload:</span> ${new Date(doc.upload_date).toLocaleDateString('nl-NL')}</div>
+                                <h4 class="font-semibold text-navy-400">📄 ${doc.cao_name}</h4>
+                                <div class="grid grid-cols-2 gap-2 mt-2 text-sm text-gray-400">
+                                    <div><span class="text-gray-500">📊 Artikelen:</span> ${doc.article_count}</div>
+                                    <div><span class="text-gray-500">📅 Upload:</span> ${new Date(doc.upload_date).toLocaleDateString('nl-NL')}</div>
                                 </div>
                             </div>
                             <div class="ml-4 flex gap-2">
-                                <button onclick="renameDocument('${doc.cao_name}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
+                                <button onclick="renameDocument('${doc.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition text-sm">
                                     ✏️ Hernoem
                                 </button>
-                                <button onclick="deleteDocument('${doc.id}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition">
+                                <button onclick="deleteDocument('${doc.id}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition text-sm">
                                     🗑️ Verwijderen
                                 </button>
                             </div>
@@ -279,27 +285,28 @@
                     `)
                     .join('');
             } else {
-                documentsList.innerHTML = '<p class="text-gray-400">Geen documenten geïndexeerd</p>';
+                documentsList.innerHTML = '<p class="text-gray-400 text-center py-8">Geen documenten geïndexeerd. Upload de eerste CAO document hieronder.</p>';
             }
         } catch (error) {
             console.error('Error loading documents:', error);
+            document.getElementById('documentsList').innerHTML = '<p class="text-red-400">Fout bij laden van documenten</p>';
         }
     }
 
-    async function renameDocument(oldCaoName) {
-        const newName = prompt('Voer de nieuwe CAO naam in:', oldCaoName);
+    async function renameDocument(docId) {
+        const newName = prompt('Voer de nieuwe CAO naam in:');
 
-        if (!newName || newName === oldCaoName) {
+        if (!newName) {
             return;
         }
 
         try {
-            const response = await fetch(`/upload/api/documents/${encodeURIComponent(oldCaoName)}/rename`, {
+            const response = await fetch(`/super-admin/api/documents/${encodeURIComponent(docId)}/rename`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ new_name: newName })
+                body: JSON.stringify({ name: newName })
             });
 
             if (response.ok) {
@@ -316,20 +323,21 @@
     }
 
     async function deleteDocument(docId) {
-        if (!confirm('Weet u zeker dat u dit document wilt verwijderen?')) {
+        if (!confirm('Weet u zeker dat u dit document wilt verwijderen? Dit kan niet ongedaan gemaakt worden.')) {
             return;
         }
 
         try {
-            const response = await fetch(`/upload/api/documents/${docId}`, {
+            const response = await fetch(`/super-admin/api/documents/${docId}`, {
                 method: 'DELETE'
             });
 
             if (response.ok) {
-                alert('Document succesvol verwijderd');
+                alert('Document succesvol verwijderd uit Memgraph');
                 loadDocuments();
             } else {
-                alert('Fout bij verwijderen van document');
+                const error = await response.json();
+                alert('Fout bij verwijderen: ' + (error.error || 'onbekende fout'));
             }
         } catch (error) {
             console.error('Error deleting document:', error);

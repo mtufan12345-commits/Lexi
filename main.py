@@ -2984,10 +2984,222 @@ def get_uploaded_documents():
         }), 500
 
 
+@app.route('/super-admin/api/documents/upload', methods=['POST'])
+@csrf.exempt
+@super_admin_required
+def super_admin_upload_documents():
+    """Upload documents via Super Admin and import to Memgraph"""
+    import sys
+    import os
+    sys.path.insert(0, '/var/www/lexi')
+
+    try:
+        if 'files' not in request.files:
+            return jsonify({'error': 'No files provided'}), 400
+
+        files = request.files.getlist('files')
+        if not files or files[0].filename == '':
+            return jsonify({'error': 'No files selected'}), 400
+
+        # Save files temporarily and process
+        upload_dir = '/tmp/cao_import'
+        os.makedirs(upload_dir, exist_ok=True)
+
+        from werkzeug.utils import secure_filename
+        valid_files = []
+
+        for file in files:
+            if file and file.filename.endswith(('.pdf', '.txt', '.docx')):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(upload_dir, filename)
+                file.save(file_path)
+                valid_files.append(file_path)
+
+        if not valid_files:
+            return jsonify({'error': 'No valid PDF/TXT/DOCX files'}), 400
+
+        # Start background processing
+        import threading
+        thread = threading.Thread(
+            target=_process_documents_to_memgraph,
+            args=(valid_files,)
+        )
+        thread.daemon = True
+        thread.start()
+
+        return jsonify({
+            'message': 'Upload started',
+            'files_count': len(valid_files),
+            'status': 'processing'
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)[:200]}), 400
+
+
+def _process_documents_to_memgraph(file_paths):
+    """Process files and import to Memgraph"""
+    import sys
+    import os
+    sys.path.insert(0, '/var/www/lexi')
+
+    try:
+        from document_importer import parse_document, generate_embeddings, import_to_memgraph
+        from gqlalchemy import Memgraph
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        total_imported = 0
+
+        for file_path in file_paths:
+            try:
+                # Parse document
+                cao_name, chunks = parse_document(file_path)
+
+                if not chunks:
+                    print(f"No content extracted from {os.path.basename(file_path)}")
+                    continue
+
+                # Generate embeddings
+                embeddings_data = generate_embeddings(chunks)
+
+                # Import to Memgraph
+                imported = import_to_memgraph(memgraph, cao_name, embeddings_data)
+                total_imported += imported
+
+                print(f"✅ Imported {imported} articles from {cao_name}")
+
+            except Exception as e:
+                print(f"❌ Error processing {os.path.basename(file_path)}: {str(e)}")
+
+        print(f"✨ COMPLETE: {total_imported} articles indexed to Memgraph")
+
+    except Exception as e:
+        print(f"❌ Fatal error: {str(e)}")
+
+
+@app.route('/super-admin/api/documents/<doc_id>', methods=['DELETE'])
+@csrf.exempt
+@super_admin_required
+def super_admin_delete_document(doc_id):
+    """Delete a CAO document from Memgraph"""
+    import sys
+    import os
+    sys.path.insert(0, '/var/www/lexi')
+
+    try:
+        from gqlalchemy import Memgraph
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Get all CAOs and find the one to delete by index
+        all_caos = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            RETURN cao.name as cao_name
+            ORDER BY cao.name
+        """))
+
+        # Parse doc_id (format: doc_1, doc_2, etc.)
+        try:
+            doc_index = int(doc_id.replace('doc_', '')) - 1
+        except:
+            return jsonify({'error': 'Invalid document ID format'}), 400
+
+        if doc_index < 0 or doc_index >= len(all_caos):
+            return jsonify({'error': 'Document not found'}), 404
+
+        cao_to_delete = all_caos[doc_index]['cao_name']
+
+        # Delete CAO and all related articles from Memgraph
+        result = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO {name: $cao_name})
+            DETACH DELETE cao
+            RETURN 1
+        """, {'cao_name': cao_to_delete}))
+
+        if not result:
+            return jsonify({'error': 'Document not found'}), 404
+
+        return jsonify({
+            'message': f'Document "{cao_to_delete}" deleted successfully',
+            'status': 'deleted'
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)[:200]}), 400
+
+
+@app.route('/super-admin/api/documents/<doc_id>/rename', methods=['PUT'])
+@csrf.exempt
+@super_admin_required
+def super_admin_rename_document(doc_id):
+    """Rename a CAO document in Memgraph"""
+    import sys
+    import os
+    sys.path.insert(0, '/var/www/lexi')
+
+    try:
+        from gqlalchemy import Memgraph
+
+        data = request.get_json()
+        new_name = data.get('name', '').strip()
+
+        if not new_name:
+            return jsonify({'error': 'New name is required'}), 400
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Get all CAOs and find the one to rename by index
+        all_caos = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            RETURN cao.name as cao_name
+            ORDER BY cao.name
+        """))
+
+        # Parse doc_id
+        try:
+            doc_index = int(doc_id.replace('doc_', '')) - 1
+        except:
+            return jsonify({'error': 'Invalid document ID format'}), 400
+
+        if doc_index < 0 or doc_index >= len(all_caos):
+            return jsonify({'error': 'Document not found'}), 404
+
+        old_name = all_caos[doc_index]['cao_name']
+
+        # Update CAO name in Memgraph
+        result = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO {name: $old_name})
+            SET cao.name = $new_name
+            RETURN cao.name as updated_name
+        """, {'old_name': old_name, 'new_name': new_name}))
+
+        if not result:
+            return jsonify({'error': 'Document not found'}), 404
+
+        return jsonify({
+            'message': f'Document renamed successfully',
+            'old_name': old_name,
+            'new_name': new_name
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)[:200]}), 400
+
+
 @app.route('/upload/api/documents/<doc_id>', methods=['DELETE'])
 @csrf.exempt
 def delete_document(doc_id):
-    """Delete a document from tracking"""
+    """Delete a document from tracking (legacy)"""
     import sys
     sys.path.insert(0, '/var/www/lexi')
     try:
