@@ -273,7 +273,7 @@ Return JSON:
         try:
             # Create CAO node
             list(self.memgraph.execute_and_fetch(f"""
-                MERGE (cao:CAO {{name: '{document_name}', processed_at: datetime()}})
+                MERGE (cao:CAO {{name: '{document_name}'}})
             """))
             print(f"   ✓ CAO node created")
 
