@@ -215,35 +215,74 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
             else:
                 embedding = self.embedding_model.encode(message, convert_to_tensor=False).tolist()
 
-            # 2. Query Memgraph for relevant context (vector + graph traversal)
-            cypher = """
-            CALL vector.search('cao_embeddings', $embedding, 10)
-            YIELD node, similarity
-            WHERE similarity > 0.65
-            WITH node, similarity
-            ORDER BY similarity DESC
-            LIMIT 5
-
-            OPTIONAL MATCH (node)-[:REFERENCES|APPLIES_TO|EXCEPTION]-(related:Article)
-            WHERE related.cao = node.cao OR related.cao IS NULL
-
-            RETURN
-                node.text AS text,
-                node.article_number AS article,
-                node.cao AS cao,
-                similarity,
-                collect(DISTINCT related.text)[0..2] AS related_articles
-            """
+            # 2. Query Memgraph for relevant context (Voyage AI semantic matching)
+            # Extract keywords from query for better matching
+            query_keywords = message.lower().split()
 
             try:
+                # Try vector search first (if available)
+                cypher = """
+                CALL vector.search('cao_embeddings', $embedding, 10)
+                YIELD node, similarity
+                WHERE similarity > 0.65
+                WITH node, similarity
+                ORDER BY similarity DESC
+                LIMIT 5
+
+                OPTIONAL MATCH (node)-[:REFERENCES|APPLIES_TO|EXCEPTION]-(related:Artikel)
+                WHERE related.cao = node.cao OR related.cao IS NULL
+
+                RETURN
+                    node.text AS text,
+                    node.article_number AS article,
+                    node.cao AS cao,
+                    similarity,
+                    collect(DISTINCT related.title)[0..2] AS related_articles
+                """
+
                 results = list(self.memgraph.execute_and_fetch(
                     cypher,
                     {'embedding': embedding}
                 ))
             except Exception as e:
-                # Fallback: als vector search niet werkt, gebruik simpele text match
-                print(f"⚠️  Vector search failed: {e}, using fallback")
+                # Fallback: Use semantic title/section matching from Artikel nodes
+                print(f"⚠️  Vector search unavailable: {e}, using title/section matching")
                 results = []
+
+                try:
+                    # Simple fallback: search by title and section keywords
+                    all_articles = list(self.memgraph.execute_and_fetch(
+                        "MATCH (cao:CAO)-[:CONTAINS_ARTIKEL]->(a:Artikel) RETURN a.title AS text, a.number AS article, cao.name AS cao, a.section AS section, a.tags AS tags"
+                    ))
+
+                    # Score articles based on keyword matching
+                    scored = []
+                    for art in all_articles:
+                        score = 0
+                        title_lower = (art['text'] or '').lower()
+                        section_lower = (art['section'] or '').lower()
+                        tags_lower = (art['tags'] or '').lower()
+
+                        for kw in query_keywords:
+                            if len(kw) > 2:  # Skip small words
+                                if kw in title_lower:
+                                    score += 3
+                                if kw in section_lower:
+                                    score += 2
+                                if kw in tags_lower:
+                                    score += 2
+
+                        if score > 0:
+                            art['similarity'] = score
+                            art['related_articles'] = [art['section']]
+                            scored.append(art)
+
+                    # Sort by score and return top 5
+                    results = sorted(scored, key=lambda x: x['similarity'], reverse=True)[:5]
+
+                except Exception as e2:
+                    print(f"⚠️  Keyword matching failed: {e2}")
+                    results = []
 
             # 3. Build context from results
             context_parts = []
