@@ -85,7 +85,8 @@ app.config['WTF_CSRF_SSL_STRICT'] = False
 
 # Session Cookie Security (Enhanced)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Lax for Stripe redirects compatibility
-app.config['SESSION_COOKIE_SECURE'] = True  # Always require HTTPS
+# Secure cookies only in production (HTTPS), allow HTTP in development
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('ENVIRONMENT') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
 # Don't set SESSION_COOKIE_DOMAIN - let Flask use the request host
 # This prevents issues with apex domains (lexiai.nl) vs subdomains (company.lexiai.nl)
