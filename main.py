@@ -150,6 +150,15 @@ def load_user(user_id):
         return super_admin
     return User.query.get(int(user_id))
 
+@login_manager.unauthorized_handler
+def unauthorized():
+    """Custom unauthorized handler - redirect to correct login page"""
+    # If accessing super-admin routes, redirect to super-admin login
+    if request.path.startswith('/super-admin'):
+        return redirect(url_for('super_admin_login', next=request.path))
+    # Otherwise redirect to normal login
+    return redirect(url_for('login', next=request.path))
+
 def get_max_users_for_tier(tier):
     """Get max users allowed for a subscription tier"""
     tier_limits = {
