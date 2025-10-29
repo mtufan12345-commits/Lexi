@@ -1,0 +1,308 @@
+================================================================================
+                 LEXI AI - QUICK REFERENCE & COMMANDS
+================================================================================
+
+GENERATED: 2025-10-29 21:13:00 UTC
+
+================================================================================
+CRITICAL ISSUES (3 Total)
+================================================================================
+
+1. WORKER TIMEOUTS (Every 15-20 min during batch imports)
+   FIX: Increase gunicorn timeout from 120 to 300 seconds
+   FILE: /var/www/lexi/gunicorn.conf.py (line 34)
+
+2. MEMORY EXHAUSTION (Workers killing due to OOM)
+   FIX: Reduce max_requests from 1000 to 500
+   FILE: /var/www/lexi/gunicorn.conf.py (line 74)
+
+3. DEBUG MODE ENABLED (Adds 100-200 MB overhead)
+   FIX: Remove FLASK_DEBUG=1 from systemd service
+   FILE: /etc/systemd/system/lexi.service
+
+================================================================================
+IMPLEMENT ALL 3 FIXES (5 minutes total)
+================================================================================
+
+# 1. Edit gunicorn config
+nano /var/www/lexi/gunicorn.conf.py
+
+  # Find line 34 and change:
+  timeout = 120        →  timeout = 300
+  
+  # Find line 38 and change:
+  graceful_timeout = 120  →  graceful_timeout = 300
+  
+  # Find line 74 and change:
+  max_requests = int(os.getenv('MAX_REQUESTS', 1000))
+  →  max_requests = int(os.getenv('MAX_REQUESTS', 500))
+
+# 2. Edit systemd service
+nano /etc/systemd/system/lexi.service
+
+  # Remove or comment out this line:
+  Environment="FLASK_DEBUG=1"
+
+# 3. Reload and restart
+systemctl daemon-reload
+systemctl restart lexi
+
+# 4. Verify restart was successful
+systemctl status lexi
+curl http://localhost:5000/
+
+================================================================================
+QUICK COMMAND REFERENCE
+================================================================================
+
+SERVICE MANAGEMENT
+──────────────────
+systemctl status lexi                    # Check service status
+systemctl start lexi                     # Start service
+systemctl stop lexi                      # Stop service
+systemctl restart lexi                   # Restart service
+systemctl enable lexi                    # Enable auto-start on boot
+
+VIEWING LOGS
+────────────
+journalctl -u lexi -f                    # Live logs (follow)
+journalctl -u lexi -n 50                 # Last 50 lines
+journalctl -u lexi --since "1 hour ago"  # Last hour
+journalctl -u lexi | grep ERROR          # Show errors only
+tail -f /var/log/lexi/*.log              # Tail all lexi logs
+
+MONITORING
+──────────
+ps aux | grep gunicorn                   # List worker processes
+ps aux | grep memgraph                   # List memgraph processes
+free -h                                  # Memory usage
+df -h                                    # Disk usage
+top -p $(pgrep -d ',' gunicorn)          # Monitor gunicorn processes
+watch -n 1 'ps aux | grep gunicorn'      # Continuous monitoring
+
+PERFORMANCE CHECKS
+──────────────────
+curl http://localhost:5000/              # Test Flask app
+curl localhost:7444                      # Test Memgraph Lab
+ss -tulpn | grep 5000                    # Check port 5000
+ss -tulpn | grep 7687                    # Check port 7687
+
+DATABASE CHECKS
+───────────────
+# PostgreSQL (requires psql)
+psql -h ep-wandering-sun-a6asxcto.us-west-2.aws.neon.tech -U neondb_owner -d neondb
+
+# Memgraph (Python)
+python3 << 'PYTHON'
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+result = s.connect_ex(('127.0.0.1', 7687))
+print("Connected" if result == 0 else "Failed")
+s.close()
+PYTHON
+
+CONFIGURATION
+──────────────
+cat /var/www/lexi/.env                   # View environment config
+cat /var/www/lexi/gunicorn.conf.py       # View gunicorn config
+cat /etc/systemd/system/lexi.service     # View systemd service
+cat /etc/supervisor/conf.d/monitor.conf  # View supervisor config
+
+MAINTENANCE
+────────────
+# Clean cache
+rm -rf /var/www/lexi/__pycache__/*
+python3 -m py_compile /var/www/lexi/*.py
+
+# View disk usage
+du -sh /var/www/lexi
+du -sh /var/log/lexi
+
+# Rotate logs manually
+systemctl restart lexi  # Triggers log rotation
+
+FILE LOCATIONS
+──────────────
+App root:         /var/www/lexi/
+Log directory:    /var/log/lexi/
+Config:           /var/www/lexi/gunicorn.conf.py
+Service:          /etc/systemd/system/lexi.service
+Supervisor:       /etc/supervisor/conf.d/monitor.conf
+Environment:      /var/www/lexi/.env
+Database backup:  /var/www/lexi/db/
+
+BATCH PROCESSING
+─────────────────
+# View batch status
+cat /var/log/lexi/batch_report.txt
+
+# Latest import log
+tail -50 /var/log/lexi/safe_import.log
+
+# Monitor import progress
+watch -n 5 'tail -20 /var/log/lexi/safe_import.log'
+
+# Check document processing
+cat /var/log/lexi/deepseek_batch.log
+
+EMERGENCY PROCEDURES
+────────────────────
+
+RESTART SERVICE
+  systemctl restart lexi
+
+KILL STUCK WORKERS
+  pkill -9 gunicorn
+  sleep 5
+  systemctl start lexi
+
+CLEAR LOGS
+  truncate -s 0 /var/log/lexi/*.log
+  systemctl restart lexi
+
+REVERT CHANGES
+  # Restore from backup
+  cp /var/www/lexi/gunicorn.conf.py.bak /var/www/lexi/gunicorn.conf.py
+  systemctl restart lexi
+
+SAFE MODE (Single Worker)
+  GUNICORN_WORKERS=1 systemctl restart lexi
+
+================================================================================
+KEY METRICS
+================================================================================
+
+HEALTHY RANGES:
+  Memory usage:    < 50% (currently 13.5%)
+  Disk usage:      < 80% (currently 40.4%)
+  CPU load:        < 4.0 (currently 0.20)
+  Worker memory:   < 800 MB per worker (currently 598 MB)
+
+PERFORMANCE TARGETS:
+  API response time:  < 2 seconds
+  Batch import:       > 100 articles/hour (currently 104)
+  Worker uptime:      > 1 hour (before recycling)
+  Timeout incidents:  0 (currently ~1 per 15-20 min)
+
+================================================================================
+DEBUGGING SINGLE ISSUES
+================================================================================
+
+WORKER TIMEOUT ERROR
+  Error: "WORKER TIMEOUT (pid:XXXX)"
+  Cause: Request took > 120 seconds
+  Fix: Increase timeout to 300s (see above)
+
+OUT OF MEMORY ERROR
+  Error: "Worker was sent SIGKILL! Perhaps out of memory?"
+  Cause: Worker memory > system limits
+  Fix: Reduce max_requests to 500 (see above)
+
+API NOT RESPONDING
+  Error: Connection refused on port 5000
+  Fix: systemctl restart lexi
+       Check logs: journalctl -u lexi -f
+
+MEMGRAPH NOT CONNECTING
+  Error: "Cannot connect to 127.0.0.1:7687"
+  Fix: Check docker: docker ps | grep memgraph
+       Check port: ss -tulpn | grep 7687
+       Restart: docker restart memgraph
+
+DATABASE CONNECTION ERROR
+  Error: "psycopg2.OperationalError"
+  Fix: Check network connectivity to Neon Cloud
+       Verify DATABASE_URL in .env
+       Check SSL certificate
+
+HIGH MEMORY USAGE
+  Symptom: Free memory < 2 GB
+  Fix: systemctl restart lexi
+       Monitor: watch -n 1 'free -h'
+
+SLOW BATCH IMPORTS
+  Symptom: Processing < 50 articles/hour
+  Cause: API rate limiting or large documents
+  Fix: Check /var/log/lexi/deepseek_batch.log
+       Monitor API quota usage
+       Consider smaller batch sizes
+
+================================================================================
+REPORTS & DOCUMENTATION
+================================================================================
+
+FULL HEALTH CHECK
+  File: /var/www/lexi/HEALTH_CHECK_REPORT_2025-10-29.txt
+  Content: Complete system analysis, all services, recommendations
+
+QUICK INDEX
+  File: /var/www/lexi/DIAGNOSTICS_INDEX.md
+  Content: Quick reference, status summary, quick fixes
+
+THIS FILE
+  File: /var/www/lexi/QUICK_REFERENCE.txt
+  Content: Commands, troubleshooting, procedures
+
+DEPLOYMENT GUIDE
+  File: /var/www/lexi/DEPLOYMENT_GUIDE.md
+  Content: Production deployment instructions
+
+OPERATIONS
+  File: /var/www/lexi/OPERATIONS.md
+  Content: Daily operations guide
+
+SERVER MANAGEMENT
+  File: /var/www/lexi/SERVER_MANAGEMENT.md
+  Content: Server administration procedures
+
+================================================================================
+SUPPORT & ESCALATION
+================================================================================
+
+Level 1 - Self Service
+  1. Check this quick reference
+  2. View logs: journalctl -u lexi -f
+  3. Restart service: systemctl restart lexi
+  4. Read HEALTH_CHECK_REPORT_2025-10-29.txt
+
+Level 2 - System Issues
+  1. Check disk space: df -h
+  2. Check memory: free -h
+  3. Check processes: ps aux | grep -E "gunicorn|memgraph"
+  4. Verify databases are connected
+
+Level 3 - Critical Issues
+  1. Save logs: journalctl -u lexi -n 1000 > /tmp/lexi_logs.txt
+  2. Contact system administrator
+  3. Provide timestamp of issue
+  4. Include error messages and logs
+
+================================================================================
+SCHEDULE MAINTENANCE
+================================================================================
+
+DAILY (Automated)
+  - Server monitor checks every 60 seconds
+  - Kill stuck processes automatically
+  - Log health metrics
+
+WEEKLY
+  - Review logs and errors
+  - Check disk usage trends
+  - Monitor import success rate
+
+MONTHLY
+  - Run full health check
+  - Update documentation
+  - Optimize database queries
+  - Plan improvements
+
+QUARTERLY
+  - Major version updates
+  - Security patches
+  - Performance optimization
+  - Capacity planning
+
+================================================================================
+LAST UPDATE: 2025-10-29 21:13:00 UTC
+================================================================================
