@@ -72,6 +72,7 @@ class MemgraphDeepSeekService:
         self.memgraph = None
         self.embedding_model = None
         self.voyage_client = None
+        self.enabled = False  # Always initialize to prevent AttributeError
 
         try:
             # Import dependencies
