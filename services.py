@@ -118,7 +118,7 @@ class MemgraphDeepSeekService:
             print(f"✓ Embedding model loaded (dim={self.embedding_model.get_sentence_embedding_dimension()})")
 
             # Voyage AI (Production Grade Legal Embeddings)
-            voyage_api_key = os.getenv('VOYAGE_AI_API_KEY')
+            voyage_api_key = os.getenv('VOYAGE_AI_API_KEY') or os.getenv('VOYAGE_API_KEY')
             if voyage_api_key:
                 try:
                     self.voyage_client = VoyageClient(api_key=voyage_api_key)
