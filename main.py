@@ -230,7 +230,8 @@ def validate_host_header():
 def load_tenant():
     g.tenant = None
     g.is_super_admin = session.get('is_super_admin', False)
-    
+    print(f"[DEBUG] load_tenant - session keys: {list(session.keys())}, is_super_admin: {g.is_super_admin}")
+
     if g.is_super_admin:
         return
     
@@ -847,17 +848,26 @@ def super_admin_login():
             print(f"  Password valid: {password_valid}")
             
             if password_valid:
-                # CRITICAL: Set session to permanent BEFORE login_user to ensure persistence
-                session.permanent = True
+                # FIX: Clear old session and set fresh login session
+                session.clear()
+
+                # Set all session data at once
                 session['super_admin_id'] = admin.id
                 session['is_super_admin'] = True
-                session.modified = True
+                session.permanent = True
+
+                # Force Flask to regenerate the session
                 login_user(admin, remember=True)
+
+                # Explicitly mark as modified to ensure cookie is set
+                session.modified = True
+
                 print(f"  ✅ Login successful for {email}")
-                print(f"  Session after login: is_super_admin={session.get('is_super_admin')}")
-                print(f"  Flask-Login remembered: {current_user.is_authenticated}")
-                print(f"  Request host: {request.host}")
-                return redirect(url_for('super_admin_dashboard'))
+                print(f"  Session after login - keys: {list(session.keys())}, permanent: {session.permanent}")
+                print(f"  Flask-Login authenticated: {current_user.is_authenticated}")
+
+                response = redirect(url_for('super_admin_dashboard'))
+                return response
             else:
                 print(f"  ❌ Password INCORRECT for {email}")
         else:
