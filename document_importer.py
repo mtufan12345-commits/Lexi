@@ -77,21 +77,36 @@ def extract_article_number(text: str) -> str:
     return "UNKNOWN"
 
 def generate_embeddings(chunks: List[str]) -> List[Dict]:
-    """Generate embeddings for text chunks"""
+    """Generate embeddings for text chunks (batch processing to save memory)"""
     result = []
+    batch_size = 32  # Process chunks in batches to avoid OOM
 
     try:
         from sentence_transformers import SentenceTransformer
         print("   ⏳ Loading embedding model...")
         model = SentenceTransformer('intfloat/multilingual-e5-large')
-        embeddings = model.encode(chunks, show_progress_bar=False)
 
-        for chunk, embedding in zip(chunks, embeddings):
-            result.append({
-                'text': chunk,
-                'article_number': extract_article_number(chunk),
-                'embedding': embedding.tolist()
-            })
+        # Process in batches to avoid loading all embeddings in memory at once
+        total_chunks = len(chunks)
+        for batch_start in range(0, total_chunks, batch_size):
+            batch_end = min(batch_start + batch_size, total_chunks)
+            batch_chunks = chunks[batch_start:batch_end]
+
+            # Encode this batch
+            embeddings = model.encode(batch_chunks, show_progress_bar=False)
+
+            # Add to results
+            for chunk, embedding in zip(batch_chunks, embeddings):
+                result.append({
+                    'text': chunk,
+                    'article_number': extract_article_number(chunk),
+                    'embedding': embedding.tolist()
+                })
+
+            # Progress indicator
+            progress = min(batch_end, total_chunks)
+            if progress % 128 == 0 or progress == total_chunks:
+                print(f"   ⏳ Processed {progress}/{total_chunks} chunks...")
 
         print(f"   ✅ Generated embeddings for {len(result)} chunks")
         return result
