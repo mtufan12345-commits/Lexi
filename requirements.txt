@@ -25,7 +25,7 @@ psycopg2-binary==2.9.9
 gqlalchemy==1.6.0
 
 # AI & Machine Learning
-sentence-transformers==2.2.2
+sentence-transformers==5.1.2
 torch==2.1.0
 httpx==0.25.2
 
