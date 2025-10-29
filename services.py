@@ -71,12 +71,14 @@ class MemgraphDeepSeekService:
 
         self.memgraph = None
         self.embedding_model = None
+        self.voyage_client = None
 
         try:
             # Import dependencies
             try:
                 from gqlalchemy import Memgraph
                 from sentence_transformers import SentenceTransformer
+                from voyageai import Client as VoyageClient
             except ImportError as e:
                 print(f"❌ Missing dependencies: {e}")
                 print("Install with: pip install gqlalchemy sentence-transformers torch")
@@ -109,11 +111,24 @@ class MemgraphDeepSeekService:
                 print(f"   Start Memgraph: docker run -p 7687:7687 memgraph/memgraph-platform")
                 raise
 
-            # Load embedding model (multilingual, optimized for Dutch)
+            # Load embedding model (multilingual, optimized for Dutch - LEGACY FALLBACK)
             embedding_model_name = os.getenv('EMBEDDING_MODEL', 'intfloat/multilingual-e5-large')
             print(f"Loading embedding model: {embedding_model_name}...")
             self.embedding_model = SentenceTransformer(embedding_model_name)
             print(f"✓ Embedding model loaded (dim={self.embedding_model.get_sentence_embedding_dimension()})")
+
+            # Voyage AI (Production Grade Legal Embeddings)
+            voyage_api_key = os.getenv('VOYAGE_AI_API_KEY')
+            if voyage_api_key:
+                try:
+                    self.voyage_client = VoyageClient(api_key=voyage_api_key)
+                    self.voyage_model = os.getenv('VOYAGE_AI_MODEL', 'voyage-law-2')
+                    print(f"✓ Voyage AI initialized (model: {self.voyage_model})")
+                except Exception as e:
+                    print(f"⚠️  Voyage AI init failed: {e} - using fallback embeddings")
+                    self.voyage_client = None
+            else:
+                print("⚠️  VOYAGE_AI_API_KEY not set - using fallback embeddings")
 
             # DeepSeek API configuration
             self.deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
@@ -162,6 +177,7 @@ Dit creëert automatisch een downloadbaar document voor de gebruiker.
 Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw op je analyse."""
 
             self.enabled = True
+            print(f"✓ Memgraph + DeepSeek RAG initialized (Voyage AI: {'✓' if self.voyage_client else '⚠️  fallback'})")
             self._initialized = True
             print("✓ Memgraph + DeepSeek RAG initialized successfully (singleton)")
 
@@ -188,8 +204,16 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
             return "Lexi is momenteel niet beschikbaar. Controleer de Memgraph en DeepSeek configuratie."
 
         try:
-            # 1. Generate embedding for user query
-            embedding = self.embedding_model.encode(message, convert_to_tensor=False).tolist()
+            # 1. Generate embedding for user query (Voyage AI preferred)
+            if self.voyage_client:
+                try:
+                    result = self.voyage_client.embed([message], model=self.voyage_model)
+                    embedding = result.embeddings[0]
+                except Exception as e:
+                    print(f"⚠️  Voyage AI embedding failed: {e}, using fallback")
+                    embedding = self.embedding_model.encode(message, convert_to_tensor=False).tolist()
+            else:
+                embedding = self.embedding_model.encode(message, convert_to_tensor=False).tolist()
 
             # 2. Query Memgraph for relevant context (vector + graph traversal)
             cypher = """

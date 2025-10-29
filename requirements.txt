@@ -28,6 +28,7 @@ gqlalchemy==1.6.0
 sentence-transformers==5.1.2
 torch==2.1.0
 httpx==0.25.2
+voyageai==0.3.1
 
 # Payments & Email
 stripe==13.0.1
