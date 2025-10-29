@@ -207,10 +207,70 @@ class SupportTicket(db.Model):
 
 class SupportReply(db.Model):
     __tablename__ = 'support_replies'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('support_tickets.id'), nullable=False)
     message = db.Column(db.Text, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     sender_name = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Document(db.Model):
+    """
+    CAO Document Upload Tracking with Automatic Processing Pipeline
+
+    Tracks:
+    - File metadata (name, type, upload info)
+    - Processing phases (chunking → embedding → R1 analysis → graph building)
+    - Graph statistics (nodes, relations, articles created)
+    - R1 analysis results (structured metadata)
+    - Error tracking and validation
+
+    Super admin uploads → automatic pipeline handles rest
+    """
+    __tablename__ = 'documents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    cao_type = db.Column(db.String(50), nullable=False)  # ABU, NBBU, Glastuinbouw, etc.
+
+    # Upload info
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('super_admins.id'), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Processing phase tracking
+    status = db.Column(db.String(50), default='uploaded', nullable=False)
+    # Status values: 'uploaded' → 'chunking' → 'embedding' → 'saving_chunks'
+    # → 'analyzing_structure' → 'building_graph' → 'validating'
+    # → 'complete' (or 'complete_with_warnings' or 'error')
+    # Also: 'rebuilding_graph' (for manual rebuild)
+
+    # Processing metrics
+    total_chunks = db.Column(db.Integer, nullable=True)
+
+    # Graph structure metrics
+    graph_nodes = db.Column(db.Integer, nullable=True)
+    graph_relations = db.Column(db.Integer, nullable=True)
+    graph_articles = db.Column(db.Integer, nullable=True)
+
+    # R1 Analysis results (JSON)
+    r1_analysis = db.Column(db.Text, nullable=True)  # Serialized JSON with cao metadata + artikelen + relaties
+    r1_tokens_used = db.Column(db.Integer, nullable=True)
+
+    # Validation
+    validation_passed = db.Column(db.Boolean, nullable=True)
+    validation_warnings = db.Column(db.Text, nullable=True)  # JSON list of warning strings
+
+    # Error tracking
+    error_message = db.Column(db.Text, nullable=True)
+    error_phase = db.Column(db.String(50), nullable=True)  # Which phase failed
+
+    # Completion
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    # Indexes for performance
+    __table_args__ = (
+        db.Index('idx_documents_status', 'status'),
+        db.Index('idx_documents_cao_type', 'cao_type'),
+        db.Index('idx_documents_uploaded_at', 'uploaded_at'),
+    )

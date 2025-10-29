@@ -11,6 +11,28 @@ from PyPDF2 import PdfReader
 from docx import Document
 import threading
 
+# Load environment variables from .env file
+# Always use manual loading to ensure environment variables are set in subprocess context
+env_file = '/var/www/lexi/.env'
+if os.path.exists(env_file):
+    with open(env_file, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, val = line.split('=', 1)
+                key = key.strip()
+                val = val.strip().strip('"\'')
+                # Only set if not already in environment (prefer shell-set vars)
+                if key not in os.environ:
+                    os.environ[key] = val
+
+# Also try python-dotenv as backup
+try:
+    from dotenv import load_dotenv
+    load_dotenv('/var/www/lexi/.env')
+except ImportError:
+    pass
+
 # Productie Stripe key heeft voorrang over test key
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY_PROD') or os.getenv('STRIPE_SECRET_KEY', '')
 
@@ -292,6 +314,345 @@ Gebruik alle beschikbare documenten optimaal. Je bent expert-niveau - vertrouw o
             import traceback
             traceback.print_exc()
             return "Er ging iets mis bij het verwerken van je vraag. Probeer het opnieuw."
+
+
+class DeepSeekR1Client:
+    """
+    DeepSeek R1 (Reasoning Model) Client for Automatic CAO Structure Analysis
+
+    Specialized for analyzing document chunks and extracting:
+    - CAO metadata (name, version, type, sector, date)
+    - Article identification and proper numbering
+    - Article relationships and cross-references
+    - Document structure hierarchy
+
+    Uses DeepSeek R1 (deepseek-reasoner) for structured, reasoning-based analysis.
+    This model thinks deeply before answering, ensuring accurate document indexing.
+
+    Critical for GraphRAG: Proper extraction ensures high-quality graph structure
+    and better retrieval relevance.
+    """
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        """Thread-safe singleton implementation"""
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        """Initialize DeepSeek R1 client"""
+        if self._initialized:
+            return
+
+        self.deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
+        self.deepseek_api_url = os.getenv('DEEPSEEK_API_URL', 'https://api.deepseek.com/v1/chat/completions')
+        self.deepseek_r1_model = 'deepseek-reasoner'  # Reasoning model
+
+        if not self.deepseek_api_key:
+            print("⚠️  DEEPSEEK_API_KEY not set - R1 analysis will not work")
+            self.enabled = False
+        else:
+            self.enabled = True
+            print(f"✓ DeepSeek R1 Client initialized (model: {self.deepseek_r1_model})")
+
+        self._initialized = True
+
+    def analyze_cao_structure(self, chunks: list, document_name: str, cao_type: str = None) -> dict:
+        """
+        Analyze document chunks using DeepSeek R1 to extract CAO structure
+
+        Args:
+            chunks: List of text chunks from document
+            document_name: Name of the uploaded document
+            cao_type: Type of CAO (NBBU, ABU, Glastuinbouw, etc.) if known
+
+        Returns:
+            {
+                'success': bool,
+                'cao_metadata': {
+                    'name': str,
+                    'type': str,
+                    'version': str,
+                    'effective_date': str,
+                    'sector': str,
+                    'description': str
+                },
+                'artikelen': [
+                    {
+                        'article_number': str,
+                        'title': str,
+                        'content_preview': str,
+                        'chunk_indices': [int],
+                        'section': str,
+                        'tags': [str]
+                    }
+                ],
+                'relaties': [
+                    {
+                        'source_article': str,
+                        'target_article': str,
+                        'relation_type': str,
+                        'description': str
+                    }
+                ],
+                'validation': {
+                    'total_articles_found': int,
+                    'coverage_percentage': float,
+                    'warnings': [str]
+                },
+                'tokens_used': int,
+                'processing_time': float
+            }
+        """
+        if not self.enabled:
+            return {
+                'success': False,
+                'error': 'DeepSeek R1 client not initialized',
+                'tokens_used': 0
+            }
+
+        import time
+        start_time = time.time()
+
+        try:
+            # Prepare chunks summary for analysis
+            chunks_text = "\n\n---CHUNK SEPARATOR---\n\n".join(
+                f"[CHUNK {i}]\n{chunk[:1000]}"
+                for i, chunk in enumerate(chunks[:50])  # Limit to first 50 chunks for analysis
+            )
+
+            # Create analysis prompt for R1 reasoning
+            analysis_prompt = f"""Analyze this legal document (CAO/collective labor agreement) and extract its structure.
+
+DOCUMENT: {document_name}
+CAO TYPE: {cao_type or 'Unknown'}
+
+CONTENT CHUNKS:
+{chunks_text}
+
+ANALYZE AND EXTRACT:
+
+1. **CAO METADATA**:
+   - Official name
+   - Type (NBBU, ABU, Glastuinbouw, etc.)
+   - Version number if present
+   - Effective date range
+   - Sector/Industry
+   - Brief description
+
+2. **ARTICLES** (Extract all article numbers and info):
+   For each article found, provide:
+   - Article number (e.g., "Article 1", "Artikel 1.2", etc.)
+   - Article title
+   - Which chunks contain this article (by chunk number)
+   - Section it belongs to
+   - Tags (e.g., "wages", "leave", "termination", etc.)
+
+3. **RELATIONSHIPS**:
+   - Which articles reference or depend on each other
+   - Cross-references and related topics
+   - Hierarchical structure (if any)
+
+4. **VALIDATION**:
+   - Estimate total articles in document (including parts you haven't seen)
+   - Estimated coverage percentage from chunks provided
+   - Any warnings or issues with document structure
+
+RESPOND IN STRICT JSON FORMAT:
+{{
+    "cao_metadata": {{
+        "name": "...",
+        "type": "...",
+        "version": "...",
+        "effective_date": "...",
+        "sector": "...",
+        "description": "..."
+    }},
+    "artikelen": [
+        {{"article_number": "...", "title": "...", "chunk_indices": [...], "section": "...", "tags": [...]}}
+    ],
+    "relaties": [
+        {{"source_article": "...", "target_article": "...", "relation_type": "...", "description": "..."}}
+    ],
+    "validation": {{
+        "total_articles_estimated": 123,
+        "coverage_percentage": 45.5,
+        "warnings": ["..."]
+    }}
+}}"""
+
+            # Call DeepSeek R1 API
+            import httpx
+
+            response_text = ""
+            total_tokens = 0
+
+            with httpx.stream(
+                'POST',
+                self.deepseek_api_url,
+                headers={
+                    'Authorization': f'Bearer {self.deepseek_api_key}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'model': self.deepseek_r1_model,
+                    'messages': [
+                        {
+                            'role': 'user',
+                            'content': analysis_prompt
+                        }
+                    ],
+                    'temperature': 0.1,  # Low temperature for consistent reasoning
+                    'max_tokens': 8000,  # Allow detailed analysis
+                    'stream': True
+                },
+                timeout=300  # 5 minute timeout for reasoning
+            ) as response:
+                response.raise_for_status()
+
+                for line in response.iter_lines():
+                    if not line:
+                        continue
+
+                    if line.startswith('data: '):
+                        data_str = line[6:]
+
+                        if data_str.strip() == '[DONE]':
+                            break
+
+                        try:
+                            chunk = json.loads(data_str)
+                            if chunk.get('choices') and len(chunk['choices']) > 0:
+                                delta = chunk['choices'][0].get('delta', {})
+                                content = delta.get('content')
+                                if content:
+                                    response_text += content
+
+                                # Track token usage
+                                if chunk.get('usage'):
+                                    total_tokens = chunk['usage'].get('total_tokens', 0)
+                        except json.JSONDecodeError:
+                            continue
+
+            # Parse R1 response
+            # Extract JSON from response (R1 may include reasoning before JSON)
+            import re
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+
+            if not json_match:
+                return {
+                    'success': False,
+                    'error': 'Could not parse R1 response as JSON',
+                    'raw_response': response_text[:500],
+                    'tokens_used': total_tokens,
+                    'processing_time': time.time() - start_time
+                }
+
+            analysis_result = json.loads(json_match.group())
+
+            # Validate and enrich result
+            result = {
+                'success': True,
+                'cao_metadata': analysis_result.get('cao_metadata', {}),
+                'artikelen': analysis_result.get('artikelen', []),
+                'relaties': analysis_result.get('relaties', []),
+                'validation': analysis_result.get('validation', {
+                    'total_articles_estimated': len(analysis_result.get('artikelen', [])),
+                    'coverage_percentage': 100.0,
+                    'warnings': []
+                }),
+                'tokens_used': total_tokens,
+                'processing_time': time.time() - start_time
+            }
+
+            print(f"✓ R1 Analysis complete: {len(result['artikelen'])} articles extracted, {total_tokens} tokens used")
+            return result
+
+        except httpx.HTTPStatusError as e:
+            error_msg = f"DeepSeek API error: {e.response.status_code}"
+            print(f"❌ {error_msg}")
+            try:
+                error_detail = e.response.json()
+                print(f"   Details: {error_detail}")
+            except:
+                print(f"   Body: {e.response.text[:200]}")
+
+            return {
+                'success': False,
+                'error': error_msg,
+                'tokens_used': 0,
+                'processing_time': time.time() - start_time
+            }
+
+        except Exception as e:
+            print(f"❌ R1 Analysis error: {e}")
+            import traceback
+            traceback.print_exc()
+
+            return {
+                'success': False,
+                'error': str(e),
+                'tokens_used': 0,
+                'processing_time': time.time() - start_time
+            }
+
+    def validate_analysis(self, analysis: dict) -> tuple[bool, list]:
+        """
+        Validate R1 analysis result
+
+        Args:
+            analysis: Result from analyze_cao_structure()
+
+        Returns:
+            (is_valid, warnings)
+        """
+        warnings = []
+
+        if not analysis.get('success'):
+            return False, [f"Analysis failed: {analysis.get('error', 'Unknown error')}"]
+
+        # Check CAO metadata
+        cao_meta = analysis.get('cao_metadata', {})
+        if not cao_meta.get('name'):
+            warnings.append("CAO name not found")
+
+        # Check articles
+        artikelen = analysis.get('artikelen', [])
+        if not artikelen:
+            warnings.append("No articles extracted")
+        else:
+            # Validate article numbers
+            for artikel in artikelen:
+                if not artikel.get('article_number'):
+                    warnings.append(f"Article missing number: {artikel}")
+                if not artikel.get('title'):
+                    warnings.append(f"Article {artikel.get('article_number', '?')} missing title")
+
+        # Validation metrics
+        validation = analysis.get('validation', {})
+        coverage = validation.get('coverage_percentage', 0)
+        if coverage < 30:
+            warnings.append(f"Low coverage: only {coverage}% of document analyzed")
+
+        is_valid = len(warnings) < 3  # Allow up to 2 warnings
+        return is_valid, warnings
+
+
+# Global R1 client instance
+_r1_client_instance = None
+
+def get_r1_client() -> DeepSeekR1Client:
+    """Get or create global DeepSeek R1 client"""
+    global _r1_client_instance
+    if _r1_client_instance is None:
+        _r1_client_instance = DeepSeekR1Client()
+    return _r1_client_instance
+
 
 class S3Service:
     """

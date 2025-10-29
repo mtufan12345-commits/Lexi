@@ -101,6 +101,102 @@ def get_status():
     return jsonify(upload_status)
 
 
+@upload_bp.route('/api/documents/<int:document_id>/status', methods=['GET'])
+def get_document_status(document_id):
+    """
+    Get individual document processing status
+
+    Returns:
+    {
+        'document_id': int,
+        'filename': str,
+        'status': str,  # uploaded, chunking, embedding, saving_chunks, analyzing_structure, building_graph, validating, complete, error
+        'progress': {
+            'current_phase': str,
+            'phases_completed': [str],
+            'total_phases': 7
+        },
+        'statistics': {
+            'total_chunks': int,
+            'graph_nodes': int,
+            'graph_relations': int,
+            'graph_articles': int
+        },
+        'error': str|null,
+        'warnings': [str],
+        'completed_at': str|null
+    }
+    """
+    try:
+        import sys
+        sys.path.insert(0, '/var/www/lexi')
+        from models import db, Document
+
+        doc = Document.query.get(document_id)
+        if not doc:
+            return jsonify({'error': 'Document not found'}), 404
+
+        # Determine progress
+        phase_order = [
+            'uploaded',
+            'chunking',
+            'embedding',
+            'saving_chunks',
+            'analyzing_structure',
+            'building_graph',
+            'validating',
+            'complete',
+            'error'
+        ]
+
+        current_phase_idx = phase_order.index(doc.status) if doc.status in phase_order else 0
+        phases_completed = phase_order[:current_phase_idx]
+
+        # Parse JSON fields
+        r1_analysis = None
+        if doc.r1_analysis:
+            try:
+                r1_analysis = json.loads(doc.r1_analysis)
+            except:
+                pass
+
+        validation_warnings = []
+        if doc.validation_warnings:
+            try:
+                validation_warnings = json.loads(doc.validation_warnings)
+            except:
+                validation_warnings = [doc.validation_warnings]
+
+        return jsonify({
+            'document_id': doc.id,
+            'filename': doc.filename,
+            'status': doc.status,
+            'progress': {
+                'current_phase': doc.status,
+                'phases_completed': phases_completed,
+                'total_phases': 7
+            },
+            'statistics': {
+                'total_chunks': doc.total_chunks or 0,
+                'graph_nodes': doc.graph_nodes or 0,
+                'graph_relations': doc.graph_relations or 0,
+                'graph_articles': doc.graph_articles or 0
+            },
+            'r1_analysis': r1_analysis,
+            'r1_tokens_used': doc.r1_tokens_used or 0,
+            'error': doc.error_message,
+            'error_phase': doc.error_phase,
+            'warnings': validation_warnings,
+            'completed_at': doc.completed_at.isoformat() if doc.completed_at else None
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"Error getting document status: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 @upload_bp.route('/api/cancel', methods=['POST'])
 def cancel_upload():
     """Cancel current operation"""
@@ -280,68 +376,88 @@ def delete_document(doc_id):
         return jsonify({'error': str(e)}), 500
 
 
-# Background processing
+# Background processing - Automatic Pipeline Integration
 def _process_documents_async(file_paths):
-    """Process documents in background"""
+    """
+    Process documents using automatic pipeline
+    Integrates with:
+    - DocumentProcessingPipeline (orchestration)
+    - DeepSeekR1Client (structure analysis)
+    - DocumentGraphBuilder (graph creation)
+    """
     global upload_status
 
     try:
-        # Import document importer
         import sys
         sys.path.insert(0, '/var/www/lexi')
-        from document_importer import parse_document, generate_embeddings, import_to_memgraph
 
-        from gqlalchemy import Memgraph
+        from models import db, Document
+        from document_processing_pipeline import get_processing_pipeline
 
-        memgraph = Memgraph(
-            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
-            port=int(os.getenv('MEMGRAPH_PORT', 7687))
-        )
-
+        pipeline = get_processing_pipeline()
         upload_status['status'] = 'processing'
         total_imported = 0
 
         for idx, file_path in enumerate(file_paths):
-            upload_status['current_file'] = os.path.basename(file_path)
-            upload_status['progress'] = int((idx / len(file_paths)) * 50)  # 0-50% for parsing
+            filename = os.path.basename(file_path)
+            upload_status['current_file'] = filename
+            upload_status['progress'] = int((idx / len(file_paths)) * 100)
 
             try:
-                # Parse document
-                cao_name, chunks = parse_document(file_path)
-                upload_status['messages'].append(
-                    f"📖 {cao_name}: {len(chunks)} chunks"
+                # Create document record in database
+                upload_status['messages'].append(f"📁 Creating document record: {filename}")
+
+                doc = Document(
+                    filename=filename,
+                    cao_type='UNKNOWN',
+                    uploaded_by=1,  # System/Super Admin
+                    status='uploaded'
+                )
+                db.session.add(doc)
+                db.session.commit()
+                document_id = doc.id
+
+                upload_status['messages'].append(f"✓ Document created (ID: {document_id})")
+
+                # Run full automatic pipeline
+                upload_status['messages'].append(f"🚀 Starting automatic processing pipeline...")
+
+                result = pipeline.process_document_pipeline(
+                    document_id=document_id,
+                    file_path=file_path,
+                    document_name=filename,
+                    cao_type='UNKNOWN'
                 )
 
-                if not chunks:
+                if result['success']:
+                    stats = result.get('statistics', {})
                     upload_status['messages'].append(
-                        f"⚠️  {os.path.basename(file_path)}: No content extracted"
+                        f"✅ {filename}: {stats.get('total_chunks', 0)} chunks, "
+                        f"{stats.get('graph_articles', 0)} articles, "
+                        f"{stats.get('graph_relations', 0)} relations"
                     )
-                    continue
+                    total_imported += stats.get('graph_articles', 0)
+                    upload_status['processed_files'] += 1
+                else:
+                    error_msg = result.get('errors', ['Unknown error'])[0]
+                    upload_status['messages'].append(
+                        f"❌ {filename}: {error_msg}"
+                    )
+                    upload_status['error'] = error_msg
 
-                # Generate embeddings
-                upload_status['progress'] = int((idx / len(file_paths)) * 75)  # 50-75% for embeddings
-                upload_status['messages'].append(f"⏳ Generating embeddings...")
-
-                embeddings_data = generate_embeddings(chunks)
+                # Show processing time
+                processing_time = result.get('total_time', 0)
                 upload_status['messages'].append(
-                    f"✓ {len(embeddings_data)} embeddings generated"
+                    f"⏱️  Processing time: {processing_time:.1f}s"
                 )
-
-                # Import to Memgraph
-                upload_status['progress'] = int((idx / len(file_paths)) * 90)  # 75-90% for import
-                imported = import_to_memgraph(memgraph, cao_name, embeddings_data)
-                total_imported += imported
-
-                upload_status['messages'].append(
-                    f"✅ {cao_name}: {imported} articles indexed"
-                )
-                upload_status['processed_files'] += 1
 
             except Exception as e:
                 upload_status['messages'].append(
-                    f"❌ Error processing {os.path.basename(file_path)}: {str(e)}"
+                    f"❌ Error processing {filename}: {str(e)}"
                 )
                 upload_status['error'] = str(e)
+                import traceback
+                print(traceback.format_exc())
 
         # Complete
         upload_status['status'] = 'complete'
