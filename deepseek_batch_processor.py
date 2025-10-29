@@ -74,6 +74,8 @@ class DeepSeekBatchProcessor:
             'error': str or None
         }
         """
+        import gc
+
         file_path = Path(file_path)
         start_time = time.time()
 
@@ -95,6 +97,11 @@ class DeepSeekBatchProcessor:
 
             imported = result[0]['count'] if result else 0
 
+            # Clean up memory after processing
+            del processor
+            del memgraph
+            gc.collect()
+
             return {
                 'file': file_path.name,
                 'success': success,
@@ -105,6 +112,8 @@ class DeepSeekBatchProcessor:
 
         except Exception as e:
             elapsed = time.time() - start_time
+            # Clean up on error too
+            gc.collect()
             return {
                 'file': file_path.name,
                 'success': False,
@@ -175,11 +184,16 @@ class DeepSeekBatchProcessor:
                     self.log(f"[{idx:2d}/{len(files)}] ❌ {file_name}: {str(e)[:50]}")
                     failed += 1
 
-                # Check memory
+                # Check memory and apply aggressive cleanup if needed
                 mem_pct = self.check_memory()
                 if mem_pct > self.max_memory_pct:
                     self.log(f"      ⚠️  HIGH MEMORY: {mem_pct:.1f}% - slowing down")
+                    import gc
+                    gc.collect()
                     time.sleep(5)
+                    mem_pct_after = self.check_memory()
+                    if mem_pct_after < mem_pct:
+                        self.log(f"      ✓ Memory reduced to {mem_pct_after:.1f}%")
 
         elapsed = time.time() - start_time
 
