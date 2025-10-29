@@ -45,3 +45,4 @@ attached_assets/*.txt
 *service-account*.json
 .gcloud/
 google-credentials.json
+.env.backup
