@@ -847,13 +847,15 @@ def super_admin_login():
             print(f"  Password valid: {password_valid}")
             
             if password_valid:
-                login_user(admin)
+                # CRITICAL: Set session to permanent BEFORE login_user to ensure persistence
+                session.permanent = True
                 session['super_admin_id'] = admin.id
                 session['is_super_admin'] = True
-                session.permanent = True
                 session.modified = True
+                login_user(admin, remember=True)
                 print(f"  ✅ Login successful for {email}")
                 print(f"  Session after login: is_super_admin={session.get('is_super_admin')}")
+                print(f"  Flask-Login remembered: {current_user.is_authenticated}")
                 print(f"  Request host: {request.host}")
                 return redirect(url_for('super_admin_dashboard'))
             else:
