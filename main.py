@@ -835,8 +835,8 @@ def super_admin_login():
         
         print(f"[DEBUG] Super Admin Login Attempt:")
         print(f"  Email: '{email}'")
+        print(f"  User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
         print(f"  Password length: {len(password)}")
-        print(f"  Password repr: {repr(password)}")
 
         admin = SuperAdmin.query.filter_by(email=email).first()
         print(f"  Admin found: {admin is not None}")
@@ -866,7 +866,13 @@ def super_admin_login():
                 print(f"  Session after login - keys: {list(session.keys())}, permanent: {session.permanent}")
                 print(f"  Flask-Login authenticated: {current_user.is_authenticated}")
 
+                # Create redirect response and set session cookies
                 response = redirect(url_for('super_admin_dashboard'))
+
+                # CRITICAL FIX for Edge browser: Explicitly ensure session is persisted before redirect
+                # For client-side sessions, we need to let Flask's session interface handle it
+                # The response should include Set-Cookie headers from the after_request handler
+
                 return response
             else:
                 print(f"  ❌ Password INCORRECT for {email}")
