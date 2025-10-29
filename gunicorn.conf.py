@@ -30,12 +30,13 @@ preload_app = True
 # TIMEOUT CONFIGURATION
 # ==============================================================================
 
-# Request timeout: 120 seconds (DeepSeek + Memgraph graph traversal can take time)
-timeout = 120
+# Request timeout: 300 seconds (DeepSeek + Memgraph graph traversal can take time)
+# Increased from 120s to prevent worker timeouts during batch processing
+timeout = 300
 
 # Graceful timeout: Give workers time to finish current requests
 # CRITICAL: Ensures Memgraph connections close cleanly during shutdown
-graceful_timeout = 120
+graceful_timeout = 300
 
 # Keep-alive: Close idle connections after 5 seconds
 keepalive = 5
@@ -71,7 +72,8 @@ loglevel = os.getenv('LOG_LEVEL', 'info')
 
 # Max requests per worker before restart (prevent memory leaks)
 # Set to 0 to disable worker recycling
-max_requests = int(os.getenv('MAX_REQUESTS', 1000))
+# Reduced from 1000 to 500 to prevent memory exhaustion during batch processing
+max_requests = int(os.getenv('MAX_REQUESTS', 500))
 
 # Add jitter to prevent all workers restarting simultaneously
 max_requests_jitter = 100
