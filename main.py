@@ -228,6 +228,7 @@ def validate_host_header():
 
 @app.before_request
 def load_tenant():
+    """Load tenant from session after login - NO subdomain routing"""
     g.tenant = None
     g.is_super_admin = session.get('is_super_admin', False)
     print(f"[DEBUG] load_tenant - session keys: {list(session.keys())}, is_super_admin: {g.is_super_admin}")
@@ -235,25 +236,12 @@ def load_tenant():
     if g.is_super_admin:
         return
     
-    # Development mode: tenant via session
+    # Multi-tenant via session (set after login)
     tenant_id = session.get('tenant_id')
     print(f"[DEBUG] load_tenant - tenant_id from session: {tenant_id}")
     if tenant_id:
         g.tenant = Tenant.query.get(tenant_id)
         print(f"[DEBUG] Tenant loaded from session: {g.tenant.company_name if g.tenant else None}")
-        return
-    
-    # Production mode: tenant via subdomain (Host header already validated by validate_host_header)
-    host = request.host.split(':')[0]
-    parts = host.split('.')
-    print(f"[DEBUG] Host parts: {parts}")
-    
-    if len(parts) >= 2 and parts[0] not in ['www', 'lex-cao', 'lex-cao-expert']:
-        subdomain = parts[0]
-        tenant = Tenant.query.filter_by(subdomain=subdomain).first()
-        if tenant:
-            g.tenant = tenant
-            print(f"[DEBUG] Tenant loaded from subdomain: {tenant.company_name}")
 
 def tenant_required(f):
     @wraps(f)
@@ -760,8 +748,9 @@ def forgot_password():
                 user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=1)
                 db.session.commit()
                 
-                # Create reset URL
-                reset_url = f"https://{tenant.subdomain}.lex-cao.replit.app/reset-password/{reset_token}"
+                # Create reset URL (no subdomain needed)
+                domain = os.getenv('PRODUCTION_DOMAIN', 'lexiai.nl')
+                reset_url = f"https://{domain}/reset-password/{reset_token}"
                 
                 # Send email with reset link (NO PASSWORD in email)
                 email_service.send_password_reset_link_email(user, tenant, reset_url)
@@ -2258,8 +2247,9 @@ def admin_users():
                 db.session.add(user)
                 db.session.commit()
                 
-                # Send activation email with secure token link
-                activation_url = f"https://{g.tenant.subdomain}.lex-cao.replit.app/reset-password/{token}"
+                # Send activation email with secure token link (no subdomain needed)
+                domain = os.getenv('PRODUCTION_DOMAIN', 'lexiai.nl')
+                activation_url = f"https://{domain}/reset-password/{token}"
                 admin_name = f"{current_user.first_name} {current_user.last_name}"
                 email_service.send_user_invitation_email(user, g.tenant, activation_url, admin_name)
                 
@@ -3204,42 +3194,30 @@ def super_admin_upload_documents():
 
 
 def _process_documents_to_memgraph(file_paths):
-    """Process files and import to Memgraph"""
+    """Process files and import to Memgraph using DeepSeek Semantic Pipeline"""
     global super_admin_upload_status
     import sys
     import os
-    import importlib
 
     sys.path.insert(0, '/var/www/lexi')
 
     super_admin_upload_status['status'] = 'processing'
-    super_admin_upload_status['messages'].append("⏳ Initializing document processor...")
+    super_admin_upload_status['messages'].append("⏳ Initializing DeepSeek Semantic Pipeline...")
 
     try:
-        # Import with verbose error handling
+        # Import DeepSeek Semantic Pipeline
         try:
-            from document_importer import parse_document, generate_embeddings, import_to_memgraph
-            super_admin_upload_status['messages'].append("   ✓ Document importer loaded")
+            from deepseek_semantic_pipeline import DeepSeekSemanticPipeline
+            super_admin_upload_status['messages'].append("   ✓ DeepSeek Semantic Pipeline loaded")
         except ImportError as ie:
-            super_admin_upload_status['messages'].append(f"   ❌ Failed to load document_importer: {str(ie)}")
+            super_admin_upload_status['messages'].append(f"   ❌ Failed to load DeepSeek pipeline: {str(ie)}")
             super_admin_upload_status['error'] = f"Import error: {str(ie)}"
             super_admin_upload_status['status'] = 'error'
             return
 
-        try:
-            from gqlalchemy import Memgraph
-            super_admin_upload_status['messages'].append("   ✓ Memgraph client loaded")
-        except ImportError as ie:
-            super_admin_upload_status['messages'].append(f"   ❌ Failed to load Memgraph: {str(ie)}")
-            super_admin_upload_status['error'] = f"Memgraph import error: {str(ie)}"
-            super_admin_upload_status['status'] = 'error'
-            return
-
-        memgraph = Memgraph(
-            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
-            port=int(os.getenv('MEMGRAPH_PORT', 7687))
-        )
-        super_admin_upload_status['messages'].append("   ✓ Connected to Memgraph")
+        # Initialize pipeline
+        pipeline = DeepSeekSemanticPipeline()
+        super_admin_upload_status['messages'].append("   ✓ Pipeline initialized (DeepSeek R1 + Memgraph)")
 
         total_imported = 0
 
@@ -3247,33 +3225,41 @@ def _process_documents_to_memgraph(file_paths):
             try:
                 filename = os.path.basename(file_path)
                 super_admin_upload_status['current_file'] = filename
-                super_admin_upload_status['progress'] = int((idx / len(file_paths)) * 50)
-                super_admin_upload_status['messages'].append(f"📄 Processing: {filename}")
+                base_progress = int((idx / len(file_paths)) * 100)
+                super_admin_upload_status['progress'] = base_progress
+                super_admin_upload_status['messages'].append(f"\n{'='*60}")
+                super_admin_upload_status['messages'].append(f"📄 Document {idx + 1}/{len(file_paths)}: {filename}")
+                super_admin_upload_status['messages'].append(f"{'='*60}")
 
-                # Parse document
-                cao_name, chunks = parse_document(file_path)
-                super_admin_upload_status['messages'].append(f"   ✓ Parsed into {len(chunks)} chunks")
+                # Phase 1: Reading document
+                super_admin_upload_status['progress'] = base_progress + 5
+                super_admin_upload_status['messages'].append(f"   📖 [1/4] Reading document...")
+                import time
+                start_time = time.time()
+                
+                # Phase 2: DeepSeek semantic chunking
+                super_admin_upload_status['progress'] = base_progress + 15
+                super_admin_upload_status['messages'].append(f"   🧠 [2/4] DeepSeek R1 semantic analysis (dit kan 30-60 sec duren)...")
+                
+                # Phase 3: Structure analysis
+                super_admin_upload_status['progress'] = base_progress + 50
+                super_admin_upload_status['messages'].append(f"   🔍 [3/4] Extracting articles and metadata...")
+                
+                # Phase 4: Memgraph import
+                super_admin_upload_status['progress'] = base_progress + 75
+                super_admin_upload_status['messages'].append(f"   💾 [4/4] Importing to Memgraph graph database...")
+                
+                # Process document
+                success = pipeline.process_document(file_path)
+                
+                elapsed = time.time() - start_time
 
-                if not chunks:
-                    super_admin_upload_status['messages'].append(f"   ⚠️ No content extracted")
-                    continue
-
-                # Generate embeddings
-                super_admin_upload_status['progress'] = int((idx / len(file_paths)) * 75)
-                super_admin_upload_status['messages'].append(f"   ⏳ Generating embeddings...")
-
-                embeddings_data = generate_embeddings(chunks)
-                super_admin_upload_status['messages'].append(f"   ✓ Generated {len(embeddings_data)} embeddings")
-
-                # Import to Memgraph
-                super_admin_upload_status['progress'] = int((idx / len(file_paths)) * 90)
-                super_admin_upload_status['messages'].append(f"   ⏳ Importing to Memgraph...")
-
-                imported = import_to_memgraph(memgraph, cao_name, embeddings_data)
-                total_imported += imported
-
-                super_admin_upload_status['messages'].append(f"   ✅ Imported {imported} articles as '{cao_name}'")
-                super_admin_upload_status['processed_files'] += 1
+                if success:
+                    super_admin_upload_status['messages'].append(f"   ✅ Document processed successfully in {elapsed:.1f}s")
+                    super_admin_upload_status['processed_files'] += 1
+                    total_imported += 1
+                else:
+                    super_admin_upload_status['messages'].append(f"   ⚠️ Processing failed after {elapsed:.1f}s - check logs at /var/log/lexi/deepseek_semantic.log")
 
             except Exception as e:
                 error_msg = f"❌ Error processing {filename}: {str(e)[:100]}"
@@ -3282,11 +3268,27 @@ def _process_documents_to_memgraph(file_paths):
                 import traceback
                 print(f"[DOCUMENT UPLOAD ERROR] {filename}: {traceback.format_exc()}", file=sys.stderr)
 
+        # Get total article count from Memgraph
+        try:
+            from gqlalchemy import Memgraph
+            memgraph = Memgraph(
+                host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+                port=int(os.getenv('MEMGRAPH_PORT', 7687))
+            )
+            
+            result = list(memgraph.execute_and_fetch(
+                "MATCH (a:Artikel) RETURN count(*) AS count"
+            ))
+            total_articles = result[0]['count'] if result else 0
+            super_admin_upload_status['imported_count'] = total_articles
+            super_admin_upload_status['messages'].append(f"   📊 Total articles in database: {total_articles}")
+        except:
+            super_admin_upload_status['imported_count'] = total_imported
+
         # Complete
         super_admin_upload_status['status'] = 'complete'
         super_admin_upload_status['progress'] = 100
-        super_admin_upload_status['imported_count'] = total_imported
-        super_admin_upload_status['messages'].append(f"✨ COMPLETE! {total_imported} articles imported")
+        super_admin_upload_status['messages'].append(f"✨ COMPLETE! {total_imported} documents processed successfully")
 
     except Exception as e:
         super_admin_upload_status['status'] = 'error'
@@ -3659,8 +3661,9 @@ def super_admin_reset_password(user_id):
     user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=1)
     db.session.commit()
     
-    # Create reset URL
-    reset_url = f"https://{tenant.subdomain}.lex-cao.replit.app/reset-password/{reset_token}"
+    # Create reset URL (no subdomain needed)
+    domain = os.getenv('PRODUCTION_DOMAIN', 'lexiai.nl')
+    reset_url = f"https://{domain}/reset-password/{reset_token}"
     
     # Send password reset link email (NO password in email)
     email_service.send_password_reset_link_email(user, tenant, reset_url)

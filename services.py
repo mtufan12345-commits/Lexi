@@ -1493,7 +1493,7 @@ class EmailService:
             <p>Hoi {tenant.contact_name},</p>
             <p>We konden je laatste betaling voor Lexi CAO Meester niet verwerken.</p>
             <p>Update je betaalmethode om actief te blijven en toegang te behouden tot Lexi.</p>
-            <p><a href="https://{tenant.subdomain}.lex-cao.replit.app/admin/billing" 
+            <p><a href="https://lexiai.nl/admin/billing" 
                style="background: #DC2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                Betaalmethode Updaten →
             </a></p>
@@ -1518,7 +1518,7 @@ class EmailService:
                 <li>Professional: €499/maand (5 users, unlimited questions)</li>
                 <li>Enterprise: €1.199/maand (unlimited users, unlimited questions)</li>
             </ul>
-            <p><a href="https://{tenant.subdomain}.lex-cao.replit.app/admin/billing" 
+            <p><a href="https://lexiai.nl/admin/billing" 
                style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                Upgrade Nu →
             </a></p>
@@ -1577,7 +1577,7 @@ class EmailService:
                                     </div>
                                     <div style="background-color: #d4af37; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
                                         <p style="margin: 0 0 12px 0; color: #1a2332; font-size: 18px; font-weight: 600;">Start nu met Lexi!</p>
-                                        <a href="https://{tenant.subdomain}.lexiai.nl/chat" style="background: #1a2332; color: #d4af37; padding: 12px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+                                        <a href="https://lexiai.nl/chat" style="background: #1a2332; color: #d4af37; padding: 12px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
                                             Naar Chat →
                                         </a>
                                     </div>
@@ -1699,7 +1699,7 @@ class EmailService:
                                         Mocht je van gedachten veranderen, je bent altijd welkom terug!
                                     </p>
                                     <div style="text-align: center;">
-                                        <a href="https://{tenant.subdomain}.lexiai.nl/admin/billing" style="background: #d4af37; color: #1a2332; padding: 12px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+                                        <a href="https://lexiai.nl/admin/billing" style="background: #d4af37; color: #1a2332; padding: 12px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
                                             Heractiveer Abonnement
                                         </a>
                                     </div>

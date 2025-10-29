@@ -20,7 +20,7 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 - **Responsiveness:** Fully responsive design across mobile, tablet, and desktop, including a collapsible sidebar and hamburger menu.
 
 **Technical Implementations & Feature Specifications:**
-- **Multi-tenant Isolation:** Implemented via subdomain routing in production and session-based isolation in development.
+- **Multi-tenant Isolation:** Session-based tenant loading after user login. All tenants/users access the platform via the main domain (lexiai.nl/login) without subdomain routing. Tenant is loaded from user.tenant_id and stored in session after authentication.
 - **CAO Selection & Dynamic AI Instructions:** Tenants select one of two uitzend-CAO's (NBBU or ABU) during signup. The AI dynamically uses the chosen CAO and all other relevant documents, explicitly excluding the alternative CAO. This ensures the AI never uses both ABU and NBBU simultaneously. Admins can change this preference with warnings about organization-wide impact.
 - **Chat Interface:** Interactive chat with Lexi animations, a chat history sidebar, and search functionality.
 - **File Management:** Users can upload PDF, DOCX, and text files for AI analysis, with text extraction and OCR fallback. Files are stored in S3.
@@ -61,7 +61,7 @@ The platform is designed with a multi-tenant hierarchy where SUPER ADMINs manage
 - **Environment:** Python 3.11, Node.js 20, PostgreSQL 16
 
 **Production Checklist:**
-- ✅ Multi-tenant subdomain routing configured
+- ✅ Multi-tenant session-based routing configured (no subdomains)
 - ✅ Stripe production webhooks configured
 - ✅ MailerSend domain verified (noreply@lexiai.nl)
 - ✅ Email templates production-ready (11/11)

@@ -59,9 +59,23 @@
                 <div class="w-full bg-gray-700 rounded-full h-2 mb-2">
                     <div id="progressBar" class="bg-navy-500 h-2 rounded-full transition-all" style="width: 0%"></div>
                 </div>
-                <div class="text-center text-sm text-gray-400 mb-4">
+                <div class="text-center text-sm text-gray-400 mb-2">
                     <span id="progressText">0%</span>
                 </div>
+                
+                <!-- Persistent Warning Area (Not Overwritten) -->
+                <div id="warningArea" style="display: none;" class="bg-yellow-900/20 border border-yellow-600 rounded-lg p-3 mb-3 animate-pulse">
+                    <div class="flex items-center gap-2 text-yellow-400">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <strong>⏳ DeepSeek R1 is processing...</strong><br>
+                            <span class="text-sm text-yellow-300">This can take 30-120 seconds per document. Please be patient!</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="messagesLog" class="bg-gray-900 rounded p-3 max-h-64 overflow-y-auto text-sm font-mono text-gray-300 space-y-1"></div>
             </div>
 
@@ -207,26 +221,50 @@
     }
 
     async function monitorProgress() {
+        let lastProgress = 0;
+        let lastUpdateTime = Date.now();
+        const warningArea = document.getElementById('warningArea');
+        
         const statusCheckInterval = setInterval(async () => {
             try {
                 const response = await fetch('/super-admin/api/documents/status');
                 const status = await response.json();
 
+                // Update progress bar
                 document.getElementById('progressBar').style.width = status.progress + '%';
                 document.getElementById('progressText').textContent = status.progress + '%';
-                document.getElementById('currentFile').textContent = status.current_file;
+                document.getElementById('currentFile').textContent = status.current_file || 'Processing...';
 
+                // Show/hide warning in dedicated area (never overwritten)
+                const timeSinceUpdate = Date.now() - lastUpdateTime;
+                if (status.progress === lastProgress && timeSinceUpdate > 10000 && status.status === 'processing') {
+                    // Show warning after 10 seconds of no progress
+                    warningArea.style.display = 'block';
+                } else if (status.progress !== lastProgress) {
+                    // Hide warning when progress changes
+                    warningArea.style.display = 'none';
+                    lastUpdateTime = Date.now();
+                    lastProgress = status.progress;
+                }
+
+                // Update message log with color coding
                 messagesLog.innerHTML = status.messages
                     .map(msg => {
                         let color = 'text-gray-300';
                         if (msg.includes('❌')) color = 'text-red-400';
                         else if (msg.includes('✅')) color = 'text-green-400';
                         else if (msg.includes('⏳')) color = 'text-blue-400';
+                        else if (msg.includes('🧠')) color = 'text-purple-400';
+                        else if (msg.includes('📖')) color = 'text-cyan-400';
+                        else if (msg.includes('💾')) color = 'text-yellow-400';
+                        else if (msg.includes('🔍')) color = 'text-pink-400';
+                        else if (msg.includes('===')) color = 'text-navy-400 font-bold';
                         return `<div class="${color}">${msg}</div>`;
                     })
                     .join('');
                 messagesLog.scrollTop = messagesLog.scrollHeight;
 
+                // Check completion
                 if (status.status === 'complete') {
                     clearInterval(statusCheckInterval);
                     progressSection.style.display = 'none';
@@ -241,12 +279,15 @@
                     }, 3000);
                 } else if (status.status === 'error') {
                     clearInterval(statusCheckInterval);
+                    alert('Upload failed: ' + (status.error || 'Unknown error'));
+                    progressSection.style.display = 'none';
+                    uploadArea.style.display = 'block';
                 }
 
             } catch (error) {
                 console.error('Status check failed:', error);
             }
-        }, 1000);
+        }, 2000); // Poll every 2 seconds
     }
 
     async function loadDocuments() {

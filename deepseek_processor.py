@@ -32,7 +32,18 @@ from gqlalchemy import Memgraph
 class DeepSeekProcessor:
     def __init__(self):
         self.r1_client = get_r1_client()
-        self.memgraph = Memgraph(host='localhost', port=7687)
+        # Use environment variables for Memgraph connection (supports production deployment)
+        memgraph_host = os.getenv('MEMGRAPH_HOST', 'localhost')
+        
+        # Safely parse port with fallback
+        try:
+            port_str = os.getenv('MEMGRAPH_PORT', '7687')
+            memgraph_port = int(port_str)
+        except (ValueError, TypeError) as e:
+            print(f"⚠️  Invalid MEMGRAPH_PORT '{port_str}', using default 7687: {e}")
+            memgraph_port = 7687
+        
+        self.memgraph = Memgraph(host=memgraph_host, port=memgraph_port)
 
     def read_document(self, file_path: str) -> str:
         """Read document content"""

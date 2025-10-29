@@ -34,7 +34,18 @@ class DeepSeekSemanticPipeline:
 
     def __init__(self):
         self.r1_client = get_r1_client()
-        self.memgraph = Memgraph(host='localhost', port=7687)
+        # Use environment variables for Memgraph connection (supports production deployment)
+        memgraph_host = os.getenv('MEMGRAPH_HOST', 'localhost')
+        
+        # Safely parse port with fallback
+        try:
+            port_str = os.getenv('MEMGRAPH_PORT', '7687')
+            memgraph_port = int(port_str)
+        except (ValueError, TypeError) as e:
+            print(f"⚠️  Invalid MEMGRAPH_PORT '{port_str}', using default 7687: {e}")
+            memgraph_port = 7687
+        
+        self.memgraph = Memgraph(host=memgraph_host, port=memgraph_port)
         self.log_file = '/var/log/lexi/deepseek_semantic.log'
         Path(self.log_file).parent.mkdir(parents=True, exist_ok=True)
 
@@ -128,15 +139,27 @@ Return JSON with chunks:
                 # Convert R1 artikelen to chunks
                 chunks = []
                 for idx, art in enumerate(artikelen):
+                    # Safely extract content with null protection
+                    article_content = art.get('content') or ''
+                    
+                    if not article_content:
+                        # Fallback: combine title and description if content not provided
+                        title = art.get('title') or ''
+                        description = art.get('description') or ''
+                        article_content = (title + '\n' + description).strip()
+                    
+                    # Skip empty chunks
+                    if not article_content or len(article_content) < 10:
+                        self.log(f"   ⚠️  Skipping empty chunk at index {idx}", 'WARN')
+                        continue
+                    
                     chunks.append({
-                        'content': art.get('title', '') + '\n' +
-                                   '\n'.join([text[i:min(i+500, len(text))]
-                                             for i in range(0, min(1000, len(text)), 500)]),
-                        'article_number': art.get('article_number', ''),
-                        'title': art.get('title', ''),
-                        'section': art.get('section', ''),
+                        'content': article_content,
+                        'article_number': art.get('article_number') or '',
+                        'title': art.get('title') or '',
+                        'section': art.get('section') or '',
                         'type': 'artikel',
-                        'tags': art.get('tags', []),
+                        'tags': art.get('tags') or [],
                         'chunk_index': idx
                     })
 
