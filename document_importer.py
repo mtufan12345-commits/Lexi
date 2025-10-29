@@ -79,10 +79,11 @@ def extract_article_number(text: str) -> str:
 def generate_embeddings(chunks: List[str]) -> List[Dict]:
     """Generate embeddings for text chunks (batch processing to save memory)"""
     result = []
-    batch_size = 32  # Process chunks in batches to avoid OOM
+    batch_size = 8  # Smaller batches to avoid OOM - empirically safe for 1GB+ models
 
     try:
         from sentence_transformers import SentenceTransformer
+        import gc
         print("   ⏳ Loading embedding model...")
         model = SentenceTransformer('intfloat/multilingual-e5-large')
 
@@ -103,9 +104,13 @@ def generate_embeddings(chunks: List[str]) -> List[Dict]:
                     'embedding': embedding.tolist()
                 })
 
+            # Clean up memory after each batch
+            del embeddings
+            gc.collect()
+
             # Progress indicator
             progress = min(batch_end, total_chunks)
-            if progress % 128 == 0 or progress == total_chunks:
+            if progress % 64 == 0 or progress == total_chunks:
                 print(f"   ⏳ Processed {progress}/{total_chunks} chunks...")
 
         print(f"   ✅ Generated embeddings for {len(result)} chunks")
