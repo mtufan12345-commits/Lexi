@@ -3096,11 +3096,12 @@ def super_admin_get_documents():
         )
 
         # Query all CAO documents with their article counts
+        # Note: Documents can be imported with either :CONTAINS_ARTIKEL or :CONTAINS_ARTICLE relationship
         results = list(memgraph.execute_and_fetch("""
             MATCH (cao:CAO)
             WITH cao.name as cao_name, cao
-            OPTIONAL MATCH (cao)-[:CONTAINS_ARTICLE]->(article:Article)
-            RETURN cao_name, COUNT(article) as article_count
+            OPTIONAL MATCH (cao)-[r:CONTAINS_ARTIKEL|CONTAINS_ARTICLE]->(node)
+            RETURN cao_name, COUNT(node) as article_count
             ORDER BY cao_name
         """))
 
