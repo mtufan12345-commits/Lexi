@@ -10,12 +10,6 @@ import json
 from pathlib import Path
 from typing import List, Dict, Tuple
 import re
-import time
-import gc
-
-# Global model cache to avoid reloading for each document
-_embedding_model = None
-_model_load_time = 0
 
 def parse_pdf(file_path: str) -> List[str]:
     """Parse PDF file into text chunks"""
@@ -82,53 +76,22 @@ def extract_article_number(text: str) -> str:
 
     return "UNKNOWN"
 
-def get_embedding_model():
-    """Get or load the embedding model (cached globally)"""
-    global _embedding_model, _model_load_time
-
-    if _embedding_model is not None:
-        print(f"   ✅ Using cached model (loaded {_model_load_time:.1f}s ago)")
-        return _embedding_model
+def generate_embeddings(chunks: List[str]) -> List[Dict]:
+    """Generate embeddings for text chunks (batch processing optimized for 16GB RAM)"""
+    result = []
+    batch_size = 64  # Optimized for 16GB RAM server - 8x faster than conservative 8-batch size
 
     try:
         from sentence_transformers import SentenceTransformer
-        print("   ⏳ Loading embedding model for first time...")
-        start = time.time()
+        import gc
+        print("   ⏳ Loading embedding model...")
         model = SentenceTransformer('intfloat/multilingual-e5-large')
-        load_time = time.time() - start
-        _model_load_time = load_time
-        _embedding_model = model
-        print(f"   ✅ Model loaded in {load_time:.1f}s and cached")
-        return model
-    except ImportError:
-        print("   ⚠️  sentence_transformers not available")
-        return None
-    except Exception as e:
-        print(f"   ⚠️  Error loading model: {str(e)[:100]}")
-        return None
-
-
-def generate_embeddings(chunks: List[str]) -> List[Dict]:
-    """Generate embeddings for text chunks (batch processing with model caching)"""
-    result = []
-    batch_size = 32  # Larger batches now (16GB RAM available)
-
-    model = get_embedding_model()
-
-    try:
-        if model is None:
-            # Fall back to placeholder embeddings
-            raise ImportError("Model not available")
 
         # Process in batches to avoid loading all embeddings in memory at once
         total_chunks = len(chunks)
-        print(f"   ⏳ Generating embeddings for {total_chunks} chunks (batch size: {batch_size})...")
-
         for batch_start in range(0, total_chunks, batch_size):
             batch_end = min(batch_start + batch_size, total_chunks)
             batch_chunks = chunks[batch_start:batch_end]
-
-            batch_start_time = time.time()
 
             # Encode this batch
             embeddings = model.encode(batch_chunks, show_progress_bar=False)
@@ -145,19 +108,18 @@ def generate_embeddings(chunks: List[str]) -> List[Dict]:
             del embeddings
             gc.collect()
 
-            # Progress indicator with timing
-            batch_time = time.time() - batch_start_time
+            # Progress indicator (log every 2 batches = 128 chunks)
             progress = min(batch_end, total_chunks)
-            chunks_per_sec = len(batch_chunks) / batch_time if batch_time > 0 else 0
-            if progress % 64 == 0 or progress == total_chunks:
-                print(f"   ⏳ Processed {progress}/{total_chunks} chunks ({chunks_per_sec:.1f} chunks/sec)...")
+            if progress % 128 == 0 or progress == total_chunks:
+                percentage = int((progress / total_chunks) * 100)
+                print(f"   ⏳ Processed {progress}/{total_chunks} chunks ({percentage}%)")
 
         print(f"   ✅ Generated embeddings for {len(result)} chunks")
         return result
 
-    except (ImportError, AttributeError):
+    except ImportError:
         # sentence_transformers not available - create dummy embeddings with hashes
-        print("   ⚠️  Using placeholder embeddings (model not available)")
+        print("   ⚠️  sentence_transformers not available - using placeholder embeddings")
         import hashlib
 
         for chunk in chunks:
@@ -194,23 +156,18 @@ def generate_embeddings(chunks: List[str]) -> List[Dict]:
         return result
 
 def import_to_memgraph(memgraph, cao_name: str, embeddings_data: List[Dict]) -> int:
-    """Import chunks with embeddings into Memgraph (optimized batch import)"""
+    """Import chunks with embeddings into Memgraph"""
     imported_count = 0
-    import_start = time.time()
 
     # Create CAO node if not exists
     try:
         list(memgraph.execute_and_fetch(f"""
             MERGE (cao:CAO {{name: '{cao_name}', version: '2025', source: 'local'}})
         """))
-        print(f"   ✅ CAO node created: {cao_name}")
     except Exception as e:
         print(f"   ⚠️  Error creating CAO node: {e}")
 
-    # Import articles with progress tracking
-    total = len(embeddings_data)
-    print(f"   ⏳ Importing {total} articles to Memgraph...")
-
+    # Import articles
     for idx, data in enumerate(embeddings_data):
         try:
             text_safe = data['text'].replace("'", "\\'").replace('"', '\\"')[:1000]  # Truncate
@@ -231,15 +188,11 @@ def import_to_memgraph(memgraph, cao_name: str, embeddings_data: List[Dict]) -> 
             list(memgraph.execute_and_fetch(query, {'content': text_safe}))
             imported_count += 1
 
-            if (idx + 1) % 100 == 0 or (idx + 1) == total:
-                elapsed = time.time() - import_start
-                rate = imported_count / elapsed if elapsed > 0 else 0
-                print(f"      ✓ Imported {imported_count}/{total} articles ({rate:.1f} articles/sec)...")
+            if (idx + 1) % 10 == 0:
+                print(f"      ✓ Imported {idx + 1} articles...")
         except Exception as e:
-            print(f"      ⚠️  Error importing article {idx}: {str(e)[:100]}")
+            print(f"      ⚠️  Error importing article {idx}: {e}")
 
-    total_time = time.time() - import_start
-    print(f"   ✅ Import complete: {imported_count} articles in {total_time:.1f}s")
     return imported_count
 
 def main():
@@ -280,39 +233,27 @@ def main():
     print(f"📄 Found {len(files)} document(s) to process\n")
 
     total_imported = 0
-    overall_start = time.time()
 
-    for file_idx, file_path in enumerate(files, 1):
-        print(f"📖 [{file_idx}/{len(files)}] Processing: {file_path.name}")
-        file_start = time.time()
+    for file_path in files:
+        print(f"📖 Processing: {file_path.name}")
 
         # Parse document
-        parse_start = time.time()
         cao_name, chunks = parse_document(file_path)
-        parse_time = time.time() - parse_start
-        print(f"   ✓ Parsed into {len(chunks)} chunks ({parse_time:.1f}s)")
+        print(f"   ✓ Parsed into {len(chunks)} chunks")
 
         if not chunks:
             continue
 
         # Generate embeddings
-        embed_start = time.time()
         embeddings_data = generate_embeddings(chunks)
-        embed_time = time.time() - embed_start
-        print(f"   ✓ Generated {len(embeddings_data)} embeddings ({embed_time:.1f}s)")
+        print(f"   ✓ Generated {len(embeddings_data)} embeddings")
 
         # Import to Memgraph
         imported = import_to_memgraph(memgraph, cao_name, embeddings_data)
         total_imported += imported
+        print(f"   ✓ Imported {imported} articles\n")
 
-        file_time = time.time() - file_start
-        print(f"   ✓ File processed in {file_time:.1f}s\n")
-
-    overall_time = time.time() - overall_start
-    print(f"\n✅ Import complete!")
-    print(f"   Total articles: {total_imported}")
-    print(f"   Total time: {overall_time:.1f}s")
-    print(f"   Average per document: {overall_time/len(files):.1f}s")
+    print(f"\n✅ Import complete! Total articles: {total_imported}")
 
 if __name__ == "__main__":
     main()
