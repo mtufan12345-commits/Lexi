@@ -672,7 +672,14 @@ def signup_cancel():
 @limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated and not g.is_super_admin:
-        return redirect(url_for('chat_page'))
+        # Check if user has valid tenant in session
+        if not g.tenant:
+            # Session is corrupt - clear it and force re-login
+            logout_user()
+            session.clear()
+            flash('Je sessie is verlopen. Log opnieuw in.', 'info')
+        else:
+            return redirect(url_for('chat_page'))
     
     if request.method == 'POST':
         email = request.form.get('email', '').lower().strip()
