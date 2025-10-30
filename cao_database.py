@@ -12,7 +12,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 
 # Database connection from .env
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://neondb_owner:npg_Fxq6DGIuA1Xd@ep-wandering-sun-a6asxcto.us-west-2.aws.neon.tech/neondb?sslmode=require')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 
 class CAODatabase:
