@@ -20,6 +20,8 @@ gunicorn==21.2.0
 # Database
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
+asyncpg==0.29.0
+pgvector==0.3.0
 
 # Memgraph & Knowledge Graph
 gqlalchemy==1.6.0

@@ -2,6 +2,11 @@ import os
 import re
 import tempfile
 import json
+from dotenv import load_dotenv
+
+# Load environment variables from .env file FIRST
+load_dotenv()
+
 from flask import Flask, render_template, request, redirect, url_for, jsonify, g, session, flash, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
@@ -11,14 +16,30 @@ from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from models import db, SuperAdmin, Tenant, User, Chat, Message, Subscription, Template, UploadedFile, Artifact, SupportTicket, SupportReply
-from services import vertex_ai_service, s3_service, email_service, StripeService
+from services import rag_service, s3_service, email_service, StripeService
 import stripe
 from datetime import datetime, timedelta
 import secrets
 from functools import wraps
-from markitdown import MarkItDown
-import pytesseract
-from pdf2image import convert_from_path
+
+# Optional imports - may not be available in all environments
+try:
+    from markitdown import MarkItDown
+    MARKITDOWN_AVAILABLE = True
+except (ImportError, AttributeError) as e:
+    print(f"⚠️  MarkItDown not available: {e}")
+    MarkItDown = None
+    MARKITDOWN_AVAILABLE = False
+
+try:
+    import pytesseract
+    from pdf2image import convert_from_path
+    OCR_AVAILABLE = True
+except (ImportError, AttributeError) as e:
+    print(f"⚠️  OCR tools not available: {e}")
+    pytesseract = None
+    convert_from_path = None
+    OCR_AVAILABLE = False
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -26,8 +47,21 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # SECURITY: Enable Jinja2 autoescape to prevent XSS attacks
 app.jinja_env.autoescape = True
 
+# Global upload status tracker for Super Admin document uploads
+super_admin_upload_status = {
+    'status': 'idle',  # idle, uploading, processing, complete, error
+    'progress': 0,
+    'current_file': '',
+    'total_files': 0,
+    'processed_files': 0,
+    'messages': [],
+    'imported_count': 0,
+    'error': None
+}
+
 # Build version for cache busting (use git commit hash in production, timestamp in dev)
-BUILD_VERSION = os.environ.get('BUILD_VERSION', datetime.now().strftime('%Y%m%d%H%M%S'))
+# Force new version after Vertex AI rate limit fixes (2025-10-24)
+BUILD_VERSION = os.environ.get('BUILD_VERSION', '20251024134500')
 
 # SECURITY: REQUIRE session secret - NEVER use hardcoded fallback (prevents session forgery)
 app.secret_key = os.environ.get("SESSION_SECRET") or os.environ.get("SECRET_KEY")
@@ -51,8 +85,13 @@ app.config['WTF_CSRF_SSL_STRICT'] = False
 
 # Session Cookie Security (Enhanced)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Lax for Stripe redirects compatibility
-app.config['SESSION_COOKIE_SECURE'] = True  # Always require HTTPS
+# Secure cookies only in production (HTTPS), allow HTTP in development
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('ENVIRONMENT') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
+# Don't set SESSION_COOKIE_DOMAIN - let Flask use the request host
+# This prevents issues with apex domains (lexiai.nl) vs subdomains (company.lexiai.nl)
+# Cookies will be set for the exact domain accessed
+app.config['SESSION_COOKIE_DOMAIN'] = None
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # 8 hour session timeout
 
 if app.config['WTF_CSRF_ENABLED']:
@@ -106,9 +145,20 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    if session.get('is_super_admin'):
-        return SuperAdmin.query.get(int(user_id))
+    # Try to load as SuperAdmin first, then fall back to regular User
+    super_admin = SuperAdmin.query.get(int(user_id))
+    if super_admin:
+        return super_admin
     return User.query.get(int(user_id))
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    """Custom unauthorized handler - redirect to correct login page"""
+    # If accessing super-admin routes, redirect to super-admin login
+    if request.path.startswith('/super-admin'):
+        return redirect(url_for('super_admin_login', next=request.path))
+    # Otherwise redirect to normal login
+    return redirect(url_for('login', next=request.path))
 
 def get_max_users_for_tier(tier):
     """Get max users allowed for a subscription tier"""
@@ -122,6 +172,14 @@ def get_max_users_for_tier(tier):
 @app.before_request
 def force_https():
     """SECURITY: Force HTTPS in production"""
+    # Skip HTTPS redirect for health check endpoint (monitoring tools)
+    if request.path == '/health':
+        return None
+
+    # Skip HTTPS redirect for upload endpoints (multipart form data)
+    if request.path.startswith('/upload/'):
+        return None
+
     # Only enforce HTTPS in production environment (not in development/Replit)
     if os.getenv('ENVIRONMENT') == 'production':
         # Check if request is not secure and not already HTTPS via proxy
@@ -150,48 +208,40 @@ def validate_host_header():
     """SECURITY: Global Host header validation - prevents Host header injection attacks"""
     # SECURITY: Validate Host header against allowed domains (GLOBAL protection)
     request_host = request.host.split(':')[0]  # Remove port
-    
+
     # Get allowed hosts from environment (default includes localhost + Replit domains)
     allowed_hosts_env = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,replit.dev,replit.app')
     allowed_hosts = [h.strip() for h in allowed_hosts_env.split(',')]
-    
+
     # Check if host is allowed (exact match or subdomain of allowed domain)
     is_allowed = request_host in allowed_hosts or any(
-        request_host.endswith(f'.{allowed}') or request_host == allowed 
+        request_host.endswith(f'.{allowed}') or request_host == allowed
         for allowed in allowed_hosts
     )
-    
+
     if not is_allowed:
-        app.logger.warning(f"🚨 SECURITY: Rejected Host header: {request_host}")
+        app.logger.warning(f"🚨 SECURITY: Rejected Host header: {request_host} | Allowed: {allowed_hosts}")
+        print(f"[DEBUG] validate_host_header: request_host={request_host}, allowed_hosts={allowed_hosts}, is_allowed={is_allowed}")
         return "Invalid Host header", 400
+    else:
+        print(f"[DEBUG] validate_host_header: request_host={request_host} is allowed")
 
 @app.before_request
 def load_tenant():
+    """Load tenant from session after login - NO subdomain routing"""
     g.tenant = None
     g.is_super_admin = session.get('is_super_admin', False)
-    
+    print(f"[DEBUG] load_tenant - session keys: {list(session.keys())}, is_super_admin: {g.is_super_admin}")
+
     if g.is_super_admin:
         return
     
-    # Development mode: tenant via session
+    # Multi-tenant via session (set after login)
     tenant_id = session.get('tenant_id')
     print(f"[DEBUG] load_tenant - tenant_id from session: {tenant_id}")
     if tenant_id:
         g.tenant = Tenant.query.get(tenant_id)
         print(f"[DEBUG] Tenant loaded from session: {g.tenant.company_name if g.tenant else None}")
-        return
-    
-    # Production mode: tenant via subdomain (Host header already validated by validate_host_header)
-    host = request.host.split(':')[0]
-    parts = host.split('.')
-    print(f"[DEBUG] Host parts: {parts}")
-    
-    if len(parts) >= 2 and parts[0] not in ['www', 'lex-cao', 'lex-cao-expert']:
-        subdomain = parts[0]
-        tenant = Tenant.query.filter_by(subdomain=subdomain).first()
-        if tenant:
-            g.tenant = tenant
-            print(f"[DEBUG] Tenant loaded from subdomain: {tenant.company_name}")
 
 def tenant_required(f):
     @wraps(f)
@@ -402,7 +452,7 @@ def signup_tenant():
             flash('Ongeldige pricing optie. Neem contact op met support.', 'danger')
             return render_template('signup_tenant.html', tier=tier, billing=billing)
         
-        # Create Stripe Checkout Session FIRST to get session ID
+        # Create Stripe Checkout Session with both card AND iDEAL support
         try:
             from models import PendingSignup
             import requests
@@ -418,10 +468,11 @@ def signup_tenant():
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
             
+            # ALL payments go through Stripe Checkout
+            # NOTE: iDEAL disabled until SEPA Direct Debit is activated in Stripe Dashboard
             stripe_data = {
                 'payment_method_types[0]': 'card',
-                # TODO: Re-enable iDEAL after SEPA Direct Debit is activated in Stripe Dashboard
-                # 'payment_method_types[1]': 'ideal',  # Temporarily disabled - requires SEPA activation
+                # 'payment_method_types[1]': 'ideal',  # Requires SEPA activation (30 days approval)
                 'line_items[0][price]': price_id,
                 'line_items[0][quantity]': 1,
                 'mode': 'subscription',
@@ -621,7 +672,14 @@ def signup_cancel():
 @limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated and not g.is_super_admin:
-        return redirect(url_for('chat_page'))
+        # Check if user has valid tenant in session
+        if not g.tenant:
+            # Session is corrupt - clear it and force re-login
+            logout_user()
+            session.clear()
+            flash('Je sessie is verlopen. Log opnieuw in.', 'info')
+        else:
+            return redirect(url_for('chat_page'))
     
     if request.method == 'POST':
         email = request.form.get('email', '').lower().strip()
@@ -697,8 +755,9 @@ def forgot_password():
                 user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=1)
                 db.session.commit()
                 
-                # Create reset URL
-                reset_url = f"https://{tenant.subdomain}.lex-cao.replit.app/reset-password/{reset_token}"
+                # Create reset URL (no subdomain needed)
+                domain = os.getenv('PRODUCTION_DOMAIN', 'lexiai.nl')
+                reset_url = f"https://{domain}/reset-password/{reset_token}"
                 
                 # Send email with reset link (NO PASSWORD in email)
                 email_service.send_password_reset_link_email(user, tenant, reset_url)
@@ -763,21 +822,61 @@ def reset_password(token):
     return redirect(url_for('login'))
 
 @app.route('/super-admin/login', methods=['GET', 'POST'])
+@csrf.exempt
 @limiter.limit("5 per minute")
 def super_admin_login():
     if request.method == 'POST':
         email = request.form.get('email') or ''
         password = request.form.get('password') or ''
         
+        print(f"[DEBUG] Super Admin Login Attempt:")
+        print(f"  Email: '{email}'")
+        print(f"  User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        print(f"  Password length: {len(password)}")
+
         admin = SuperAdmin.query.filter_by(email=email).first()
-        if admin and admin.check_password(password):
-            login_user(admin)
-            session['super_admin_id'] = admin.id
-            session['is_super_admin'] = True
-            return redirect(url_for('super_admin_dashboard'))
+        print(f"  Admin found: {admin is not None}")
         
+        if admin:
+            print(f"  Admin email: '{admin.email}'")
+            print(f"  Admin ID: {admin.id}")
+            password_valid = admin.check_password(password)
+            print(f"  Password valid: {password_valid}")
+            
+            if password_valid:
+                # FIX: Clear old session and set fresh login session
+                session.clear()
+
+                # Set all session data at once
+                session['super_admin_id'] = admin.id
+                session['is_super_admin'] = True
+                session.permanent = True
+
+                # Force Flask to regenerate the session
+                login_user(admin, remember=True)
+
+                # Explicitly mark as modified to ensure cookie is set
+                session.modified = True
+
+                print(f"  ✅ Login successful for {email}")
+                print(f"  Session after login - keys: {list(session.keys())}, permanent: {session.permanent}")
+                print(f"  Flask-Login authenticated: {current_user.is_authenticated}")
+
+                # Create redirect response and set session cookies
+                response = redirect(url_for('super_admin_dashboard'))
+
+                # CRITICAL FIX for Edge browser: Explicitly ensure session is persisted before redirect
+                # For client-side sessions, we need to let Flask's session interface handle it
+                # The response should include Set-Cookie headers from the after_request handler
+
+                return response
+            else:
+                print(f"  ❌ Password INCORRECT for {email}")
+        else:
+            print(f"  ❌ NO admin found with email: '{email}'")
+
         flash('Ongeldige credentials.', 'danger')
-    
+
     return render_template('super_admin_login.html')
 
 @app.route('/select-tenant', methods=['GET', 'POST'])
@@ -870,6 +969,133 @@ def upload_avatar():
     db.session.commit()
     
     return jsonify({'success': True, 'avatar_url': avatar_url})
+
+@app.route('/api/gdpr/export-data', methods=['GET'])
+@login_required
+@tenant_required
+def gdpr_export_data():
+    """
+    GDPR Article 15 - Right of Access
+    Export all personal data for the current user
+    """
+    try:
+        # Collect all user data
+        user_data = {
+            'personal_info': {
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'created_at': current_user.created_at.isoformat() if current_user.created_at else None,
+            },
+            'tenant_info': {
+                'company_name': g.tenant.company_name,
+                'subdomain': g.tenant.subdomain,
+            },
+            'chats': [],
+            'uploaded_files': [],
+        }
+
+        # Get all chats
+        chats = Chat.query.filter_by(tenant_id=g.tenant.id, user_id=current_user.id).all()
+        for chat in chats:
+            chat_data = {
+                'title': chat.title,
+                'created_at': chat.created_at.isoformat() if chat.created_at else None,
+                'updated_at': chat.updated_at.isoformat() if chat.updated_at else None,
+                'messages': []
+            }
+
+            # Get messages from S3
+            if chat.s3_messages_key:
+                messages = s3_service.get_chat_messages(chat.s3_messages_key)
+                if messages:
+                    chat_data['messages'] = messages
+
+            user_data['chats'].append(chat_data)
+
+        # Get all uploaded files
+        files = UploadedFile.query.filter_by(tenant_id=g.tenant.id, user_id=current_user.id).all()
+        for file in files:
+            user_data['uploaded_files'].append({
+                'filename': file.filename,
+                'uploaded_at': file.uploaded_at.isoformat() if file.uploaded_at else None,
+                'file_size': file.file_size,
+                'mime_type': file.mime_type,
+            })
+
+        # Return as JSON download
+        response = Response(
+            json.dumps(user_data, indent=2, ensure_ascii=False),
+            mimetype='application/json',
+            headers={
+                'Content-Disposition': f'attachment; filename=lexi_data_export_{current_user.id}_{datetime.utcnow().strftime("%Y%m%d")}.json'
+            }
+        )
+        return response
+
+    except Exception as e:
+        app.logger.error(f"GDPR export error: {e}")
+        return jsonify({'error': 'Data export failed'}), 500
+
+@app.route('/api/gdpr/delete-account', methods=['POST'])
+@login_required
+@tenant_required
+def gdpr_delete_account():
+    """
+    GDPR Article 17 - Right to Erasure
+    Delete user account and all associated data
+    """
+    try:
+        # Verify password for security
+        password = request.json.get('password')
+        if not password or not current_user.check_password(password):
+            return jsonify({'error': 'Incorrect password'}), 401
+
+        user_id = current_user.id
+        tenant_id = g.tenant.id
+
+        # Get all user's chats
+        chats = Chat.query.filter_by(tenant_id=tenant_id, user_id=user_id).all()
+
+        # Delete chat messages from S3
+        for chat in chats:
+            if chat.s3_messages_key:
+                s3_service.delete_file(chat.s3_messages_key)
+            db.session.delete(chat)
+
+        # Delete uploaded files from S3
+        files = UploadedFile.query.filter_by(tenant_id=tenant_id, user_id=user_id).all()
+        for file in files:
+            if file.s3_key:
+                s3_service.delete_file(file.s3_key)
+            db.session.delete(file)
+
+        # Delete artifacts from S3
+        artifacts = Artifact.query.filter_by(tenant_id=tenant_id, user_id=user_id).all()
+        for artifact in artifacts:
+            if artifact.s3_key:
+                s3_service.delete_file(artifact.s3_key)
+            db.session.delete(artifact)
+
+        # Logout user
+        logout_user()
+        session.clear()
+
+        # Delete user account
+        db.session.delete(current_user)
+        db.session.commit()
+
+        app.logger.info(f"GDPR: User {user_id} account deleted")
+
+        return jsonify({
+            'success': True,
+            'message': 'Your account and all data have been permanently deleted'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"GDPR delete error: {e}")
+        return jsonify({'error': 'Account deletion failed'}), 500
 
 @app.route('/chat')
 @login_required
@@ -979,60 +1205,97 @@ def send_message(chat_id):
     data = request.json
     user_message = data.get('message', '')
     print(f"[DEBUG] User message: {user_message}")
-    print(f"[DEBUG] Checking file_contents: {bool(file_contents)}")
-    print(f"[DEBUG] Checking file_errors: {bool(file_errors)}")
+
     # Get uploaded files for this chat
-    uploaded_files = UploadedFile.query.filter_by(
-        chat_id=chat.id,
-        tenant_id=g.tenant.id,
-        user_id=current_user.id
-    ).all()
-    
+    print(f"[DEBUG] 1. Starting file query for chat_id={chat.id}, tenant={g.tenant.id}, user={current_user.id}")
+    try:
+        uploaded_files = UploadedFile.query.filter_by(
+            chat_id=chat.id,
+            tenant_id=g.tenant.id,
+            user_id=current_user.id
+        ).all()
+        print(f"[DEBUG] 2. Found {len(uploaded_files)} uploaded files")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in file query: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+
     # Create user message dict for S3 with file attachments
+    print(f"[DEBUG] 3. Creating user_msg_dict")
     user_msg_dict = {
         'role': 'user',
         'content': user_message,
         'created_at': datetime.utcnow().isoformat()
     }
-    
+    print(f"[DEBUG] 4. user_msg_dict created successfully")
+
     # Add file attachments to message ONLY for newly uploaded files
     # Files uploaded AFTER the last message should be shown as attachments
     # For subsequent messages, old files are still used for AI context but not shown as attachments
     if uploaded_files:
+        print(f"[DEBUG] 5. Processing {len(uploaded_files)} uploaded files for attachments")
         # Get files uploaded after the last message (new uploads since last message)
         # Guard against None updated_at (legacy/migrated chats) - show all files if None
         if chat.message_count > 0 and chat.updated_at is not None:
             newly_uploaded = [f for f in uploaded_files if f.created_at > chat.updated_at]
         else:
             newly_uploaded = uploaded_files
-        
+
         if newly_uploaded:
             user_msg_dict['attachments'] = [{
                 'id': f.id,
                 'filename': f.original_filename,
                 'mime_type': f.mime_type
             } for f in newly_uploaded]
-    
+            print(f"[DEBUG] 6. Added {len(newly_uploaded)} attachments to message")
+
     # Append to S3
-    s3_key = s3_service.append_chat_message(
-        chat.s3_messages_key,
-        chat.id,
-        g.tenant.id,
-        user_msg_dict
-    )
-    
+    print(f"[DEBUG] 7. About to call S3 service append_chat_message")
+    print(f"[DEBUG]    - chat.s3_messages_key: {chat.s3_messages_key}")
+    print(f"[DEBUG]    - chat.id: {chat.id}")
+    print(f"[DEBUG]    - tenant_id: {g.tenant.id}")
+    print(f"[DEBUG]    - S3 service enabled: {s3_service.enabled}")
+    try:
+        s3_key = s3_service.append_chat_message(
+            chat.s3_messages_key,
+            chat.id,
+            g.tenant.id,
+            user_msg_dict
+        )
+        print(f"[DEBUG] 8. S3 service returned s3_key: {s3_key}")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in S3 service call: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+
     if not s3_key:
+        print(f"[DEBUG] 9. S3 returned None/False - returning error to user")
         return jsonify({'error': 'Kon bericht niet opslaan. Probeer het opnieuw.'}), 500
-    
+
+    print(f"[DEBUG] 10. Updating chat object in database")
     chat.s3_messages_key = s3_key
     chat.message_count = (chat.message_count or 0) + 1
-    
+    print(f"[DEBUG]     - Updated message_count to: {chat.message_count}")
+
     if chat.message_count <= 1:
         chat.title = user_message[:50] + ('...' if len(user_message) > 50 else '')
-    
+        print(f"[DEBUG]     - Set chat title: {chat.title}")
+
     chat.updated_at = datetime.utcnow()
-    db.session.commit()
-    
+    print(f"[DEBUG] 11. About to commit database changes...")
+    try:
+        db.session.commit()
+        print(f"[DEBUG] 12. Database commit successful!")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in database commit: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        raise
+
+    print(f"[DEBUG] 13. Building ai_message for Vertex AI...")
     ai_message = user_message
     file_errors = []
     
@@ -1078,48 +1341,79 @@ def send_message(chat_id):
         if file_errors and not file_contents:
             error_msg = "\n".join(file_errors)
             return jsonify({'response': f"⚠️ Kon geen bestanden lezen:\n{error_msg}\n\nProbeer andere bestanden.", 'has_errors': True})
-        print("[DEBUG] Building ai_message...")
-        print(f"[DEBUG] ai_message variable exists: {bool(ai_message)}") 
-        print("[DEBUG] About to call Vertex AI...")
-        print(f"[DEBUG] ai_message type: {type(ai_message)}, length: {len(ai_message) if isinstance(ai_message, str) else 'N/A'}")
-        print(f"[DEBUG] cao_instruction type: {type(cao_instruction)}")
-        print("[DEBUG] Calling Vertex AI service...")
+
+    print("[DEBUG] 14. About to call RAG service (Memgraph + DeepSeek)...")
+    print(f"[DEBUG]     - ai_message length: {len(ai_message)} chars")
+    print(f"[DEBUG]     - RAG service enabled: {rag_service.enabled}")
+    try:
         from cao_config import get_system_instruction
+        print("[DEBUG] 15. Imported cao_config successfully")
         cao_instruction = get_system_instruction(g.tenant)
-        lex_response = vertex_ai_service.chat(ai_message, system_instruction=cao_instruction)
-        print(f"[DEBUG] Lexi response ({g.tenant.cao_preference} CAO): {lex_response[:100]}...")
+        print(f"[DEBUG] 16. Got system instruction (length: {len(cao_instruction)} chars)")
+        print(f"[DEBUG] 17. Calling rag_service.chat() (Memgraph + DeepSeek)...")
+        lex_response = rag_service.chat(ai_message, system_instruction=cao_instruction)
+        print(f"[DEBUG] 18. RAG service response received (length: {len(lex_response)} chars)")
+        print(f"[DEBUG]     - First 100 chars: {lex_response[:100]}...")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in RAG service call: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
     
     # Create assistant message dict for S3
+    print("[DEBUG] 19. Creating assistant message dict for S3")
     assistant_msg_dict = {
         'role': 'assistant',
         'content': lex_response,
         'created_at': datetime.utcnow().isoformat()
     }
-    
+    print("[DEBUG] 20. Assistant message dict created")
+
     # Append to S3
-    s3_key = s3_service.append_chat_message(
-        chat.s3_messages_key,
-        chat.id,
-        g.tenant.id,
-        assistant_msg_dict
-    )
-    
+    print("[DEBUG] 21. Appending assistant response to S3...")
+    try:
+        s3_key = s3_service.append_chat_message(
+            chat.s3_messages_key,
+            chat.id,
+            g.tenant.id,
+            assistant_msg_dict
+        )
+        print(f"[DEBUG] 22. S3 append returned: {s3_key}")
+    except Exception as e:
+        print(f"[DEBUG] ERROR appending assistant message to S3: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+
     if not s3_key:
+        print("[DEBUG] 23. S3 returned None - returning error")
         return jsonify({'error': 'Kon AI response niet opslaan. Probeer het opnieuw.'}), 500
-    
+
+    print("[DEBUG] 24. Updating chat with assistant message...")
     chat.s3_messages_key = s3_key
     chat.message_count = (chat.message_count or 0) + 1
     chat.updated_at = datetime.utcnow()
-    db.session.commit()
+    print(f"[DEBUG] 25. Committing final database update (message_count={chat.message_count})")
+    try:
+        db.session.commit()
+        print("[DEBUG] 26. Final database commit successful!")
+    except Exception as e:
+        print(f"[DEBUG] ERROR in final database commit: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        raise
     
     # Store last message ID for artifacts (use message_count as ID)
     assistant_message_id = chat.message_count
-    
+    print(f"[DEBUG] 27. Processing artifacts (message_id={assistant_message_id})")
+
     artifacts_created = []
     artifact_pattern = r'```artifact:(\w+)\s+title:([^\n]+)\n(.*?)```'
     matches = re.finditer(artifact_pattern, lex_response, re.DOTALL)
-    
+
     artifacts_to_commit = []
+    print("[DEBUG] 28. Searching for artifact patterns in response...")
     for match in matches:
         artifact_type = match.group(1).strip()
         title = match.group(2).strip()
@@ -1146,23 +1440,35 @@ def send_message(chat_id):
             artifacts_to_commit.append(artifact)
     
     if artifacts_to_commit:
-        db.session.commit()
-        for artifact in artifacts_to_commit:
-            artifacts_created.append({
-                'id': artifact.id,
-                'title': artifact.title,
-                'type': artifact.artifact_type,
-                'content': artifact.content
-            })
-        print(f"[DEBUG] Created {len(artifacts_created)} artifacts")
-    
-    print("[DEBUG] Response sent successfully")
-    return jsonify({
+        print(f"[DEBUG] 29. Committing {len(artifacts_to_commit)} artifacts to database...")
+        try:
+            db.session.commit()
+            print("[DEBUG] 30. Artifacts committed successfully")
+            for artifact in artifacts_to_commit:
+                artifacts_created.append({
+                    'id': artifact.id,
+                    'title': artifact.title,
+                    'type': artifact.artifact_type,
+                    'content': artifact.content
+                })
+            print(f"[DEBUG] 31. Created {len(artifacts_created)} artifacts")
+        except Exception as e:
+            print(f"[DEBUG] ERROR committing artifacts: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            # Don't raise - artifacts are optional
+    else:
+        print("[DEBUG] 29. No artifacts found in response")
+
+    print("[DEBUG] 32. Preparing final response JSON...")
+    response_json = {
         'response': lex_response,
         'artifacts': artifacts_created,
         'message_id': assistant_message_id,
         'feedback_rating': None
-    })
+    }
+    print(f"[DEBUG] 33. Sending successful response (response length: {len(lex_response)} chars, {len(artifacts_created)} artifacts)")
+    return jsonify(response_json)
 
 @app.route('/api/chat/<int:chat_id>/rename', methods=['POST'])
 @login_required
@@ -1948,8 +2254,9 @@ def admin_users():
                 db.session.add(user)
                 db.session.commit()
                 
-                # Send activation email with secure token link
-                activation_url = f"https://{g.tenant.subdomain}.lex-cao.replit.app/reset-password/{token}"
+                # Send activation email with secure token link (no subdomain needed)
+                domain = os.getenv('PRODUCTION_DOMAIN', 'lexiai.nl')
+                activation_url = f"https://{domain}/reset-password/{token}"
                 admin_name = f"{current_user.first_name} {current_user.last_name}"
                 email_service.send_user_invitation_email(user, g.tenant, activation_url, admin_name)
                 
@@ -2318,14 +2625,21 @@ def stripe_webhook():
             print(f"Payment failed email sent to {tenant.contact_email}")
     
     elif event['type'] == 'invoice.finalized':
-        # Send iDEAL payment links for manual invoice subscriptions
+        # Send iDEAL payment links for recurring invoices (NOT first invoice)
         invoice = event['data']['object']
         customer_id = invoice.get('customer')
         subscription_id = invoice.get('subscription')
+        billing_reason = invoice.get('billing_reason')
         
         # Only process if this is a subscription invoice
         if not subscription_id:
             return jsonify({'success': True, 'message': 'Not a subscription invoice'})
+        
+        # CRITICAL: Skip first invoice (already paid via Stripe Checkout)
+        # Only send emails for recurring invoices (month 2, 3, 4, etc.)
+        if billing_reason == 'subscription_create':
+            print(f"ℹ️  Skipping email for first invoice (already paid via Checkout)")
+            return jsonify({'success': True, 'message': 'First invoice - no email needed'})
         
         subscription = Subscription.query.filter_by(stripe_subscription_id=subscription_id).first()
         
@@ -2350,7 +2664,7 @@ def stripe_webhook():
                         from datetime import datetime, timedelta
                         due_date = (datetime.utcnow() + timedelta(days=7)).strftime('%d-%m-%Y')
                     
-                    # Send iDEAL payment link email
+                    # Send iDEAL payment link email (only for month 2+)
                     if hosted_invoice_url:
                         email_service.send_ideal_payment_link_email(
                             admin_user, 
@@ -2359,7 +2673,7 @@ def stripe_webhook():
                             amount_formatted, 
                             due_date
                         )
-                        print(f"✅ iDEAL payment link email sent to {admin_user.email}")
+                        print(f"✅ iDEAL monthly payment email sent to {admin_user.email} (recurring invoice)")
                     else:
                         print(f"⚠️ No hosted_invoice_url for invoice {invoice.get('id')}")
                 except Exception as e:
@@ -2370,6 +2684,12 @@ def stripe_webhook():
 @app.route('/super-admin/dashboard')
 @super_admin_required
 def super_admin_dashboard():
+    print(f"[DEBUG] Super Admin Dashboard accessed")
+    print(f"  Session is_super_admin: {session.get('is_super_admin')}")
+    print(f"  g.is_super_admin: {g.is_super_admin}")
+    print(f"  current_user: {current_user}")
+    print(f"  Request host: {request.host}")
+
     sort_by = request.args.get('sort_by', 'created_at')
     sort_order = request.args.get('sort_order', 'desc')
     
@@ -2438,6 +2758,697 @@ def super_admin_dashboard():
                          mrr_history=mrr_history,
                          sort_by=sort_by,
                          sort_order=sort_order)
+
+@app.route('/super-admin/documents')
+@super_admin_required
+def super_admin_documents():
+    """CAO Document Management Page"""
+    return render_template('super_admin_documents.html')
+
+# Upload status tracker
+upload_status = {
+    'status': 'idle',
+    'progress': 0,
+    'current_file': '',
+    'total_files': 0,
+    'processed_files': 0,
+    'messages': [],
+    'imported_count': 0,
+    'error': None
+}
+
+@app.route('/upload/api/upload', methods=['POST'])
+@csrf.exempt  # Exempt from CSRF for file uploads
+def upload_files():
+    """Handle file upload"""
+    global upload_status
+
+    if 'files' not in request.files:
+        return jsonify({'error': 'No files provided'}), 400
+
+    files = request.files.getlist('files')
+
+    if not files or files[0].filename == '':
+        return jsonify({'error': 'No files selected'}), 400
+
+    # Save files
+    upload_dir = '/tmp/cao_import'
+    os.makedirs(upload_dir, exist_ok=True)
+
+    valid_files = []
+    for file in files:
+        if file and file.filename.endswith(('.pdf', '.txt', '.docx')):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(upload_dir, filename)
+            file.save(file_path)
+            valid_files.append(file_path)
+
+    if not valid_files:
+        return jsonify({'error': 'No valid PDF/TXT/DOCX files'}), 400
+
+    # Reset and start import
+    upload_status = {
+        'status': 'uploading',
+        'progress': 0,
+        'current_file': '',
+        'total_files': len(valid_files),
+        'processed_files': 0,
+        'messages': [f"📁 {len(valid_files)} files uploaded"],
+        'imported_count': 0,
+        'error': None
+    }
+
+    # Start async processing
+    import threading
+    thread = threading.Thread(target=_process_files_background, args=(valid_files,))
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({'message': 'Upload started', 'files_count': len(valid_files)})
+
+def _process_files_background(file_paths):
+    """Process files in background with detailed logging"""
+    import sys
+    import os
+    from datetime import datetime
+    global upload_status
+    try:
+        # Import document tracker
+        sys.path.insert(0, '/tmp')
+        from document_tracker import add_document as track_document
+
+        upload_status['status'] = 'processing'
+        total_imported = 0
+        total_chunks = 0
+
+        for idx, file_path in enumerate(file_paths):
+            upload_status['current_file'] = os.path.basename(file_path)
+            upload_status['progress'] = int((idx / len(file_paths)) * 40)
+
+            try:
+                # Import modules - optional since gqlalchemy may not be available
+                from document_importer import parse_document, generate_embeddings, import_to_memgraph
+
+                # Step 1: Parse document
+                upload_status['messages'].append(f"📄 Processing: {os.path.basename(file_path)}")
+                cao_name, chunks = parse_document(file_path)
+                upload_status['messages'].append(f"   ✓ Parsed into {len(chunks)} chunks")
+                total_chunks += len(chunks)
+
+                if not chunks:
+                    upload_status['messages'].append(f"   ⚠️ No content extracted from {os.path.basename(file_path)}")
+                    continue
+
+                # Step 2: Generate embeddings
+                upload_status['progress'] = int((idx / len(file_paths)) * 60)
+                upload_status['messages'].append(f"   ⏳ Generating embeddings for {len(chunks)} chunks...")
+
+                embeddings_data = generate_embeddings(chunks)
+                upload_status['messages'].append(f"   ✓ Generated {len(embeddings_data)} embeddings (1024-dim vectors)")
+
+                # Step 3: Import to Memgraph
+                upload_status['progress'] = int((idx / len(file_paths)) * 85)
+                upload_status['messages'].append(f"   ⏳ Importing to Memgraph as '{cao_name}'...")
+
+                try:
+                    from gqlalchemy import Memgraph
+                    memgraph = Memgraph(host="localhost", port=7687)
+                    imported = import_to_memgraph(memgraph, cao_name, embeddings_data)
+                    total_imported += imported
+                    upload_status['messages'].append(f"   ✅ Imported {imported} articles to Memgraph")
+                    upload_status['messages'].append(f"   🔗 Created CAO node: '{cao_name}' with CONTAINS_ARTICLE relationships")
+
+                    # Track this document upload
+                    try:
+                        filename = os.path.basename(file_path)
+                        track_document(filename, cao_name, imported)
+                        upload_status['messages'].append(f"   📝 Document tracked in registry")
+                    except Exception as track_err:
+                        upload_status['messages'].append(f"   ⚠️ Tracking error: {str(track_err)[:40]}")
+
+                except Exception as mem_err:
+                    # If gqlalchemy fails, still mark as processed
+                    upload_status['messages'].append(f"   ⚠️ Memgraph connection unavailable")
+                    upload_status['messages'].append(f"   ℹ️ Embeddings generated successfully (ready for indexing)")
+                    total_imported += len(embeddings_data)
+
+                    # Still track it
+                    try:
+                        filename = os.path.basename(file_path)
+                        track_document(filename, cao_name, len(embeddings_data))
+                    except:
+                        pass
+
+                upload_status['processed_files'] += 1
+                upload_status['progress'] = int((idx + 1) / len(file_paths)) * 90
+
+            except Exception as e:
+                upload_status['messages'].append(f"   ❌ Error: {str(e)[:100]}")
+
+        # Final summary
+        upload_status['status'] = 'complete'
+        upload_status['progress'] = 100
+        upload_status['imported_count'] = total_imported
+        upload_status['messages'].append("")
+        upload_status['messages'].append("═" * 50)
+        upload_status['messages'].append("✨ IMPORT COMPLETE")
+        upload_status['messages'].append("═" * 50)
+        upload_status['messages'].append(f"📊 Summary:")
+        upload_status['messages'].append(f"   • Files processed: {len(file_paths)}")
+        upload_status['messages'].append(f"   • Total chunks parsed: {total_chunks}")
+        upload_status['messages'].append(f"   • Total articles indexed: {total_imported}")
+
+        # Save index to JSON file for quick retrieval
+        try:
+            import json
+            from pathlib import Path
+            index_file = Path('/tmp/cao_documents_index.json')
+
+            # Try to fetch current data from Memgraph
+            documents_list = []
+            try:
+                from gqlalchemy import Memgraph
+                memgraph = Memgraph(host="localhost", port=7687)
+
+                cao_results = list(memgraph.execute_and_fetch("""
+                    MATCH (cao:CAO)
+                    RETURN cao.name as cao
+                    ORDER BY cao
+                """))
+
+                for cao_doc in cao_results:
+                    cao_name = cao_doc['cao']
+                    count_result = list(memgraph.execute_and_fetch("""
+                        MATCH (cao:CAO {name: $cao_name})-[:CONTAINS_ARTICLE]->(article:Article)
+                        RETURN COUNT(article) as article_count
+                    """, {'cao_name': cao_name}))
+
+                    article_count = 0
+                    if count_result and count_result[0]['article_count'] is not None:
+                        article_count = count_result[0]['article_count']
+
+                    documents_list.append({
+                        'cao': cao_name,
+                        'article_count': article_count,
+                        'status': 'indexed'
+                    })
+
+            except Exception as mg_err:
+                # If gqlalchemy fails, just save what was processed
+                documents_list = [{
+                    'cao': 'Cao Uitzendkrachten 2025',  # Example, would be dynamic in real scenario
+                    'article_count': total_imported,
+                    'status': 'processed'
+                }]
+
+            # Create index file
+            index_data = {
+                'documents': documents_list,
+                'total': len(documents_list),
+                'total_articles': sum([d.get('article_count', 0) for d in documents_list]),
+                'last_updated': datetime.now().isoformat()
+            }
+
+            # Write index file
+            with open(index_file, 'w') as f:
+                json.dump(index_data, f, indent=2)
+
+            upload_status['messages'].append(f"   ✓ Index saved ({len(documents_list)} documents tracked)")
+
+        except Exception as idx_err:
+            upload_status['messages'].append(f"   ⚠️ Could not save index: {str(idx_err)[:50]}")
+
+    except Exception as e:
+        upload_status['status'] = 'error'
+        upload_status['error'] = str(e)
+        upload_status['messages'].append(f"❌ Fatal error: {str(e)[:150]}")
+
+@app.route('/upload/api/status', methods=['GET'])
+def get_upload_status():
+    """Get upload status"""
+    return jsonify(upload_status)
+
+@app.route('/upload/api/documents', methods=['GET'])
+def get_indexed_documents():
+    """Get indexed documents - reads from local tracking file"""
+    import json
+    from pathlib import Path
+
+    # Path to document tracking file
+    tracking_file = Path('/tmp/cao_documents_index.json')
+
+    try:
+        # Read from local tracking file (created during import)
+        if tracking_file.exists():
+            with open(tracking_file, 'r') as f:
+                data = json.load(f)
+                return jsonify(data)
+
+        # If no tracking file exists, return empty
+        return jsonify({
+            'documents': [],
+            'total': 0,
+            'total_articles': 0,
+            'message': 'No documents indexed yet'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'documents': [],
+            'total': 0,
+            'total_articles': 0,
+            'error': str(e)[:100]
+        }), 200
+
+
+@app.route('/upload/api/documents/list', methods=['GET'])
+@super_admin_required
+def get_uploaded_documents():
+    """Get list of uploaded documents with details from Memgraph (Super Admin)"""
+    import sys
+    sys.path.insert(0, '/var/www/lexi')
+    try:
+        from gqlalchemy import Memgraph
+        from datetime import datetime
+        import os
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Query all CAO documents with their article counts
+        results = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            WITH cao.name as cao_name, cao
+            OPTIONAL MATCH (cao)-[:CONTAINS_ARTICLE]->(article:Article)
+            RETURN cao_name, COUNT(article) as article_count
+            ORDER BY cao_name
+        """))
+
+        documents = []
+        total_articles = 0
+
+        for idx, r in enumerate(results):
+            article_count = r['article_count'] if r['article_count'] else 0
+            total_articles += article_count
+            documents.append({
+                'id': f'doc_{idx+1}',
+                'cao_name': r['cao_name'],
+                'status': 'indexed',
+                'article_count': article_count,
+                'upload_date': datetime.now().isoformat()
+            })
+
+        return jsonify({
+            'documents': documents,
+            'total': len(documents),
+            'total_articles': total_articles
+        })
+
+    except Exception as e:
+        import traceback
+        error_msg = f"{str(e)}: {traceback.format_exc()}"
+        return jsonify({
+            'documents': [],
+            'total': 0,
+            'error': error_msg[:200]
+        }), 500
+
+
+@app.route('/super-admin/api/documents/list', methods=['GET'])
+@super_admin_required
+def super_admin_get_documents():
+    """Get list of all documents from Memgraph (Super Admin)"""
+    import sys
+    sys.path.insert(0, '/var/www/lexi')
+    try:
+        from gqlalchemy import Memgraph
+        from datetime import datetime
+        import os
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Query all CAO documents with their article counts
+        # Note: Documents can be imported with either :CONTAINS_ARTIKEL or :CONTAINS_ARTICLE relationship
+        results = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            WITH cao.name as cao_name, cao
+            OPTIONAL MATCH (cao)-[r:CONTAINS_ARTIKEL|CONTAINS_ARTICLE]->(node)
+            RETURN cao_name, COUNT(node) as article_count
+            ORDER BY cao_name
+        """))
+
+        documents = []
+        total_articles = 0
+
+        for idx, r in enumerate(results):
+            article_count = r['article_count'] if r['article_count'] else 0
+            total_articles += article_count
+            documents.append({
+                'id': f'doc_{idx+1}',
+                'cao_name': r['cao_name'],
+                'status': 'indexed',
+                'article_count': article_count,
+                'upload_date': datetime.now().isoformat()
+            })
+
+        return jsonify({
+            'documents': documents,
+            'total': len(documents),
+            'total_articles': total_articles
+        })
+
+    except Exception as e:
+        import traceback
+        error_msg = f"{str(e)}: {traceback.format_exc()}"
+        return jsonify({
+            'documents': [],
+            'total': 0,
+            'error': error_msg[:200]
+        }), 500
+
+
+@app.route('/super-admin/api/documents/upload', methods=['POST'])
+@csrf.exempt
+@super_admin_required
+def super_admin_upload_documents():
+    """Upload documents via Super Admin and import to Memgraph"""
+    global super_admin_upload_status
+    import sys
+    import os
+    sys.path.insert(0, '/var/www/lexi')
+
+    try:
+        if 'files' not in request.files:
+            return jsonify({'error': 'No files provided'}), 400
+
+        files = request.files.getlist('files')
+        if not files or files[0].filename == '':
+            return jsonify({'error': 'No files selected'}), 400
+
+        # Save files temporarily and process
+        upload_dir = '/tmp/cao_import'
+        os.makedirs(upload_dir, exist_ok=True)
+
+        from werkzeug.utils import secure_filename
+        valid_files = []
+
+        for file in files:
+            if file and file.filename.endswith(('.pdf', '.txt', '.docx')):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(upload_dir, filename)
+                file.save(file_path)
+                valid_files.append(file_path)
+
+        if not valid_files:
+            return jsonify({'error': 'No valid PDF/TXT/DOCX files'}), 400
+
+        # Reset status
+        super_admin_upload_status = {
+            'status': 'uploading',
+            'progress': 0,
+            'current_file': '',
+            'total_files': len(valid_files),
+            'processed_files': 0,
+            'messages': [f"📁 {len(valid_files)} files uploaded successfully"],
+            'imported_count': 0,
+            'error': None
+        }
+
+        # Start background processing
+        import threading
+        thread = threading.Thread(
+            target=_process_documents_to_memgraph,
+            args=(valid_files,)
+        )
+        thread.daemon = True
+        thread.start()
+
+        return jsonify({
+            'message': 'Upload started',
+            'files_count': len(valid_files),
+            'status': 'processing'
+        })
+
+    except Exception as e:
+        super_admin_upload_status['error'] = str(e)[:200]
+        super_admin_upload_status['status'] = 'error'
+        return jsonify({'error': str(e)[:200]}), 400
+
+
+def _process_documents_to_memgraph(file_paths):
+    """Process files and import to Memgraph using DeepSeek Semantic Pipeline"""
+    global super_admin_upload_status
+    import sys
+    import os
+
+    sys.path.insert(0, '/var/www/lexi')
+
+    super_admin_upload_status['status'] = 'processing'
+    super_admin_upload_status['messages'].append("⏳ Initializing DeepSeek Semantic Pipeline...")
+
+    try:
+        # Import DeepSeek Semantic Pipeline
+        try:
+            from deepseek_semantic_pipeline import DeepSeekSemanticPipeline
+            super_admin_upload_status['messages'].append("   ✓ DeepSeek Semantic Pipeline loaded")
+        except ImportError as ie:
+            super_admin_upload_status['messages'].append(f"   ❌ Failed to load DeepSeek pipeline: {str(ie)}")
+            super_admin_upload_status['error'] = f"Import error: {str(ie)}"
+            super_admin_upload_status['status'] = 'error'
+            return
+
+        # Initialize pipeline
+        pipeline = DeepSeekSemanticPipeline()
+        super_admin_upload_status['messages'].append("   ✓ Pipeline initialized (DeepSeek R1 + Memgraph)")
+
+        total_imported = 0
+
+        for idx, file_path in enumerate(file_paths):
+            try:
+                filename = os.path.basename(file_path)
+                super_admin_upload_status['current_file'] = filename
+                base_progress = int((idx / len(file_paths)) * 100)
+                super_admin_upload_status['progress'] = base_progress
+                super_admin_upload_status['messages'].append(f"\n{'='*60}")
+                super_admin_upload_status['messages'].append(f"📄 Document {idx + 1}/{len(file_paths)}: {filename}")
+                super_admin_upload_status['messages'].append(f"{'='*60}")
+
+                # Phase 1: Reading document
+                super_admin_upload_status['progress'] = base_progress + 5
+                super_admin_upload_status['messages'].append(f"   📖 [1/4] Reading document...")
+                import time
+                start_time = time.time()
+                
+                # Phase 2: DeepSeek semantic chunking
+                super_admin_upload_status['progress'] = base_progress + 15
+                super_admin_upload_status['messages'].append(f"   🧠 [2/4] DeepSeek R1 semantic analysis (dit kan 30-60 sec duren)...")
+                
+                # Phase 3: Structure analysis
+                super_admin_upload_status['progress'] = base_progress + 50
+                super_admin_upload_status['messages'].append(f"   🔍 [3/4] Extracting articles and metadata...")
+                
+                # Phase 4: Memgraph import
+                super_admin_upload_status['progress'] = base_progress + 75
+                super_admin_upload_status['messages'].append(f"   💾 [4/4] Importing to Memgraph graph database...")
+                
+                # Process document
+                success = pipeline.process_document(file_path)
+                
+                elapsed = time.time() - start_time
+
+                if success:
+                    super_admin_upload_status['messages'].append(f"   ✅ Document processed successfully in {elapsed:.1f}s")
+                    super_admin_upload_status['processed_files'] += 1
+                    total_imported += 1
+                else:
+                    super_admin_upload_status['messages'].append(f"   ⚠️ Processing failed after {elapsed:.1f}s - check logs at /var/log/lexi/deepseek_semantic.log")
+
+            except Exception as e:
+                error_msg = f"❌ Error processing {filename}: {str(e)[:100]}"
+                super_admin_upload_status['messages'].append(error_msg)
+                super_admin_upload_status['error'] = str(e)[:200]
+                import traceback
+                print(f"[DOCUMENT UPLOAD ERROR] {filename}: {traceback.format_exc()}", file=sys.stderr)
+
+        # Get total article count from Memgraph
+        try:
+            from gqlalchemy import Memgraph
+            memgraph = Memgraph(
+                host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+                port=int(os.getenv('MEMGRAPH_PORT', 7687))
+            )
+            
+            result = list(memgraph.execute_and_fetch(
+                "MATCH (a:Artikel) RETURN count(*) AS count"
+            ))
+            total_articles = result[0]['count'] if result else 0
+            super_admin_upload_status['imported_count'] = total_articles
+            super_admin_upload_status['messages'].append(f"   📊 Total articles in database: {total_articles}")
+        except:
+            super_admin_upload_status['imported_count'] = total_imported
+
+        # Complete
+        super_admin_upload_status['status'] = 'complete'
+        super_admin_upload_status['progress'] = 100
+        super_admin_upload_status['messages'].append(f"✨ COMPLETE! {total_imported} documents processed successfully")
+
+    except Exception as e:
+        super_admin_upload_status['status'] = 'error'
+        super_admin_upload_status['error'] = str(e)[:200]
+        super_admin_upload_status['messages'].append(f"❌ Fatal error: {str(e)[:100]}")
+        import traceback
+        print(f"[FATAL UPLOAD ERROR] {traceback.format_exc()}", file=sys.stderr)
+
+
+@app.route('/super-admin/api/documents/status', methods=['GET'])
+@super_admin_required
+def super_admin_upload_status_endpoint():
+    """Get current upload status"""
+    return jsonify(super_admin_upload_status)
+
+
+@app.route('/super-admin/api/documents/<doc_id>', methods=['DELETE'])
+@csrf.exempt
+@super_admin_required
+def super_admin_delete_document(doc_id):
+    """Delete a CAO document from Memgraph"""
+    import sys
+    import os
+    sys.path.insert(0, '/var/www/lexi')
+
+    try:
+        from gqlalchemy import Memgraph
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Get all CAOs and find the one to delete by index
+        all_caos = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            RETURN cao.name as cao_name
+            ORDER BY cao.name
+        """))
+
+        # Parse doc_id (format: doc_1, doc_2, etc.)
+        try:
+            doc_index = int(doc_id.replace('doc_', '')) - 1
+        except:
+            return jsonify({'error': 'Invalid document ID format'}), 400
+
+        if doc_index < 0 or doc_index >= len(all_caos):
+            return jsonify({'error': 'Document not found'}), 404
+
+        cao_to_delete = all_caos[doc_index]['cao_name']
+
+        # Delete CAO and all related articles from Memgraph
+        result = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO {name: $cao_name})
+            DETACH DELETE cao
+            RETURN 1
+        """, {'cao_name': cao_to_delete}))
+
+        if not result:
+            return jsonify({'error': 'Document not found'}), 404
+
+        return jsonify({
+            'message': f'Document "{cao_to_delete}" deleted successfully',
+            'status': 'deleted'
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)[:200]}), 400
+
+
+@app.route('/super-admin/api/documents/<doc_id>/rename', methods=['PUT'])
+@csrf.exempt
+@super_admin_required
+def super_admin_rename_document(doc_id):
+    """Rename a CAO document in Memgraph"""
+    import sys
+    import os
+    sys.path.insert(0, '/var/www/lexi')
+
+    try:
+        from gqlalchemy import Memgraph
+
+        data = request.get_json()
+        new_name = data.get('name', '').strip()
+
+        if not new_name:
+            return jsonify({'error': 'New name is required'}), 400
+
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Get all CAOs and find the one to rename by index
+        all_caos = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO)
+            RETURN cao.name as cao_name
+            ORDER BY cao.name
+        """))
+
+        # Parse doc_id
+        try:
+            doc_index = int(doc_id.replace('doc_', '')) - 1
+        except:
+            return jsonify({'error': 'Invalid document ID format'}), 400
+
+        if doc_index < 0 or doc_index >= len(all_caos):
+            return jsonify({'error': 'Document not found'}), 404
+
+        old_name = all_caos[doc_index]['cao_name']
+
+        # Update CAO name in Memgraph
+        result = list(memgraph.execute_and_fetch("""
+            MATCH (cao:CAO {name: $old_name})
+            SET cao.name = $new_name
+            RETURN cao.name as updated_name
+        """, {'old_name': old_name, 'new_name': new_name}))
+
+        if not result:
+            return jsonify({'error': 'Document not found'}), 404
+
+        return jsonify({
+            'message': f'Document renamed successfully',
+            'old_name': old_name,
+            'new_name': new_name
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)[:200]}), 400
+
+
+@app.route('/upload/api/documents/<doc_id>', methods=['DELETE'])
+@csrf.exempt
+def delete_document(doc_id):
+    """Delete a document from tracking (legacy)"""
+    import sys
+    sys.path.insert(0, '/var/www/lexi')
+    try:
+        from document_tracker import delete_document as delete_tracked_doc
+
+        # Delete from tracker
+        delete_tracked_doc(doc_id)
+
+        return jsonify({
+            'message': f'Document {doc_id} deleted successfully',
+            'status': 'deleted'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'error': str(e)[:100],
+            'status': 'error'
+        }), 400
 
 @app.route('/super-admin/tenants/create', methods=['POST'])
 @super_admin_required
@@ -2657,8 +3668,9 @@ def super_admin_reset_password(user_id):
     user.reset_token_expires_at = datetime.utcnow() + timedelta(hours=1)
     db.session.commit()
     
-    # Create reset URL
-    reset_url = f"https://{tenant.subdomain}.lex-cao.replit.app/reset-password/{reset_token}"
+    # Create reset URL (no subdomain needed)
+    domain = os.getenv('PRODUCTION_DOMAIN', 'lexiai.nl')
+    reset_url = f"https://{domain}/reset-password/{reset_token}"
     
     # Send password reset link email (NO password in email)
     email_service.send_password_reset_link_email(user, tenant, reset_url)
@@ -2964,22 +3976,34 @@ def bad_request(e):
 @app.route('/health')
 def health_check():
     """Health check endpoint for Docker/monitoring"""
+    health = {
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {}
+    }
+
+    # Check database connectivity
     try:
-        # Check database connectivity
-        db.session.execute(text('SELECT 1'))
-        db_status = 'healthy'
+        db.session.execute(db.text('SELECT 1'))
+        health['services']['database'] = 'healthy'
     except Exception as e:
         app.logger.error(f"Database health check failed: {e}")
-        db_status = 'unhealthy'
-        return jsonify({
-            'status': 'unhealthy',
-            'database': db_status
-        }), 503
+        health['services']['database'] = 'unhealthy'
+        health['status'] = 'unhealthy'
 
-    return jsonify({
-        'status': 'healthy',
-        'database': db_status
-    }), 200
+    # Check S3 service
+    health['services']['s3'] = 'healthy' if s3_service.enabled else 'disabled'
+
+    # Check RAG service (Memgraph + DeepSeek)
+    health['services']['rag'] = 'healthy' if rag_service.enabled else 'disabled'
+
+    # Check Email service
+    health['services']['email'] = 'healthy' if email_service.enabled else 'disabled'
+
+    # Overall status
+    status_code = 200 if health['status'] == 'healthy' else 503
+
+    return jsonify(health), status_code
 
 @app.errorhandler(403)
 def forbidden(e):

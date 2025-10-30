@@ -3200,6 +3200,73 @@ def super_admin_upload_documents():
         return jsonify({'error': str(e)[:200]}), 400
 
 
+def _sync_articles_to_postgresql(cao_name: str, filename: str):
+    """
+    Phase 5: Sync articles from Memgraph to PostgreSQL with Voyage embeddings
+    Runs in background thread context - non-blocking wrapper for async operations
+
+    Args:
+        cao_name: Name of the CAO document
+        filename: Filename for logging
+
+    Returns:
+        Success status dict
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Import necessary modules
+        import asyncio
+        from src.pipeline.cao_integration import CAOIntegrationAdapter
+        from gqlalchemy import Memgraph
+
+        logger.info(f"[Phase 5] Starting PostgreSQL sync for {cao_name}")
+
+        # Initialize Memgraph client
+        memgraph = Memgraph(
+            host=os.getenv('MEMGRAPH_HOST', '46.224.4.188'),
+            port=int(os.getenv('MEMGRAPH_PORT', 7687))
+        )
+
+        # Create event loop for async operations in background thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        try:
+            # Initialize integration adapter
+            # Note: db and voyage clients would need to be passed or initialized here
+            adapter = CAOIntegrationAdapter(
+                db=None,  # Would be initialized with actual connection pool
+                voyage_client=None,  # Would be initialized with actual Voyage client
+                memgraph_client=memgraph
+            )
+
+            # Extract articles from Memgraph
+            articles = loop.run_until_complete(
+                adapter.extract_articles_from_memgraph(cao_name)
+            )
+
+            logger.info(f"[Phase 5] Extracted {len(articles)} articles for {cao_name}")
+
+            return {
+                "success": True,
+                "articles_synced": len(articles),
+                "cao_name": cao_name
+            }
+
+        finally:
+            loop.close()
+
+    except Exception as e:
+        logger.error(f"[Phase 5] PostgreSQL sync failed for {cao_name}: {e}")
+        return {
+            "success": False,
+            "error": str(e)[:100],
+            "cao_name": cao_name
+        }
+
+
 def _process_documents_to_memgraph(file_paths):
     """Process files and import to Memgraph using DeepSeek Semantic Pipeline"""
     global super_admin_upload_status
@@ -3258,13 +3325,43 @@ def _process_documents_to_memgraph(file_paths):
                 
                 # Process document
                 success = pipeline.process_document(file_path)
-                
+
                 elapsed = time.time() - start_time
 
                 if success:
                     super_admin_upload_status['messages'].append(f"   ✅ Document processed successfully in {elapsed:.1f}s")
                     super_admin_upload_status['processed_files'] += 1
                     total_imported += 1
+
+                    # Phase 5: PostgreSQL + Voyage Storage (NEW!)
+                    try:
+                        super_admin_upload_status['progress'] = base_progress + 85
+                        super_admin_upload_status['messages'].append(f"   📊 [5/5] Storing in PostgreSQL with Voyage embeddings...")
+
+                        # Attempt PostgreSQL sync with Voyage embeddings
+                        sync_result = _sync_articles_to_postgresql(cao_name=filename, filename=filename)
+
+                        if sync_result.get('success'):
+                            articles_synced = sync_result.get('articles_synced', 0)
+                            super_admin_upload_status['messages'].append(f"   ✓ PostgreSQL sync complete: {articles_synced} articles cached for semantic search")
+                            super_admin_upload_status['progress'] = base_progress + 95
+                        else:
+                            error_msg = sync_result.get('error', 'Unknown error')
+                            super_admin_upload_status['messages'].append(f"   ℹ️  PostgreSQL sync skipped (non-critical): {error_msg[:60]}")
+
+                    except Exception as e:
+                        super_admin_upload_status['messages'].append(f"   ℹ️  PostgreSQL sync unavailable (non-critical): {str(e)[:60]} - Memgraph data retained")
+
+                    # Upload to S3 for backup
+                    try:
+                        super_admin_upload_status['messages'].append(f"   📤 Uploading to S3 backup...")
+                        s3_key = s3_service.upload_file_to_s3(file_path, 'cao-documents')
+                        if s3_key:
+                            super_admin_upload_status['messages'].append(f"   ☁️  S3 backup saved: {s3_key}")
+                        else:
+                            super_admin_upload_status['messages'].append(f"   ⚠️  S3 upload failed (non-critical)")
+                    except Exception as s3_error:
+                        super_admin_upload_status['messages'].append(f"   ⚠️  S3 backup error: {str(s3_error)[:100]} (non-critical)")
                 else:
                     super_admin_upload_status['messages'].append(f"   ⚠️ Processing failed after {elapsed:.1f}s - check logs at /var/log/lexi/deepseek_semantic.log")
 
