@@ -5,8 +5,9 @@ from typing import List
 
 class VoyageClient:
     def __init__(self):
-        self.api_key = os.getenv('VOYAGE_API_KEY')
-        self.model = 'voyage-law-2'
+        # Try both key names for compatibility
+        self.api_key = os.getenv('VOYAGE_API_KEY') or os.getenv('VOYAGE_AI_API_KEY')
+        self.model = os.getenv('VOYAGE_AI_MODEL', 'voyage-law-2')
         if self.api_key:
             self.client = voyageai.Client(api_key=self.api_key)
 
