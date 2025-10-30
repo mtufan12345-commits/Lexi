@@ -10,7 +10,9 @@ import os
 from pathlib import Path
 
 # Database connection from .env
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://neondb_owner:npg_Fxq6DGIuA1Xd@ep-wandering-sun-a6asxcto.us-west-2.aws.neon.tech/neondb?sslmode=require')
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable not set!")
 
 
 class DatabaseMigrations:
